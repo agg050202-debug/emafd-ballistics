@@ -1,0 +1,29 @@
+Copyright (c) 2026 emafd — Engineering Consulting Associates.
+All rights reserved.
+
+PROPRIETARY AND CONFIDENTIAL
+
+This repository and everything in it — source code, markup, stylesheets,
+assets, documentation and the ballistics models they describe or invoke — are
+the proprietary property of emafd. They are made available only to people
+explicitly authorised by emafd, and only for the purposes emafd has agreed to.
+
+No licence is granted by the mere fact of having access to this repository. In
+particular, no permission is given to copy, modify, merge, publish, distribute,
+sublicense, sell, or create derivative works from any part of it, in whole or
+in part, without prior written permission from emafd.
+
+This notice must be preserved in all copies or substantial portions of the
+work.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Superior Ballistics is an engineering-analysis and research tool. It is not an
+operational aid, and every result should be verified against measured data
+before it is relied upon.
