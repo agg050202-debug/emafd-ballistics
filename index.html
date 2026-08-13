@@ -6,14 +6,12 @@
 <title>Superior Ballistics &mdash; Field</title>
 <meta name="description" content="Long-range external ballistics solver: 6DOF trajectory, spin drift, Coriolis and a reticle hold picture, running entirely in the browser.">
 
-<!-- Favicon inline. A linked file would be the ONE external request this
-     page makes, and a missing one is a 404 in every visitor's console. -->
+<!-- Favicon inline. A linked file would be an external request, and a
+     missing one is a 404 in every visitor's console. -->
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRmYTNmZiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cGF0aCBkPSJNMTYgMi41djI3TTIuNSAxNmgyNyIgc3Ryb2tlPSIjNGZhM2ZmIiBzdHJva2Utd2lkdGg9IjIiLz48Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIzIiBmaWxsPSIjZmY0ZDRkIi8+PC9zdmc+">
 <meta name="theme-color" content="#101317" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
 
-<!-- Shared-link preview. The point of hosting this is collecting
-     feedback, and feedback starts with someone pasting the link. -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Superior Ballistics — Field">
 <meta property="og:description" content="Long-range firing solutions in the browser: 6DOF trajectory, spin drift, Coriolis, reticle hold picture. No install, works offline.">
@@ -32,9 +30,10 @@
  * index.html); do not move it in here, or inlining this file changes the
  * host document.
  *
- * Dark by default because that is what gets used at dusk on a range, but
- * scheme-aware, and every colour is stated rather than inherited -- an
- * iframe inherits nothing from its host.
+ * Navigation is a screen stack, not accordions: one screen is visible at
+ * a time and a back button returns, matching the desktop build's Range
+ * Field. Collapsing panels put the setup and the answer on the same
+ * screen fighting for room, which is exactly wrong on a phone.
  */
 
 .sb-app {
@@ -139,40 +138,121 @@
 }
 .sb-app .status.solving { color: var(--sb-warn); }
 
-/* ---------------- layout ---------------- */
-.sb-app .sb-main {
-  display: grid;
-  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
-  gap: 18px; padding: 18px; align-items: start;
-  max-width: 1500px; margin: 0 auto;
+/* ---------------- screen stack ---------------- */
+.sb-app .screen {
+  display: none;
+  max-width: 1500px; margin: 0 auto; padding: 16px 18px 8px;
+  flex-direction: column; gap: 14px;
 }
-@media (max-width: 900px) {
-  .sb-app .sb-main { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
+.sb-app .screen.on { display: flex; }
+@media (max-width: 900px) { .sb-app .screen { padding: 12px; gap: 12px; } }
+
+.sb-app .page-head {
+  display: flex; align-items: center; gap: 12px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--sb-line);
+}
+.sb-app .page-head h2 {
+  margin: 0; flex: 1; text-align: center;
+  font: 600 15px var(--sb-sans); color: var(--sb-fg);
+}
+.sb-app .page-head .head-spacer { width: 92px; flex: none; }
+.sb-app button.back {
+  width: 92px; flex: none; font-weight: 600;
+  border-color: var(--sb-accent); color: var(--sb-accent);
+}
+.sb-app .page-body {
+  display: flex; flex-direction: column; gap: 14px;
+  max-width: 720px; width: 100%; margin: 0 auto;
+}
+/* Merged pages carry several groups; the rule separates them without
+ * reintroducing the collapsing panels this replaced. */
+.sb-app h3.section {
+  margin: 8px 0 0; padding-bottom: 6px;
+  border-bottom: 1px solid var(--sb-line);
+  font: 600 11px var(--sb-sans); letter-spacing: .08em;
+  text-transform: uppercase; color: var(--sb-fg-dim);
+}
+.sb-app h3.section:first-child { margin-top: 0; }
+
+/* ---------------- rifle library ---------------- */
+.sb-app .library {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px; align-items: center;
+}
+@media (max-width: 560px) {
+  .sb-app .library { grid-template-columns: 1fr; }
+}
+.sb-app .lib-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.sb-app .lib-actions button { white-space: nowrap; }
+.sb-app .lib-actions button:disabled {
+  opacity: .45; cursor: default; border-color: var(--sb-line);
 }
 
-.sb-app .panel {
-  display: flex; flex-direction: column; gap: 10px; min-width: 0;
+/* ---------------- the square nav tiles ---------------- */
+.sb-app .navgrid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
 }
-
-.sb-app details {
+@media (max-width: 560px) {
+  .sb-app .navgrid { grid-template-columns: 1fr; }
+}
+/* Output sits at the foot of the screen as one wide, short row: it is
+   set once and left alone, so it should not compete with Equipment and
+   Environment for the top of the page. */
+.sb-app .navgrid.bottom { grid-template-columns: 1fr; }
+.sb-app .navgrid.bottom button {
+  min-height: 0; flex-direction: row; align-items: center;
+  justify-content: space-between; gap: 14px; padding: 12px 16px;
+}
+.sb-app .navgrid.bottom .v { width: auto; text-align: right; }
+.sb-app .navgrid button {
+  min-height: 92px;
+  display: flex; flex-direction: column; align-items: flex-start;
+  justify-content: space-between; gap: 6px;
+  padding: 12px; text-align: left;
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
-  border-radius: var(--sb-radius); overflow: hidden;
+  border-radius: var(--sb-radius);
 }
-.sb-app summary {
-  cursor: pointer; padding: 11px 14px; font-weight: 600; font-size: 13.5px;
-  list-style: none; user-select: none; color: var(--sb-fg);
-  display: flex; align-items: center; justify-content: space-between;
+.sb-app .navgrid button:hover {
+  border-color: var(--sb-accent); background: var(--sb-bg-3);
 }
-.sb-app summary::-webkit-details-marker { display: none; }
-.sb-app summary::after {
-  content: "+"; color: var(--sb-fg-dim); font-weight: 400; font-size: 16px;
+.sb-app .navgrid .t {
+  font: 600 13px var(--sb-sans); color: var(--sb-fg);
+  text-transform: uppercase; letter-spacing: .04em; font-size: 11.5px;
 }
-.sb-app details[open] summary::after { content: "\2212"; }
-.sb-app details[open] summary { border-bottom: 1px solid var(--sb-line); }
-.sb-app .body {
-  padding: 14px; display: flex; flex-direction: column; gap: 12px;
+.sb-app .navgrid .v {
+  font: 12.5px var(--sb-mono); color: var(--sb-accent);
+  width: 100%; white-space: pre-line; line-height: 1.4;
 }
 
+/* ---------------- the selected-row readout ---------------- */
+.sb-app .readout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px; align-items: center;
+  background: var(--sb-bg-2); border: 1px solid var(--sb-line);
+  border-radius: var(--sb-radius); padding: 12px 16px;
+}
+@media (max-width: 700px) {
+  .sb-app .readout { grid-template-columns: 1fr; gap: 10px; }
+  .sb-app .readout-more { justify-self: stretch; }
+}
+.sb-app .readout-range { display: flex; flex-direction: column; gap: 2px; }
+.sb-app .readout-range .k {
+  font: 600 10.5px var(--sb-sans); letter-spacing: .07em;
+  text-transform: uppercase; color: var(--sb-fg-dim);
+}
+.sb-app .readout-range .v {
+  font: 700 26px var(--sb-mono); color: var(--sb-fg);
+  font-variant-numeric: tabular-nums;
+}
+.sb-app .readout-dials {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.sb-app .readout .dial { padding: 4px 8px; border: 0; background: transparent; }
+.sb-app .readout .dial-value { font-size: clamp(32px, 7vw, 52px); }
+.sb-app .readout-more { white-space: nowrap; }
+
+/* ---------------- fields ---------------- */
 .sb-app .grid2 {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px;
 }
@@ -209,11 +289,14 @@
 }
 .sb-app .hint.warn { color: var(--sb-warn); }
 
-/* wind clock: 12 o'clock is a headwind, so the buttons read like a dial */
-.sb-app .clock { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
-.sb-app .clock button { padding: 7px 0; font: 12px var(--sb-mono); }
-.sb-app .clock button.on {
-  background: var(--sb-accent); color: #fff; border-color: transparent;
+.sb-app label.check {
+  display: flex; align-items: center; gap: 9px;
+  text-transform: none; letter-spacing: 0; font-size: 13.5px;
+  color: var(--sb-fg); cursor: pointer;
+}
+.sb-app label.check input[type="checkbox"] {
+  width: 17px; height: 17px; flex: none; margin: 0; padding: 0;
+  accent-color: var(--sb-accent); cursor: pointer;
 }
 
 .sb-app button {
@@ -228,12 +311,12 @@
 
 /* ---------------- catalogue search ---------------- */
 .sb-app .results-list {
-  max-height: 260px; overflow-y: auto; margin-top: 6px;
+  max-height: 300px; overflow-y: auto; margin-top: 6px;
   border: 1px solid var(--sb-line); border-radius: 7px;
   background: var(--sb-bg-3);
 }
 .sb-app .results-list div {
-  padding: 7px 10px; cursor: pointer; font-size: 13px;
+  padding: 8px 10px; cursor: pointer; font-size: 13px;
   border-bottom: 1px solid var(--sb-line);
 }
 .sb-app .results-list div:last-child { border-bottom: 0; }
@@ -246,7 +329,7 @@
 .sb-app .results-list div.active .meta { color: #e8f0fb; }
 .sb-app .results-list .none { color: var(--sb-fg-dim); cursor: default; }
 
-/* ---------------- results ---------------- */
+/* ---------------- result header ---------------- */
 .sb-app .result-head {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
@@ -263,16 +346,17 @@
 }
 .sb-app .summary b { color: var(--sb-fg); font-weight: 600; }
 
+/* ---------------- the distance table ---------------- */
 .sb-app .card-wrap {
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
-  border-radius: var(--sb-radius); overflow: auto; max-height: 46vh;
+  border-radius: var(--sb-radius); overflow: auto; max-height: 52vh;
 }
 .sb-app table.dope {
   border-collapse: collapse; width: 100%; font: 13px var(--sb-mono);
   margin: 0;
 }
 .sb-app .dope th, .sb-app .dope td {
-  padding: 7px 10px; text-align: right; white-space: nowrap; border: 0;
+  padding: 6px 10px; text-align: right; white-space: nowrap; border: 0;
 }
 .sb-app .dope th {
   position: sticky; top: 0; background: var(--sb-bg-3); z-index: 1;
@@ -281,46 +365,123 @@
   color: var(--sb-fg-dim); border-bottom: 1px solid var(--sb-line);
 }
 .sb-app .dope th:first-child, .sb-app .dope td:first-child { text-align: left; }
-.sb-app .dope tbody tr {
-  border-bottom: 1px solid var(--sb-line); cursor: pointer;
-}
+.sb-app .dope tbody tr { border-bottom: 1px solid var(--sb-line); }
 .sb-app .dope tbody tr:last-child { border-bottom: 0; }
 .sb-app .dope tbody tr:hover { background: var(--sb-bg-3); }
 .sb-app .dope tbody tr.sel {
-  background: color-mix(in srgb, var(--sb-accent) 22%, transparent);
+  background: color-mix(in srgb, var(--sb-accent) 20%, transparent);
 }
-.sb-app .dope td.dial { color: var(--sb-accent); font-weight: 600; }
-.sb-app .dope td.sub { color: var(--sb-fg-dim); }
-.sb-app .dope tr.trans td { color: var(--sb-warn); }
+.sb-app .dope tbody tr.sel td.solution { color: var(--sb-fg); }
 
-/* On a phone the eight columns force a sideways drag before you can read
- * anything past the wind call, which is the wrong trade for the one
- * screen a shooter actually looks at on a firing line. Drop Mach, time of
- * flight and energy; the note under the card says they are gone and where
- * to get them, because hiding data without saying so is worse than
- * making someone scroll. */
-.sb-app .card-note { display: none; }
-@media (max-width: 700px) {
-  .sb-app .dope th:nth-child(n+6), .sb-app .dope td:nth-child(n+6) {
-    display: none;
-  }
-  .sb-app .card-note { display: block; }
-  /* Five columns at the desktop metrics still overhang a 375 px phone by
-   * ~50 px. Tighter padding and one point smaller brings the card inside
-   * the box, so there is no sideways drag at all on the screen that
-   * matters most. */
-  .sb-app table.dope { font-size: 12px; }
-  .sb-app .dope th, .sb-app .dope td { padding: 7px 6px; }
-  .sb-app .dope th { font-size: 10px; letter-spacing: .03em; }
+/* The distance cell is the one the shooter owns; it says so. */
+.sb-app .dope input.dist {
+  width: 8ch; padding: 5px 7px; text-align: right;
+  background: var(--sb-bg); border-color: var(--sb-accent);
+  font: 13px var(--sb-mono);
 }
+.sb-app .dope td.solution {
+  cursor: pointer; color: var(--sb-accent); font-weight: 600; font-size: 15px;
+}
+.sb-app .dope td.sub { color: var(--sb-fg-dim); cursor: pointer; }
+.sb-app .dope tr.trans td.sub { color: var(--sb-warn); }
+.sb-app .dope td.rowdel { text-align: center; }
+.sb-app .dope button.del {
+  padding: 3px 8px; font-size: 13px; line-height: 1;
+  color: var(--sb-fg-dim); border-color: transparent; background: transparent;
+}
+.sb-app .dope button.del:hover { color: var(--sb-hold); border-color: var(--sb-hold); }
+.sb-app .dope tr.empty td { color: var(--sb-fg-dim); font-style: italic; }
 
+.sb-app .table-actions {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+}
+.sb-app .table-actions .grow { flex: 1; }
+.sb-app .table-actions select { width: auto; }
+
+/* ---------------- shot detail ---------------- */
+.sb-app .shot-wrap {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  gap: 18px; align-items: start;
+}
+@media (max-width: 900px) {
+  .sb-app .shot-wrap { grid-template-columns: 1fr; }
+}
+/* Two children, not three: the dials and their supporting numbers are one
+ * column, the reticle is the other. A stray third child lands in the wide
+ * track and blows the reticle up to twice its intended size. */
+.sb-app .shot-left { min-width: 0; }
+.sb-app .shot-dials { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sb-app .dial {
+  background: var(--sb-bg-2); border: 1px solid var(--sb-line);
+  border-radius: var(--sb-radius); padding: 18px 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.sb-app .dial-label {
+  font: 600 11px var(--sb-sans); letter-spacing: .07em;
+  text-transform: uppercase; color: var(--sb-fg-dim);
+}
+.sb-app .dial-value {
+  font: 700 clamp(38px, 11vw, 66px)/1.05 var(--sb-mono);
+  color: var(--sb-accent); font-variant-numeric: tabular-nums;
+}
+.sb-app .dial-unit { font: 12px var(--sb-mono); color: var(--sb-fg-dim); }
+.sb-app .shot-secondary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px; margin-top: 12px;
+}
+.sb-app .shot-secondary div {
+  background: var(--sb-bg-2); border: 1px solid var(--sb-line);
+  border-radius: 8px; padding: 10px 12px;
+}
+.sb-app .shot-secondary .k {
+  display: block; font: 10.5px var(--sb-sans); letter-spacing: .06em;
+  text-transform: uppercase; color: var(--sb-fg-dim);
+}
+.sb-app .shot-secondary .v {
+  display: block; font: 600 17px var(--sb-mono); color: var(--sb-fg);
+}
+.sb-app .shot-reticle { display: flex; flex-direction: column; gap: 8px; }
+
+/* ---------------- wind rose ---------------- */
+.sb-app .rose-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.sb-app .rose {
+  width: min(320px, 82vw); aspect-ratio: 1; display: block;
+  touch-action: none; cursor: grab; border-radius: 50%;
+}
+.sb-app .rose:active { cursor: grabbing; }
+.sb-app .rose:focus { outline: 2px solid var(--sb-accent); outline-offset: 2px; }
+.sb-app .rose-face {
+  fill: var(--sb-bg-2); stroke: var(--sb-line); stroke-width: 1;
+}
+.sb-app .rose-tick { stroke: var(--sb-line); stroke-width: 1.5; }
+.sb-app .rose-tick.major { stroke: var(--sb-fg-dim); stroke-width: 2; }
+.sb-app .rose-hour {
+  fill: var(--sb-fg-dim); font: 11px var(--sb-mono);
+}
+.sb-app .rose-los {
+  stroke: var(--sb-fg-dim); stroke-width: 1; stroke-dasharray: 3 4;
+}
+.sb-app .rose-cardinal {
+  fill: var(--sb-fg-dim); font: 600 9px var(--sb-sans); letter-spacing: .12em;
+}
+.sb-app .rose-arrow { stroke: var(--sb-accent); stroke-width: 3; }
+.sb-app .rose-head { fill: var(--sb-accent); }
+.sb-app .rose-grip {
+  fill: var(--sb-accent); stroke: var(--sb-bg-2); stroke-width: 2;
+}
+.sb-app .rose-readout {
+  fill: var(--sb-fg); font: 700 20px var(--sb-mono);
+}
+.sb-app .rose-sub { fill: var(--sb-fg-dim); font: 11px var(--sb-mono); }
+
+/* ---------------- visualisations ---------------- */
 .sb-app .viz {
   display: grid; grid-template-columns: minmax(0,1.35fr) minmax(0,1fr);
   gap: 12px;
 }
-@media (max-width: 1100px) {
-  .sb-app .viz { grid-template-columns: 1fr; }
-}
+@media (max-width: 1100px) { .sb-app .viz { grid-template-columns: 1fr; } }
 .sb-app .viz-box {
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
   border-radius: var(--sb-radius); padding: 12px 14px;
@@ -358,21 +519,34 @@
 }
 .sb-app .sb-footer p { max-width: 90ch; margin: 0; }
 
+/* On a phone the secondary columns force a sideways drag before you can
+ * read the wind call, which is the wrong trade for the one screen a
+ * shooter looks at on a firing line. The full set is one tap away in the
+ * shot view, and in the CSV. */
+@media (max-width: 760px) {
+  .sb-app .dope th:nth-child(n+4):not(:last-child),
+  .sb-app .dope td:nth-child(n+4):not(:last-child) { display: none; }
+  .sb-app .dope th, .sb-app .dope td { padding: 6px 7px; }
+  .sb-app .dope input.dist { width: 7ch; }
+}
+
 @media print {
-  .sb-app .topbar, .sb-app .inputs, .sb-app .viz,
-  .sb-app .sb-footer, .sb-app .actions { display: none !important; }
-  .sb-app .sb-main { display: block; padding: 0; }
+  .sb-app .topbar, .sb-app .navgrid, .sb-app .viz, .sb-app .sb-footer,
+  .sb-app .table-actions, .sb-app .result-head .badge { display: none !important; }
+  .sb-app .screen { display: none !important; }
+  .sb-app #screen-main { display: block !important; padding: 0; }
   .sb-app { background: #fff; color: #000; }
-  .sb-app .card-wrap { max-height: none; border: 0; }
+  .sb-app .card-wrap { max-height: none; border: 0; overflow: visible; }
   .sb-app .dope th { color: #000; background: #eee; }
+  .sb-app .dope input.dist { border: 0; background: transparent; color: #000; }
+  .sb-app .dope td.rowdel { display: none; }
 }
 
 </style>
 <style>
 /* STANDALONE PAGE ONLY. style.css is scoped entirely under .sb-app so it
  * can be inlined into someone else's page without touching their markup;
- * these three lines are the part that cannot be, so they live here and
- * get dropped when the app is embedded. See INTEGRATION.md. */
+ * these three lines are the part that cannot be. See INTEGRATION.md. */
 html, body { margin: 0; padding: 0; }
 body { background: #101317; }
 @media (prefers-color-scheme: light) { body { background: #f4f6f9; } }
@@ -399,162 +573,43 @@ body { background: #101317; }
   </div>
 </header>
 
-<main class="sb-main">
+<!-- ==================== MAIN: the firing solution ==================== -->
+<section class="screen on" id="screen-main" aria-label="Firing solution">
 
-<!-- ================= inputs ================= -->
-<section class="panel inputs" aria-label="Setup">
-
-  <details open>
-    <summary>Projectile</summary>
-    <div class="body">
-      <div class="field wide">
-        <label for="bullet-search">Search the catalogue</label>
-        <input type="search" id="bullet-search" autocomplete="off"
-               role="combobox" aria-expanded="false" aria-autocomplete="list"
-               aria-controls="bullet-results"
-               placeholder="e.g. 6.5 140 berger, 308 175, eld-m">
-        <div id="bullet-results" class="results-list" role="listbox"
-             aria-label="Catalogue matches" hidden></div>
-        <p class="hint" id="bullet-current">Sierra MatchKing 168 gr &mdash; built-in reference (M852)</p>
-      </div>
-      <div class="grid2">
-        <div class="field"><label for="in-mass">Mass <u data-u="mass"></u></label>
-          <input type="text" inputmode="decimal" id="in-mass"></div>
-        <div class="field"><label for="in-cal">Calibre <u data-u="calibre"></u></label>
-          <input type="text" inputmode="decimal" id="in-cal"></div>
-        <div class="field"><label for="in-len">Length <u data-u="length"></u></label>
-          <input type="text" inputmode="decimal" id="in-len"></div>
-        <div class="field"><label for="in-bc">Ballistic coefficient</label>
-          <input type="text" inputmode="decimal" id="in-bc"></div>
-        <div class="field"><label for="in-dragmodel">Drag model</label>
-          <select id="in-dragmodel">
-            <option value="G7">G7 standard</option>
-            <option value="G1">G1 standard</option>
-            <option value="McCoy">McCoy coefficients</option>
-            <option value="Tabulated">Tabulated Cd</option>
-          </select></div>
-        <div class="field"><label for="in-profile">Aero coefficients</label>
-          <select id="in-profile"></select></div>
-      </div>
-      <p class="hint" id="coef-provenance"></p>
-    </div>
-  </details>
-
-  <details open>
-    <summary>Rifle &amp; sight</summary>
-    <div class="body">
-      <div class="grid2">
-        <div class="field"><label for="in-mv">Muzzle velocity <u data-u="velocity"></u></label>
-          <input type="text" inputmode="decimal" id="in-mv"></div>
-        <div class="field"><label for="in-twist">Twist (in/rev)</label>
-          <input type="text" inputmode="decimal" id="in-twist"></div>
-        <div class="field"><label for="in-twistdir">Twist direction</label>
-          <select id="in-twistdir">
-            <option value="RH">Right hand</option>
-            <option value="LH">Left hand</option>
-          </select></div>
-        <div class="field"><label for="in-sh">Sight height <u data-u="sight_h"></u></label>
-          <input type="text" inputmode="decimal" id="in-sh"></div>
-        <div class="field"><label for="in-zr">Zero range <u data-u="distance"></u></label>
-          <input type="text" inputmode="decimal" id="in-zr"></div>
-        <div class="field"><label for="in-reticle">Reticle</label>
-          <select id="in-reticle"></select></div>
-      </div>
-      <p class="hint" id="stability-note"></p>
-    </div>
-  </details>
-
-  <details open>
-    <summary>Atmosphere</summary>
-    <div class="body">
-      <div class="grid2">
-        <div class="field"><label for="in-temp">Temperature <u data-u="temp"></u></label>
-          <input type="text" inputmode="decimal" id="in-temp"></div>
-        <div class="field"><label for="in-press">Station pressure <u data-u="pressure"></u></label>
-          <input type="text" inputmode="decimal" id="in-press"></div>
-        <div class="field"><label for="in-hum">Humidity (%)</label>
-          <input type="text" inputmode="decimal" id="in-hum"></div>
-        <div class="field"><label for="in-alt">Altitude <u data-u="altitude"></u></label>
-          <input type="text" inputmode="decimal" id="in-alt"></div>
-      </div>
-      <p class="hint">Station pressure is what a Kestrel reads &mdash; not
-      the altimeter setting corrected to sea level. If you only have the
-      sea-level value, leave pressure standard and set the altitude.</p>
-    </div>
-  </details>
-
-  <details open>
-    <summary>Wind</summary>
-    <div class="body">
-      <div class="grid2">
-        <div class="field"><label for="in-wspd">Speed <u data-u="wind"></u></label>
-          <input type="text" inputmode="decimal" id="in-wspd"></div>
-        <div class="field"><label for="in-wdir">Direction (deg, from)</label>
-          <input type="text" inputmode="decimal" id="in-wdir"></div>
-      </div>
-      <div class="clock" id="wind-clock" role="group" aria-label="Wind clock"></div>
-      <p class="hint">12 o'clock blows from the target towards you.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>Shot geometry</summary>
-    <div class="body">
-      <div class="grid2">
-        <div class="field"><label for="in-los">Shot angle (deg)</label>
-          <input type="text" inputmode="decimal" id="in-los"></div>
-        <div class="field"><label for="in-lat">Latitude (deg)</label>
-          <input type="text" inputmode="decimal" id="in-lat"></div>
-        <div class="field"><label for="in-az">Azimuth of fire (deg)</label>
-          <input type="text" inputmode="decimal" id="in-az"></div>
-      </div>
-      <p class="hint">Latitude and azimuth drive the Coriolis term.
-      Positive shot angle is uphill.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>Output</summary>
-    <div class="body">
-      <div class="grid2">
-        <div class="field"><label for="in-maxrange">Max range <u data-u="distance"></u></label>
-          <input type="text" inputmode="decimal" id="in-maxrange"></div>
-        <div class="field"><label for="in-step">Step <u data-u="distance"></u></label>
-          <input type="text" inputmode="decimal" id="in-step"></div>
-        <div class="field"><label for="in-corr">Corrections in</label>
-          <select id="in-corr">
-            <option value="MIL">MIL</option>
-            <option value="MOA">MOA</option>
-            <option value="clicks">Clicks</option>
-            <option value="linear">Linear drop</option>
-          </select></div>
-        <div class="field" id="click-field"><label for="in-click">Click value</label>
-          <select id="in-click"></select></div>
-        <div class="field" id="turret-field">
-          <label for="in-turret">Turret factor</label>
-          <input type="text" inputmode="decimal" id="in-turret"></div>
-      </div>
-      <p class="hint" id="turret-hint">A turret factor other than 1.000
-      scales the clicks you dial. Set it only if you have <em>measured</em>
-      your scope's tracking on a tall target: a scope that moves 9.7 MIL
-      when you dial 10.0 has a factor of 10.0 / 9.7 = 1.031.</p>
-    </div>
-  </details>
-
-  <div class="actions">
-    <button type="button" id="btn-csv">Export CSV</button>
-    <button type="button" id="btn-print">Print card</button>
-    <button type="button" id="btn-reset" class="ghost">Reset</button>
-  </div>
-</section>
-
-<!-- ================= results ================= -->
-<section class="panel results" aria-label="Firing solution">
+  <nav class="navgrid" aria-label="Setup">
+    <button type="button" data-goto="screen-equipment">
+      <span class="t">Equipment</span><span class="v" id="nav-equipment">&nbsp;</span></button>
+    <button type="button" data-goto="screen-environment">
+      <span class="t">Environment</span><span class="v" id="nav-environment">&nbsp;</span></button>
+  </nav>
 
   <div class="result-head">
     <button type="button" id="wind-badge" class="badge"
             aria-label="Toggle whether wind is included in the corrections">WIND IN DOPE</button>
     <div class="summary" id="solution-summary"></div>
+  </div>
+
+  <!-- The selected row, full size. This is the number you actually dial,
+       so it sits above the table rather than inside a cell. -->
+  <div class="readout" id="readout" aria-live="polite">
+    <div class="readout-range">
+      <span class="k">Distance</span>
+      <span class="v" id="ro-range">&mdash;</span>
+    </div>
+    <div class="readout-dials">
+      <div class="dial">
+        <span class="dial-label">Elevation</span>
+        <span class="dial-value" id="ro-elev">&mdash;</span>
+        <span class="dial-unit" id="ro-elev-unit">&nbsp;</span>
+      </div>
+      <div class="dial">
+        <span class="dial-label">Windage</span>
+        <span class="dial-value" id="ro-wind">&mdash;</span>
+        <span class="dial-unit" id="ro-wind-unit">&nbsp;</span>
+      </div>
+    </div>
+    <button type="button" class="readout-more" data-goto="screen-shot">
+      Full detail &rarr;</button>
   </div>
 
   <p class="hint warn" id="range-warning" hidden></p>
@@ -565,8 +620,19 @@ body { background: #101317; }
       <tbody id="dope-body"></tbody>
     </table>
   </div>
-  <p class="hint card-note">Mach, time of flight and energy are hidden on
-  a narrow screen. Rotate the phone, or use Export CSV for the full card.</p>
+
+  <div class="table-actions">
+    <button type="button" id="btn-add-row">+ Add distance</button>
+    <select id="quick-fill" aria-label="Fill the table with a range series">
+      <option value="">Fill series&hellip;</option>
+    </select>
+    <button type="button" id="btn-clear-rows" class="ghost">Clear</button>
+    <span class="grow"></span>
+    <button type="button" id="btn-csv">Export CSV</button>
+    <button type="button" id="btn-print">Print card</button>
+  </div>
+  <p class="hint">Type the distances you are shooting. Tap a row to put it
+  in the readout above.</p>
 
   <div class="viz">
     <div class="viz-box">
@@ -579,26 +645,279 @@ body { background: #101317; }
       <svg id="reticle" class="reticle" role="img"
            aria-label="Reticle with the residual hold point"></svg>
       <div class="reticle-ctl">
-        <label for="in-hold">Hold at</label>
-        <select id="in-hold"></select>
+        <label for="in-reticle-main">Pattern</label>
+        <select id="in-reticle-main"></select>
         <label for="in-zoom">Zoom</label>
         <input type="range" id="in-zoom" min="8" max="60" step="1">
       </div>
+      <label class="check">
+        <input type="checkbox" id="in-ladder" checked>
+        <span>Show the table as holdover marks</span>
+      </label>
       <p class="hint" id="hold-note"></p>
+      <p class="hint" id="ladder-note"></p>
+    </div>
+  </div>
+
+  <!-- Output settings live at the bottom: units, click value and turret
+       factor get set once and then left alone, unlike the two tiles at
+       the top which are touched every outing. -->
+  <nav class="navgrid bottom" aria-label="Output settings">
+    <button type="button" data-goto="screen-output">
+      <span class="t">Output</span><span class="v" id="nav-output">&nbsp;</span></button>
+  </nav>
+</section>
+
+<!-- ==================== SHOT: one distance, full size ==================== -->
+<section class="screen" id="screen-shot" aria-label="Shot detail">
+  <div class="page-head">
+    <button type="button" class="back" data-goto="screen-main">&larr; Back</button>
+    <h2 id="shot-title">&nbsp;</h2>
+    <span class="head-spacer"></span>
+  </div>
+  <div class="shot-wrap">
+    <div class="shot-left">
+      <div class="shot-dials">
+        <div class="dial">
+          <span class="dial-label">Elevation</span>
+          <span class="dial-value" id="shot-elev">&mdash;</span>
+          <span class="dial-unit" id="shot-elev-unit">&nbsp;</span>
+        </div>
+        <div class="dial">
+          <span class="dial-label">Windage</span>
+          <span class="dial-value" id="shot-wind">&mdash;</span>
+          <span class="dial-unit" id="shot-wind-unit">&nbsp;</span>
+        </div>
+      </div>
+      <div class="shot-secondary" id="shot-secondary"></div>
+    </div>
+    <div class="shot-reticle">
+      <svg id="shot-ret" class="reticle" role="img"
+           aria-label="Reticle with the residual hold point"></svg>
+      <p class="hint" id="shot-hold-note"></p>
+      <p class="hint" id="shot-ladder-note"></p>
     </div>
   </div>
 </section>
 
-</main>
+<!-- ==================== EQUIPMENT: bullet, rifle, sight ==================== -->
+<section class="screen" id="screen-equipment" aria-label="Equipment">
+  <div class="page-head">
+    <button type="button" class="back" data-goto="screen-main">&larr; Back</button>
+    <h2>Equipment</h2><span class="head-spacer"></span>
+  </div>
+  <div class="page-body">
+
+    <h3 class="section">Rifle library</h3>
+    <div class="library">
+      <select id="rifle-select" aria-label="Saved rifles"></select>
+      <div class="lib-actions">
+        <button type="button" id="btn-rifle-save">Save</button>
+        <button type="button" id="btn-rifle-new">Save as new&hellip;</button>
+        <button type="button" id="btn-rifle-del" class="ghost">Delete</button>
+      </div>
+    </div>
+    <p class="hint" id="rifle-note"></p>
+    <div class="lib-actions">
+      <button type="button" id="btn-lib-export" class="ghost">Export library</button>
+      <button type="button" id="btn-lib-import" class="ghost">Import library</button>
+      <input type="file" id="lib-file" accept="application/json,.json" hidden>
+    </div>
+
+    <h3 class="section">Projectile</h3>
+    <div class="field wide">
+      <label for="bullet-search">Search the catalogue</label>
+      <input type="search" id="bullet-search" autocomplete="off"
+             role="combobox" aria-expanded="false" aria-autocomplete="list"
+             aria-controls="bullet-results"
+             placeholder="e.g. 6.5 140 berger, 308 175, eld-m">
+      <div id="bullet-results" class="results-list" role="listbox"
+           aria-label="Catalogue matches" hidden></div>
+      <p class="hint" id="bullet-current">&nbsp;</p>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="in-mass">Mass <u data-u="mass"></u></label>
+        <input type="text" inputmode="decimal" id="in-mass"></div>
+      <div class="field"><label for="in-cal">Calibre <u data-u="calibre"></u></label>
+        <input type="text" inputmode="decimal" id="in-cal"></div>
+      <div class="field"><label for="in-len">Length <u data-u="length"></u></label>
+        <input type="text" inputmode="decimal" id="in-len"></div>
+      <div class="field"><label for="in-bc">Ballistic coefficient</label>
+        <input type="text" inputmode="decimal" id="in-bc"></div>
+      <div class="field"><label for="in-dragmodel">Drag standard</label>
+        <select id="in-dragmodel">
+          <option value="G7">G7 &mdash; boat-tail match</option>
+          <option value="G1">G1 &mdash; flat-base / legacy</option>
+        </select></div>
+      <div class="field"><label for="in-profile">Aero coefficients</label>
+        <select id="in-profile"></select></div>
+    </div>
+    <p class="hint">The BC must match the standard: a G1 number entered
+    against G7 will be wrong by roughly a factor of two.</p>
+    <p class="hint" id="coef-provenance"></p>
+
+    <h3 class="section">Rifle</h3>
+    <div class="field wide">
+      <label for="rifle-search">Factory twist rates</label>
+      <input type="search" id="rifle-search" autocomplete="off"
+             role="combobox" aria-expanded="false" aria-autocomplete="list"
+             aria-controls="rifle-results"
+             placeholder="e.g. ruger precision 6.5, tikka, mrad">
+      <div id="rifle-results" class="results-list" role="listbox"
+           aria-label="Factory rifles" hidden></div>
+      <p class="hint" id="twist-note">Sets the twist rate only &mdash; not
+      the muzzle velocity, which depends on your barrel and your load.</p>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="in-mv">Muzzle velocity <u data-u="velocity"></u></label>
+        <input type="text" inputmode="decimal" id="in-mv"></div>
+      <div class="field"><label for="in-twist">Twist (in/rev)</label>
+        <input type="text" inputmode="decimal" id="in-twist"></div>
+      <div class="field"><label for="in-twistdir">Twist direction</label>
+        <select id="in-twistdir">
+          <option value="RH">Right hand</option>
+          <option value="LH">Left hand</option>
+        </select></div>
+      <div class="field"><label for="in-zr">Zero range <u data-u="distance"></u></label>
+        <input type="text" inputmode="decimal" id="in-zr"></div>
+    </div>
+    <p class="hint" id="stability-note"></p>
+
+    <h3 class="section">Zeroing conditions</h3>
+    <label class="check">
+      <input type="checkbox" id="in-zwx">
+      <span>Correct for the weather I zeroed in</span>
+    </label>
+    <p class="hint">Your zero was set on one particular day. Turn this on
+    and the scope angle is solved under <em>those</em> conditions while the
+    bullet flies through today's air &mdash; which is what actually
+    happens. Leave it off and the solver assumes you zeroed in the
+    conditions you are shooting in now.</p>
+    <div class="grid2" id="zwx-fields">
+      <div class="field"><label for="in-zwx-temp">Temperature <u data-u="temp"></u></label>
+        <input type="text" inputmode="decimal" id="in-zwx-temp"></div>
+      <div class="field"><label for="in-zwx-press">Pressure <u data-u="pressure"></u></label>
+        <input type="text" inputmode="decimal" id="in-zwx-press"></div>
+      <div class="field"><label for="in-zwx-hum">Humidity (%)</label>
+        <input type="text" inputmode="decimal" id="in-zwx-hum"></div>
+      <div class="field" style="justify-content:flex-end">
+        <button type="button" id="btn-zwx-today">Use today's conditions</button>
+      </div>
+    </div>
+    <p class="hint" id="zwx-note"></p>
+
+    <h3 class="section">Sight</h3>
+    <div class="grid2">
+      <div class="field"><label for="in-sh">Sight height <u data-u="sight_h"></u></label>
+        <input type="text" inputmode="decimal" id="in-sh"></div>
+      <div class="field"><label for="in-reticle">Reticle</label>
+        <select id="in-reticle"></select></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ENVIRONMENT: location, weather, wind, angle ============ -->
+<section class="screen" id="screen-environment" aria-label="Environment">
+  <div class="page-head">
+    <button type="button" class="back" data-goto="screen-main">&larr; Back</button>
+    <h2>Environment</h2><span class="head-spacer"></span>
+  </div>
+  <div class="page-body">
+
+    <h3 class="section">Where you are</h3>
+    <div class="grid2">
+      <div class="field"><label for="in-lat">Latitude (deg)</label>
+        <input type="text" inputmode="decimal" id="in-lat"></div>
+      <div class="field"><label for="in-lon">Longitude (deg)</label>
+        <input type="text" inputmode="decimal" id="in-lon"></div>
+      <div class="field"><label for="in-alt">Altitude <u data-u="altitude"></u></label>
+        <input type="text" inputmode="decimal" id="in-alt"></div>
+      <div class="field"><label for="in-az">Azimuth of fire (deg)</label>
+        <input type="text" inputmode="decimal" id="in-az"></div>
+    </div>
+    <div class="actions">
+      <button type="button" id="btn-locate">Use my location</button>
+      <button type="button" id="btn-weather">Fetch live weather</button>
+    </div>
+    <p class="hint" id="online-note">Both of these leave the device.
+    “Use my location” asks the browser for your coordinates; “Fetch live
+    weather” sends those coordinates to the Open-Meteo public API and
+    fills in temperature, pressure, humidity and wind. Nothing else on
+    this page ever contacts the network, and neither runs unless you
+    press it.</p>
+
+    <h3 class="section">Atmosphere</h3>
+    <div class="grid2">
+      <div class="field"><label for="in-temp">Temperature <u data-u="temp"></u></label>
+        <input type="text" inputmode="decimal" id="in-temp"></div>
+      <div class="field"><label for="in-press">Station pressure <u data-u="pressure"></u></label>
+        <input type="text" inputmode="decimal" id="in-press"></div>
+      <div class="field"><label for="in-hum">Humidity (%)</label>
+        <input type="text" inputmode="decimal" id="in-hum"></div>
+      <div class="field"><label for="in-los">Shot angle (deg)</label>
+        <input type="text" inputmode="decimal" id="in-los"></div>
+    </div>
+    <p class="hint">Station pressure is what a Kestrel reads &mdash; not
+    the altimeter setting corrected to sea level. Positive shot angle is
+    uphill. Latitude and azimuth drive the Coriolis term.</p>
+
+    <h3 class="section">Wind</h3>
+    <div class="rose-wrap">
+      <svg id="wind-rose" class="rose" role="slider" tabindex="0"
+           aria-label="Wind direction relative to the shot"
+           aria-valuemin="0" aria-valuemax="359" aria-valuenow="90"></svg>
+      <p class="hint">Drag the dial, or use the arrow keys. The clock is
+      relative to your shot: 12 o'clock blows from the target into your
+      face, 3 o'clock from your right.</p>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="in-wspd">Speed <u data-u="wind"></u></label>
+        <input type="text" inputmode="decimal" id="in-wspd"></div>
+      <div class="field"><label for="in-wdir">Direction (deg, relative)</label>
+        <input type="text" inputmode="decimal" id="in-wdir"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== OUTPUT ==================== -->
+<section class="screen" id="screen-output" aria-label="Output">
+  <div class="page-head">
+    <button type="button" class="back" data-goto="screen-main">&larr; Back</button>
+    <h2>Output</h2><span class="head-spacer"></span>
+  </div>
+  <div class="page-body">
+    <div class="grid2">
+      <div class="field"><label for="in-corr">Corrections in</label>
+        <select id="in-corr">
+          <option value="MIL">MIL</option>
+          <option value="MOA">MOA</option>
+          <option value="clicks">Clicks</option>
+          <option value="linear">Linear drop</option>
+        </select></div>
+      <div class="field" id="click-field"><label for="in-click">Click value</label>
+        <select id="in-click"></select></div>
+      <div class="field" id="turret-field">
+        <label for="in-turret">Turret factor</label>
+        <input type="text" inputmode="decimal" id="in-turret"></div>
+    </div>
+    <p class="hint" id="turret-hint">A turret factor other than 1.000
+    scales the clicks you dial. Set it only if you have <em>measured</em>
+    your scope's tracking on a tall target: a scope that moves 9.7 MIL
+    when you dial 10.0 has a factor of 10.0 / 9.7 = 1.031.</p>
+    <div class="actions">
+      <button type="button" id="btn-reset" class="ghost">Reset everything</button>
+    </div>
+  </div>
+</section>
 
 <footer class="sb-footer">
   <p>Ported from the PyBallisticsV2 solver (Python + NumPy), validated
   cell-by-cell against it across 22 configurations. The canonical M852
   case reproduces &minus;1357.3097&nbsp;cm of drop at 1000&nbsp;m.
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
-  G7/G1 per McCoy. Academic tool &mdash; verify against your own data
-  before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.0.0 · 2026-08-13 00:54 UTC</b> &mdash;
+  G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
+  against your own data before trusting a solution.</p>
+  <p style="margin-top:6px">Build <b id="build-stamp">1.1.0 · 2026-08-13 17:49 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -2442,6 +2761,11 @@ var PB_CATALOG = [{"n":"ULD Machined Metal CNC Tip","v":"ALCO Bullets","d":7.213
 
 </script>
 <script>
+/* 88 factory rifles (twist + chambering). Barrel twist rates as published by the manufacturer for the model and chambering named. Twist varies between variants of */
+var PB_RIFLES = [{"mk":"Barrett","md":"MRAD","c":"300 Norma Magnum","t":8.0,"vr":"fluted","b":26.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"300 Norma Magnum","t":8.0,"vr":"mk","b":26.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"300 Norma Magnum","t":10.0,"vr":"heavy","b":24.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"300 PRC (Carbon Fiber)","t":8.0,"vr":"carbonfiber","b":26.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"300 PRC (Carbon Fiber)","t":8.0,"vr":"heavy","b":26.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"300 PRC (Stainless Steel)","t":8.0,"vr":"fluted","b":26.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"300 Winchester Magnum","t":8.0,"vr":"fluted","b":26.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"300 Winchester Magnum","t":10.0,"vr":"heavy","b":24.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"308 Winchester","t":8.0,"vr":"fluted","p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"308 Winchester","t":10.0,"vr":"heavy","b":17.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"338 Lapua Magnum","t":9.4,"vr":"fluted","b":26.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"338 Lapua Magnum","t":9.4,"vr":"heavy","p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"338 Norma Magnum","t":9.4,"vr":"fluted","b":26.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"338 Norma Magnum","t":9.4,"vr":"mk","b":27.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"338 Norma Magnum","t":9.4,"vr":"heavy","b":24.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"6.5 Creedmoor","t":8.0,"vr":"fluted","b":24.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"6.5 Creedmoor","t":8.0,"vr":"heavy","b":24.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"7.62 x 51 NATO","t":8.0,"vr":"mk","b":20.0,"p":"published:manufacturer product page"},{"mk":"Barrett","md":"MRAD","c":"7mm PRC","t":8.0,"vr":"fluted","b":26.0,"p":"published:manufacturer product page"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":".22 Creedmoor","t":7.0,"vr":"20\"","b":20.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":".22 Creedmoor","t":7.0,"vr":"24\"","b":24.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":".223 REM","t":8.0,"vr":"16.25\"","b":16.25,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":".25 Creedmoor","t":7.5,"vr":"20\"","b":20.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":".25 Creedmoor","t":7.5,"vr":"24\"","b":24.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":".300 PRC","t":8.0,"vr":"26\"","b":26.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":".300 Win Mag","t":10.0,"vr":"26\"","b":26.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":".308 Win","t":10.0,"vr":"16.25\"","b":16.25,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":".308 Win","t":10.0,"vr":"20\"","b":20.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":".308 Win","t":10.0,"vr":"24\"","b":24.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":".338 Lapua Mag","t":9.3,"vr":"27\"","b":27.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":"6.5 Creedmoor","t":8.0,"vr":"16.25\"","b":16.25,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":"6.5 Creedmoor","t":8.0,"vr":"22\"","b":22.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":"6.5 PRC","t":8.0,"vr":"24\"","b":24.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":"6mm ARC","t":7.5,"vr":"16.25\"","b":16.25,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":"6mm Creedmoor","t":8.0,"vr":"24\"","b":24.0,"p":"published:manufacturer product configurator"},{"mk":"Christensen Arms","md":"Modern Precision Rifle","c":"7MM PRC","t":8.0,"vr":"26\"","b":26.0,"p":"published:manufacturer product configurator"},{"mk":"Ruger","md":"American Rifle Generation II","c":"204 Ruger","t":12.0,"vr":"46908","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"22 ARC","t":7.0,"vr":"46918","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"223 Rem","t":8.0,"vr":"46909","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"223 Rem","t":8.0,"vr":"56910","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"243 Win","t":9.0,"vr":"46904","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"270 Win","t":10.0,"vr":"46914","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"30-06 Sprg","t":10.0,"vr":"46913","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"300 Win Mag","t":10.0,"vr":"46915","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"308 Win","t":10.0,"vr":"46902","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"308 Win","t":10.0,"vr":"56931","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"350 Legend","t":16.0,"vr":"46906","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"350 Legend","t":16.0,"vr":"46991","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"400 Legend","t":16.0,"vr":"46907","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"450 Bushmaster","t":16.0,"vr":"46905","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"6.5 Creedmoor","t":8.0,"vr":"46901","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"6.5 Grendel","t":8.0,"vr":"46911","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"6.5 PRC","t":8.0,"vr":"46916","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"6mm ARC","t":7.7,"vr":"46910","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"6mm Creedmoor","t":7.7,"vr":"46912","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"7mm PRC","t":8.0,"vr":"46917","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II","c":"7mm-08 Rem","t":8.5,"vr":"46903","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"204 Ruger","t":12.0,"vr":"46938","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"22 ARC","t":7.0,"vr":"46940","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"223 Rem","t":8.0,"vr":"56909","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"223 Rem","t":8.0,"vr":"46939","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"243 Win","t":9.0,"vr":"46933","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"270 Win","t":10.0,"vr":"46944","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"30-06 Sprg","t":10.0,"vr":"46943","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"300 Win Mag","t":10.0,"vr":"46945","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"308 Win","t":10.0,"vr":"46931","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"350 Legend","t":16.0,"vr":"46993","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"350 Legend","t":16.0,"vr":"46936","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"400 Legend","t":16.0,"vr":"46937","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"450 Bushmaster","t":16.0,"vr":"46935","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"6.5 Creedmoor","t":8.0,"vr":"46930","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"6.5 Grendel","t":8.0,"vr":"46942","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"6.5 PRC","t":8.0,"vr":"46946","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"6mm ARC","t":7.7,"vr":"46941","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"6mm Creedmoor","t":7.7,"vr":"46934","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"7mm PRC","t":8.0,"vr":"46947","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"American Rifle Generation II Predator","c":"7mm-08 Rem","t":8.5,"vr":"46932","b":22.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"Precision Rifle","c":"300 PRC","t":9.0,"vr":"18107","b":26.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"Precision Rifle","c":"300 Win Mag","t":9.0,"vr":"18106","b":26.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"Precision Rifle","c":"308 Win","t":10.0,"vr":"18104","b":20.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"Precision Rifle","c":"338 Lapua Mag","t":9.375,"vr":"18096","b":26.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"Precision Rifle","c":"6.5 Creedmoor","t":8.0,"vr":"18095","b":24.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"Precision Rifle","c":"6.5 Creedmoor","t":7.0,"vr":"18103","b":26.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"Precision Rifle","c":"6.5 PRC","t":8.0,"vr":"18105","b":26.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"Precision Rifle","c":"6mm Creedmoor","t":7.0,"vr":"18102","b":26.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"Precision Rifle","c":"6mm GT","t":7.0,"vr":"18109","b":26.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Ruger","md":"Precision Rifle","c":"6mm GT","t":7.0,"vr":"18097","b":26.0,"td":"R","p":"published:manufacturer spec sheet"},{"mk":"Tikka","md":"T3x","c":"6.5 Creedmoor","t":8.0,"td":"R","p":"observed:barrel marking on the rifle"}];
+
+</script>
+<script>
 /* Unit handling. The solver works in SI, always; state is held in SI and
  * converted only at the edges. That is the same discipline the desktop
  * build follows, and for the same reason: a value that round-trips
@@ -2813,6 +3137,47 @@ var PBReticle = (function () {
       }
     }
 
+    /* Holdover ladder: where each distance in the table falls if you dial
+     * nothing beyond the zero. Drawn under the residual dot because the
+     * two answer different questions -- the ladder is "where is 700 m on
+     * my reticle", the dot is "what must I still hold after dialling". */
+    if (opts.ladder && opts.ladder.length) {
+      var lg = el('g', { class: 'sb-ladder' });
+      svg.appendChild(lg);
+      var scale = (spec.unit === 'MOA') ? 3.438 : 1;
+      for (var mi = 0; mi < opts.ladder.length; mi++) {
+        var m = opts.ladder[mi];
+        var mx = X(m.mil_x * scale), my = Y(m.mil_y * scale);
+        if (mx < -20 || mx > size + 20 || my < -20 || my > size + 20) continue;
+        var sel = !!m.selected;
+        lg.appendChild(el('line', {
+          x1: mx - (sel ? 9 : 5), y1: my, x2: mx + (sel ? 9 : 5), y2: my,
+          stroke: sel ? 'var(--sb-accent-2)' : 'var(--sb-accent)',
+          'stroke-width': sel ? 2.5 : 1.5,
+          opacity: sel ? 1 : 0.6
+        }));
+        if (sel) {
+          lg.appendChild(el('circle', { cx: mx, cy: my, r: 4.5,
+                                        fill: 'none',
+                                        stroke: 'var(--sb-accent-2)',
+                                        'stroke-width': 2 }));
+        }
+        if (m.label && (sel || opts.labelAll !== false)) {
+          var lt = el('text', {
+            x: mx + (sel ? 13 : 9), y: my + 3.5,
+            'font-size': sel ? 12 : 10,
+            'font-weight': sel ? 700 : 400,
+            fill: sel ? 'var(--sb-accent-2)' : 'var(--sb-accent)',
+            opacity: sel ? 1 : 0.7,
+            stroke: 'none',
+            'font-family': 'ui-monospace, Menlo, Consolas, monospace'
+          });
+          lt.textContent = m.label;
+          lg.appendChild(lt);
+        }
+      }
+    }
+
     /* The residual hold dot, drawn last so nothing occludes it. */
     if (opts.hold) {
       var hx = X(opts.hold.mil_x * (spec.unit === 'MOA' ? 3.438 : 1));
@@ -2956,18 +3321,299 @@ var PBChart = (function () {
 
 </script>
 <script>
+/* Wind rose: a dial you drag, instead of twelve buttons.
+ *
+ * Convention comes from the solver, not from taste. runner.js computes
+ *   wdRel = wind_dir_deg - azimuth
+ *   W = [-speed*cos(wdRel), 0, -speed*sin(wdRel)]
+ * and the bullet flies along +x, so wind_dir_deg = 0 puts the wind vector
+ * at -x: blowing from the target back into your face. That is 12 o'clock,
+ * and the angle grows clockwise (90 deg = 3 o'clock = from your right).
+ *
+ * The dial is drawn from the shooter's eye: target at the top. The arrow
+ * starts where the wind comes FROM and points the way it blows, because
+ * "which way is it pushing my bullet" is the question being asked.
+ */
+'use strict';
+
+var PBWindRose = (function () {
+  var NS = 'http://www.w3.org/2000/svg';
+
+  function el(name, attrs, text) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) {
+      if (Object.prototype.hasOwnProperty.call(attrs, k)) {
+        n.setAttribute(k, attrs[k]);
+      }
+    }
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  /* Screen position of a bearing: 0 deg is up, clockwise positive. */
+  function pt(cx, cy, r, deg) {
+    var a = (deg - 90) * Math.PI / 180;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  }
+
+  function draw(svg, deg, opts) {
+    var size = opts.size || 260;
+    var cx = size / 2, cy = size / 2;
+    var R = size / 2 - 18;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size);
+
+    var g = el('g');
+    svg.appendChild(g);
+
+    g.appendChild(el('circle', { cx: cx, cy: cy, r: R, class: 'rose-face' }));
+
+    /* hour marks: the ticks a shooter already thinks in */
+    for (var h = 0; h < 12; h++) {
+      var a = h * 30;
+      var p1 = pt(cx, cy, R, a), p2 = pt(cx, cy, R - (h % 3 === 0 ? 13 : 7), a);
+      g.appendChild(el('line', { x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1],
+                                 class: h % 3 === 0 ? 'rose-tick major'
+                                                    : 'rose-tick' }));
+      var lp = pt(cx, cy, R - 26, a);
+      g.appendChild(el('text', { x: lp[0], y: lp[1] + 4, class: 'rose-hour',
+                                 'text-anchor': 'middle' },
+                       String(h === 0 ? 12 : h)));
+    }
+
+    /* the shooter, and the line of fire towards the target at the top */
+    g.appendChild(el('line', { x1: cx, y1: cy, x2: cx, y2: cy - R + 4,
+                               class: 'rose-los' }));
+    g.appendChild(el('text', { x: cx, y: cy - R - 5, class: 'rose-cardinal',
+                               'text-anchor': 'middle' }, 'TARGET'));
+
+    /* wind arrow: tail at the source, head towards the centre */
+    var tail = pt(cx, cy, R - 34, deg);
+    var head = pt(cx, cy, 16, deg + 180);
+    g.appendChild(el('line', { x1: tail[0], y1: tail[1],
+                               x2: head[0], y2: head[1], class: 'rose-arrow' }));
+    /* arrowhead */
+    var hp = pt(cx, cy, 16, deg + 180);
+    var b1 = pt(cx, cy, 30, deg + 180 - 9);
+    var b2 = pt(cx, cy, 30, deg + 180 + 9);
+    g.appendChild(el('polygon', {
+      points: hp[0] + ',' + hp[1] + ' ' + b1[0] + ',' + b1[1] + ' ' +
+              b2[0] + ',' + b2[1], class: 'rose-head' }));
+
+    /* grab handle at the source end */
+    g.appendChild(el('circle', { cx: tail[0], cy: tail[1], r: 9,
+                                 class: 'rose-grip' }));
+
+    g.appendChild(el('text', { x: cx, y: cy + 6, class: 'rose-readout',
+                               'text-anchor': 'middle' },
+                     Math.round(deg) + '°'));
+    var oc = Math.round(((deg % 360) + 360) % 360 / 30);
+    if (oc === 0) oc = 12;
+    g.appendChild(el('text', { x: cx, y: cy + 22, class: 'rose-sub',
+                               'text-anchor': 'middle' },
+                     oc + " o'clock"));
+    svg.setAttribute('aria-valuenow', String(Math.round(deg)));
+    svg.setAttribute('aria-valuetext', Math.round(deg) + " degrees, " +
+                     oc + " o'clock");
+  }
+
+  /* Pointer position -> bearing. Ignores distance from the centre, so a
+   * clumsy drag on a phone still tracks the angle. */
+  function bearingFrom(svg, clientX, clientY) {
+    var r = svg.getBoundingClientRect();
+    var dx = clientX - (r.left + r.width / 2);
+    var dy = clientY - (r.top + r.height / 2);
+    var deg = Math.atan2(dx, -dy) * 180 / Math.PI;
+    return ((deg % 360) + 360) % 360;
+  }
+
+  /* onChange(deg) fires continuously while dragging; onCommit(deg) once
+   * the gesture ends, so a solve is not queued for every pixel. */
+  function attach(svg, getDeg, onChange, onCommit) {
+    var dragging = false;
+
+    function move(ev) {
+      if (!dragging) return;
+      ev.preventDefault();
+      onChange(bearingFrom(svg, ev.clientX, ev.clientY));
+    }
+    function up(ev) {
+      if (!dragging) return;
+      dragging = false;
+      svg.releasePointerCapture && ev.pointerId !== undefined &&
+        svg.hasPointerCapture(ev.pointerId) &&
+        svg.releasePointerCapture(ev.pointerId);
+      onCommit(getDeg());
+    }
+
+    svg.addEventListener('pointerdown', function (ev) {
+      dragging = true;
+      svg.setPointerCapture && svg.setPointerCapture(ev.pointerId);
+      ev.preventDefault();
+      onChange(bearingFrom(svg, ev.clientX, ev.clientY));
+    });
+    svg.addEventListener('pointermove', move);
+    svg.addEventListener('pointerup', up);
+    svg.addEventListener('pointercancel', up);
+
+    svg.addEventListener('keydown', function (ev) {
+      var d = getDeg(), step = 0;
+      if (ev.key === 'ArrowRight' || ev.key === 'ArrowUp') step = 5;
+      else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowDown') step = -5;
+      else if (ev.key === 'PageUp') step = 30;      /* one hour */
+      else if (ev.key === 'PageDown') step = -30;
+      else if (ev.key === 'Home') { onChange(0); onCommit(0); return; }
+      else return;
+      ev.preventDefault();
+      var next = ((d + step) % 360 + 360) % 360;
+      onChange(next);
+      onCommit(next);
+    });
+  }
+
+  return { draw: draw, attach: attach, bearingFrom: bearingFrom };
+})();
+
+</script>
+<script>
+/* The two things in this build that leave the device.
+ *
+ * Everything else runs offline by construction, and that is a property
+ * worth protecting: the app has to work at a range with no signal, and
+ * a solver that silently phones home is not one you can vouch for in a
+ * thesis. So both calls here are opt-in, both are isolated in this one
+ * file, and both fail into a message rather than into a wrong number.
+ *
+ *   geolocate()  -- browser Geolocation API. Needs a secure context
+ *                   (https, or localhost); on plain http it is blocked
+ *                   by the browser, not by us.
+ *   fetchWeather() -- Open-Meteo's free public API, the same endpoint
+ *                   the desktop build uses in _rf_fetch_weather.
+ *
+ * No key, no account, no tracking parameters. The coordinates are the
+ * only thing sent, and only when the user presses the button.
+ */
+'use strict';
+
+var PBOnline = (function () {
+
+  var ENDPOINT = 'https://api.open-meteo.com/v1/forecast';
+  var FIELDS = ['temperature_2m', 'surface_pressure', 'relative_humidity_2m',
+                'wind_speed_10m', 'wind_direction_10m'];
+
+  function geolocate() {
+    return new Promise(function (resolve, reject) {
+      if (!navigator.geolocation) {
+        reject(new Error('this browser has no geolocation'));
+        return;
+      }
+      if (!window.isSecureContext) {
+        /* Say which of the two it is: "permission denied" would send
+         * someone hunting through browser settings for a problem that is
+         * actually the page being served over http. */
+        reject(new Error('needs https (the page is not a secure context)'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        function (p) {
+          resolve({ lat: p.coords.latitude, lon: p.coords.longitude,
+                    alt: Number.isFinite(p.coords.altitude)
+                      ? p.coords.altitude : null,
+                    accuracy: p.coords.accuracy });
+        },
+        function (err) {
+          reject(new Error(err.code === 1 ? 'permission refused'
+                           : err.code === 2 ? 'position unavailable'
+                           : 'timed out'));
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
+    });
+  }
+
+  /* Returns SI values, converted here so the caller never handles
+   * Open-Meteo's units: km/h for wind and hPa for pressure. */
+  function fetchWeather(lat, lon, timeoutMs) {
+    var url = ENDPOINT + '?latitude=' + lat.toFixed(4) +
+              '&longitude=' + lon.toFixed(4) +
+              '&current=' + FIELDS.join(',');
+    var ctrl = (typeof AbortController !== 'undefined')
+      ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); },
+                                  timeoutMs || 10000) : null;
+
+    return fetch(url, ctrl ? { signal: ctrl.signal } : undefined)
+      .then(function (r) {
+        if (timer) clearTimeout(timer);
+        if (!r.ok) throw new Error('Open-Meteo returned ' + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        var cur = (d && d.current) || {};
+        var out = { got: [] };
+        if (Number.isFinite(cur.temperature_2m)) {
+          out.temp = cur.temperature_2m;                 /* degC */
+          out.got.push('temperature');
+        }
+        if (Number.isFinite(cur.surface_pressure)) {
+          out.pressure = cur.surface_pressure * 100.0;   /* hPa -> Pa */
+          out.got.push('pressure');
+        }
+        if (Number.isFinite(cur.relative_humidity_2m)) {
+          out.humidity = cur.relative_humidity_2m;
+          out.got.push('humidity');
+        }
+        if (Number.isFinite(cur.wind_speed_10m)) {
+          out.windSpeed = cur.wind_speed_10m / 3.6;      /* km/h -> m/s */
+          out.got.push('wind');
+        }
+        if (Number.isFinite(cur.wind_direction_10m)) {
+          /* True bearing the wind blows FROM. The caller subtracts the
+           * azimuth of fire to get the o'clock the shooter reads. */
+          out.windFromTrue = cur.wind_direction_10m;
+        }
+        out.time = cur.time || null;
+        if (!out.got.length) throw new Error('no current conditions returned');
+        return out;
+      })
+      .catch(function (e) {
+        if (timer) clearTimeout(timer);
+        if (e && e.name === 'AbortError') throw new Error('timed out');
+        /* fetch rejects with a bare TypeError for offline, DNS failure,
+         * CORS and a blocking Content-Security-Policy alike; there is no
+         * way to tell them apart from script, so say so honestly rather
+         * than guess. */
+        if (e instanceof TypeError) {
+          throw new Error('could not reach Open-Meteo (offline, blocked, ' +
+                          'or the page has a strict content policy)');
+        }
+        throw e;
+      });
+  }
+
+  return { geolocate: geolocate, fetchWeather: fetchWeather,
+           ENDPOINT: ENDPOINT };
+})();
+
+</script>
+<script>
 /* Superior Ballistics -- Field. Application wiring.
  *
  * State is held in SI; the display converts. Every edit schedules a
  * debounced solve, and every solve computes BOTH the physical trajectory
  * (real wind) and the wind-free one, so the WIND IN DOPE / HOLD YOURSELF
  * switch re-picks which one feeds the table without re-solving.
+ *
+ * Navigation is a screen stack (showScreen), matching the desktop build's
+ * Range Field: one screen at a time, a back button returns.
  */
 'use strict';
 
 (function () {
   var U = PBUnits, R = PBRunner, C = PBConfig;
-  var STORE_KEY = 'superior-ballistics-field-v1';
+  /* v3: wind.dir changed meaning, from a true bearing to one relative to
+   * the line of fire. Reading a v2 session with v3 code would silently
+   * reinterpret the wind, so the key moves rather than the data. */
+  var STORE_KEY = 'superior-ballistics-field-v3';
 
   // ------------------------------------------------------------------
   // state (SI throughout)
@@ -2985,21 +3631,42 @@ var PBChart = (function () {
       },
       rifle: { mv: 783.0, twist: 12.0, twistLH: false,
                sightH: 0.03, zeroRange: 100.0 },
+      /* The conditions the rifle was zeroed in. When enabled the engine
+       * solves the scope angle under these and then flies the bullet
+       * through today's air, which is what physically happened. Part of
+       * the rifle, not of today -- the desktop stores it in the rifle
+       * preset as zero_atmo, and so does the library here. */
+      zeroWx: { enabled: false, temp: 15.0, pressure: 101325.0,
+                humidity: 0.0 },
       atmo: { temp: 15.0, pressure: 101325.0, humidity: 0.0, altitude: 0.0 },
+      /* dir is RELATIVE to the line of fire: 0 = straight from the
+       * target (headwind), 90 = from your right. That is what the clock
+       * on the dial means, and what a shooter says out loud. The solver
+       * wants a bearing in the same frame as the azimuth, so buildConfig
+       * adds the azimuth back on. */
       wind: { speed: 0.0, dir: 90.0 },
-      geom: { los: 0.0, lat: 0.0, az: 0.0 },
-      out: { maxRange: 1000.0, step: 100.0, corr: 'MIL',
-             click: '0.1 MIL', turret: 1.0 },
+      geom: { los: 0.0, lat: 0.0, lon: 0.0, az: 0.0 },
+      out: { corr: 'MIL', click: '0.1 MIL', turret: 1.0 },
+      /* The distances the shooter is actually shooting, in metres. This
+       * is the worksheet: the table is an input, not a fixed grid. */
+      rows: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
       windInDope: true,
       reticleId: null,
-      holdRange: null,
-      zoom: 26
+      shotRange: null,
+      zoom: 26,
+      ladder: true,
+      /* Saved setups. A rifle is the whole shooting side of the state --
+       * bullet, barrel, sight and turret -- and deliberately NOT the
+       * atmosphere, the wind or the distances: those belong to today,
+       * not to the rifle. Same split the desktop's rifle_presets use. */
+      rifles: [],
+      activeRifle: null
     };
   }
 
   /* Plausible physical bounds, in SI. Two jobs: keep the solver away from
-   * inputs it cannot mean anything for, and -- for `step` above all --
-   * keep a typo from building a million-row card and freezing the tab. */
+   * inputs it cannot mean anything for, and keep a typo from asking for
+   * an integration that freezes the tab. */
   var LIMITS = {
     'bullet.mass': [1e-5, 0.1],
     'bullet.d': [1e-3, 0.05],
@@ -3013,14 +3680,17 @@ var PBChart = (function () {
     'atmo.pressure': [25000, 115000],
     'atmo.humidity': [0, 100],
     'atmo.altitude': [-500, 9000],
+    'zeroWx.temp': [-60, 60],
+    'zeroWx.pressure': [25000, 115000],
+    'zeroWx.humidity': [0, 100],
     'wind.speed': [0, 60],
     'geom.los': [-89, 89],
     'geom.lat': [-90, 90],
-    'out.maxRange': [25, 3000],
-    'out.step': [5, 500],
+    'geom.lon': [-180, 180],
     'out.turret': [0.5, 2.0]
   };
   var WRAPPED = { 'wind.dir': true, 'geom.az': true };
+  var MAX_DISTANCE = 3000;         /* metres, per row */
 
   function clamp(path, v) {
     if (WRAPPED[path]) return ((v % 360) + 360) % 360;
@@ -3031,6 +3701,11 @@ var PBChart = (function () {
 
   var S = defaults();
   var resPhys = null, resFree = null, solveTimer = null, solving = false;
+  /* Only populated while the zeroing-weather correction is on: the same
+   * shot solved as if it were off, so the interface can say what the
+   * correction is actually worth instead of leaving it an invisible
+   * checkbox. */
+  var resNoZwx = null;
 
   function $(id) { return document.getElementById(id); }
 
@@ -3039,9 +3714,7 @@ var PBChart = (function () {
    * The inputs are text, not number, on purpose: with <input type=number>
    * a Spanish or French browser renders 168.1 as "168,1", and when the
    * user then types a comma the element's value goes EMPTY -- the field
-   * silently refuses the edit with no error anywhere. Parsing both
-   * separators here costs six lines and removes a class of bug that only
-   * shows up for half the world. */
+   * silently refuses the edit with no error anywhere. */
   function parseNum(text) {
     if (typeof text !== 'string') return NaN;
     var s = text.trim().replace(/\s/g, '');
@@ -3069,7 +3742,8 @@ var PBChart = (function () {
       for (k in base) {
         if (!Object.prototype.hasOwnProperty.call(base, k)) continue;
         if (d[k] === undefined) continue;
-        if (base[k] && typeof base[k] === 'object') {
+        if (Array.isArray(base[k])) { base[k] = d[k]; }
+        else if (base[k] && typeof base[k] === 'object') {
           for (var s in base[k]) {
             if (d[k][s] !== undefined) base[k][s] = d[k][s];
           }
@@ -3077,6 +3751,20 @@ var PBChart = (function () {
       }
       S = base;
     } catch (e) { S = defaults(); }
+  }
+
+  // ------------------------------------------------------------------
+  // screens
+  // ------------------------------------------------------------------
+  function showScreen(id) {
+    var all = document.querySelectorAll('.sb-app .screen');
+    for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === id);
+    window.scrollTo(0, 0);
+    /* SVGs measured from clientWidth draw to zero in a hidden screen, so
+     * anything on the screen being revealed is redrawn now. */
+    if (id === 'screen-main') { renderChart(); renderReticle(); }
+    if (id === 'screen-shot') renderShot();
+    if (id === 'screen-environment') renderRose();
   }
 
   // ------------------------------------------------------------------
@@ -3089,6 +3777,21 @@ var PBChart = (function () {
       }
     }
     return null;
+  }
+
+  /* The distances actually asked for, cleaned and sorted. */
+  function distances() {
+    var out = [];
+    for (var i = 0; i < S.rows.length; i++) {
+      var d = S.rows[i];
+      if (Number.isFinite(d) && d > 0) out.push(Math.min(d, MAX_DISTANCE));
+    }
+    return out;
+  }
+
+  function maxDistance() {
+    var dd = distances();
+    return dd.length ? Math.max.apply(null, dd) : 1000;
   }
 
   function buildConfig(withWind) {
@@ -3110,50 +3813,77 @@ var PBChart = (function () {
     cfg.aim.zero_range = clamp('rifle.zeroRange', S.rifle.zeroRange);
     cfg.aim.LOS_angle = clamp('geom.los', S.geom.los);
 
+    /* Zeroing weather: solve the scope angle under the day the rifle was
+     * zeroed, then fly today's air. Engine-side this builds a second
+     * RunData for the zero solve only. */
+    cfg.aim.zero_air_enabled = !!S.zeroWx.enabled;
+    cfg.aim.zero_temp = clamp('zeroWx.temp', S.zeroWx.temp);
+    cfg.aim.zero_press = clamp('zeroWx.pressure', S.zeroWx.pressure);
+    cfg.aim.zero_hum = clamp('zeroWx.humidity', S.zeroWx.humidity);
+
     cfg.air.temp = clamp('atmo.temp', S.atmo.temp);
     cfg.air.pressure = clamp('atmo.pressure', S.atmo.pressure);
     cfg.air.humidity = clamp('atmo.humidity', S.atmo.humidity);
     cfg.air.wind_speed = withWind ? clamp('wind.speed', S.wind.speed) : 0.0;
-    cfg.air.wind_dir_deg = clamp('wind.dir', S.wind.dir);
 
     cfg.pos.latitude = clamp('geom.lat', S.geom.lat);
     cfg.pos.azimuth = clamp('geom.az', S.geom.az);
+
+    /* The solver uses wdRel = wind_dir_deg - azimuth, so wind_dir_deg
+     * lives in the same frame as the azimuth. State holds the direction
+     * RELATIVE to the shot (what the dial's clock means), so put the
+     * azimuth back on here. Reading the clock straight off an absolute
+     * bearing, as this did before, mislabels the wind by the azimuth:
+     * firing east into an easterly is a headwind, not a 3 o'clock. */
+    cfg.air.wind_dir_deg = clamp('wind.dir', S.wind.dir) + cfg.pos.azimuth;
     cfg.pos.altitude = clamp('atmo.altitude', S.atmo.altitude);
 
-    var maxRange = clamp('out.maxRange', S.out.maxRange);
+    /* Solve 50 m past the furthest row, as the desktop does, so every
+     * requested distance is interpolated from inside the card rather
+     * than off its end. */
+    var maxRange = Math.min(MAX_DISTANCE + 50, maxDistance() + 50);
     cfg.sim.max_range_m = maxRange;
-    cfg.diag.card_step_m = clamp('out.step', S.out.step);
+
+    /* Card resolution.
+     *
+     * The table asks for arbitrary distances, and the card is a grid, so
+     * a row's numbers come from interpolating the card -- the same
+     * np.interp the desktop uses in _rf_fill_results.
+     *
+     * Grid spacing then decides how much that interpolation costs, and
+     * it was measured rather than guessed -- a card node's value depends
+     * only on the trajectory spline, so any grid containing the distance
+     * exactly gives the true answer to compare against. For the M852 at
+     * 823 m the error against that truth is:
+     *
+     *     50 m grid  -1.99   cm     <- the desktop default
+     *     25 m grid  -0.145  cm
+     *     10 m grid  -0.067  cm
+     *      5 m grid  -0.019  cm
+     *      2 m grid  -0.0032 cm     <- what this build uses
+     *
+     * The project tripwire is 0.02 cm, so a 50 m grid would make the
+     * interpolation a hundred times the entire error budget and the
+     * carefully validated solver underneath it pointless. Capped at 800
+     * rows so a 3 km card stays cheap. */
+    cfg.diag.card_step_m = Math.max(1, Math.min(5, Math.ceil(maxRange / 800)));
     cfg.forces.drag_model = b.dragModel;
 
-    /* Flight-time horizon.
-     *
-     * The engine's 5 s default covers roughly 1800 m for a match .308;
-     * past that the card would simply stop, with nothing to say it had.
-     * Extend it to cover the range actually asked for, using the same
-     * expression runner.py uses to decide how much of the time vector to
-     * integrate. This only LENGTHENS the vector: every t[i] is i*dt
-     * regardless of its length and rk4 still stops at max_range_m, so any
-     * card that already fitted inside 5 s is bit-identical.
-     *
-     * Capped at 30 s. runner.py's horizon estimate assumes the projectile
-     * averages only max(40, 0.18*MV) m/s downrange, which for a very slow
-     * round asks for 100 s of integration -- 125 000 RK4 steps and about
-     * two seconds of frozen UI on every keystroke. Anything still in the
-     * air after 30 s is a mortar round rather than a rifle bullet, the
-     * card would be meaningless, and the range warning below says plainly
-     * that the bullet did not get there. Every realistic request fits:
-     * 3000 m at 783 m/s needs 29.4 s. */
+    /* Flight-time horizon. The engine's 5 s default covers roughly
+     * 1800 m for a match .308; past that the card would simply stop,
+     * with nothing to say it had. This only LENGTHENS the time vector --
+     * every t[i] is i*dt regardless of its length and rk4 still stops at
+     * max_range_m -- so a card that already fitted inside 5 s is
+     * bit-identical. Capped at 30 s: anything still airborne after that
+     * is a mortar round, and the out-of-range marks below say so. */
     var minFwd = Math.max(40.0, 0.18 * mv);
     cfg.sim.t_end = Math.min(30.0,
                              Math.max(5.0, 1.35 * maxRange / minFwd + 0.65));
 
-    /* The Range Field physics set: drag, the stabilisation group and
-     * Coriolis, at the interactive time step. */
     C.applyFieldPreset(cfg);
 
     /* Coefficient curves. A catalogue bullet has none of its own, so it
-     * inherits the M852 set -- exactly what the desktop build does. The
-     * UI says so rather than pretending the curves are the bullet's. */
+     * inherits the M852 set -- exactly what the desktop build does. */
     cfg.coef_set = coefSetFor(b.profileId || 'm852_168gr_smk');
     return cfg;
   }
@@ -3161,7 +3891,7 @@ var PBChart = (function () {
   function scheduleSolve(delay) {
     if (solveTimer) clearTimeout(solveTimer);
     setStatus('solving', true);
-    solveTimer = setTimeout(runSolve, delay === undefined ? 140 : delay);
+    solveTimer = setTimeout(runSolve, delay === undefined ? 160 : delay);
   }
 
   function runSolve() {
@@ -3173,9 +3903,16 @@ var PBChart = (function () {
       resPhys = R.runCase(buildConfig(true));
       resFree = (clamp('wind.speed', S.wind.speed) === 0)
         ? resPhys : R.runCase(buildConfig(false));
+      if (S.zeroWx.enabled) {
+        var plain = buildConfig(true);
+        plain.aim.zero_air_enabled = false;
+        resNoZwx = R.runCase(plain);
+      } else {
+        resNoZwx = null;
+      }
       setStatus((performance.now() - t0).toFixed(0) + ' ms', false);
     } catch (e) {
-      resPhys = resFree = null;
+      resPhys = resFree = resNoZwx = null;
       setStatus('error', false);
       console.error('[superior-ballistics] solve failed', e);
     }
@@ -3189,14 +3926,37 @@ var PBChart = (function () {
     n.classList.toggle('solving', !!busy);
   }
 
-  /* The corrections table shows the wind-free solution when the shooter
-   * has chosen to hold for wind rather than dial it. */
   function displayed() { return S.windInDope ? resPhys : resFree; }
-
   function hasWind() { return clamp('wind.speed', S.wind.speed) > 0; }
 
+  /* One row of the card at an arbitrary distance.
+   *
+   * Linear interpolation between the bracketing grid points, matching
+   * app.py::_rf_fill_results. Returns null when the distance is past
+   * where the bullet actually got: the desktop clamps silently, which
+   * puts a confident number next to a range the projectile never
+   * reached. */
+  function cardAt(card, d) {
+    if (!card || card.length < 2) return null;
+    var last = card[card.length - 1][0];
+    if (d > last + 1e-9) return null;
+    if (d <= card[0][0]) return card[0].slice();
+    var lo = 0, hi = card.length - 1;
+    while (hi - lo > 1) {
+      var mid = (lo + hi) >> 1;
+      if (card[mid][0] <= d) lo = mid; else hi = mid;
+    }
+    var a = card[lo], b = card[hi];
+    var span = b[0] - a[0];
+    var f = span > 0 ? (d - a[0]) / span : 0;
+    var out = new Array(a.length);
+    for (var c = 0; c < a.length; c++) out[c] = a[c] + f * (b[c] - a[c]);
+    out[0] = d;
+    return out;
+  }
+
   // ------------------------------------------------------------------
-  // rendering
+  // formatting
   // ------------------------------------------------------------------
   function fmt(v, n) {
     if (!Number.isFinite(v)) return '—';
@@ -3207,84 +3967,271 @@ var PBChart = (function () {
     return /^-0(\.0*)?$/.test(s) ? s.slice(1) : s;
   }
 
-  /* Keep holdRange pointing at a row that exists, BEFORE anything draws:
-   * the table highlight, the chart marker, the dot and the select all
-   * read it, and resolving it mid-render leaves them disagreeing for a
-   * frame. */
-  function resolveHoldRange() {
-    var res = displayed();
-    if (!res || !res.card.length) return;
-    var ranges = res.card.map(function (r) { return r[0]; })
-                         .filter(function (r) { return r > 0; });
-    if (!ranges.length) { S.holdRange = null; return; }
-    var ok = S.holdRange !== null && ranges.some(function (r) {
-      return Math.abs(r - S.holdRange) < 1e-6;
-    });
-    if (!ok) S.holdRange = ranges[Math.min(ranges.length - 1, 4)];
+  /* Corrections read as a letter and a magnitude -- U/D and L/R -- the
+   * way they are called on a firing line and the way the desktop shows
+   * them. A signed number invites dialling the wrong way. */
+  function elevCall(row) {
+    var v = U.correction(row, 'drop', S.out.corr, S.units, S.out.click,
+                         S.out.turret);
+    var dec = U.decimals(S.out.corr);
+    if (Math.abs(row[1]) < 1e-3) return { letter: '', text: '0', mag: 0 };
+    return { letter: row[1] < 0 ? 'U' : 'D', mag: Math.abs(v),
+             text: (row[1] < 0 ? 'U' : 'D') + fmt(Math.abs(v), dec) };
+  }
+  function windCall(row) {
+    var v = U.correction(row, 'drift', S.out.corr, S.units, S.out.click,
+                         S.out.turret);
+    var dec = U.decimals(S.out.corr);
+    if (Math.abs(row[4]) < 5e-3) return { letter: '', text: '0', mag: 0 };
+    return { letter: row[4] < 0 ? 'R' : 'L', mag: Math.abs(v),
+             text: (row[4] < 0 ? 'R' : 'L') + fmt(Math.abs(v), dec) };
   }
 
-  function renderTable() {
+  function distDisp(m) {
+    return fmt(U.fromSI(S.units, 'distance', m), 0);
+  }
+
+  // ------------------------------------------------------------------
+  // the distance table
+  // ------------------------------------------------------------------
+  var COLS = null;
+
+  function rebuildTable() {
     var head = $('dope-head'), body = $('dope-body');
     head.innerHTML = ''; body.innerHTML = '';
-    var res = displayed();
-    if (!res) return;
-
     var cu = U.correctionLabel(S.out.corr, S.units, S.out.click);
-    var dec = U.decimals(S.out.corr);
-    var cols = ['Range (' + U.label(S.units, 'distance') + ')',
-                'Elev (' + cu + ')', 'Wind (' + cu + ')',
-                'Drop (' + U.label(S.units, 'drop') + ')',
-                'Vel (' + U.label(S.units, 'velocity') + ')',
-                'Mach', 'TOF (s)',
-                'E (' + U.label(S.units, 'energy') + ')'];
-    for (var i = 0; i < cols.length; i++) {
+    COLS = ['Distance (' + U.label(S.units, 'distance') + ')',
+            'Elev (' + cu + ')', 'Wind (' + cu + ')',
+            'Vel (' + U.label(S.units, 'velocity') + ')',
+            'Mach', 'TOF (s)',
+            'Drop (' + U.label(S.units, 'drop') + ')',
+            'E (' + U.label(S.units, 'energy') + ')', ''];
+    for (var i = 0; i < COLS.length; i++) {
       var th = document.createElement('th');
-      th.textContent = cols[i];
+      th.textContent = COLS[i];
       head.appendChild(th);
     }
 
-    var card = res.card;
-    for (i = 0; i < card.length; i++) {
-      var row = card[i];
+    if (!S.rows.length) {
       var tr = document.createElement('tr');
-      var cls = [];
-      if (row[8] < 1.2 && row[8] > 0.8) cls.push('trans');
-      if (S.holdRange !== null && Math.abs(row[0] - S.holdRange) < 1e-6) {
-        cls.push('sel');
-      }
-      tr.className = cls.join(' ');
-      tr.dataset.range = row[0];
+      tr.className = 'empty';
+      var td = document.createElement('td');
+      td.colSpan = COLS.length;
+      td.textContent = 'No distances yet — add one, or fill a series.';
+      tr.appendChild(td); body.appendChild(tr);
+      return;
+    }
 
-      /* Elevation is what you DIAL: the bullet is below the sight line,
-       * so a negative drop becomes a positive come-up. */
-      var elev = -U.correction(row, 'drop', S.out.corr, S.units,
-                               S.out.click, S.out.turret);
-      var wind = -U.correction(row, 'drift', S.out.corr, S.units,
-                               S.out.click, S.out.turret);
-      var cells = [
-        [fmt(U.fromSI(S.units, 'distance', row[0]), 0), ''],
-        [fmt(elev, dec), 'dial'],
-        [fmt(wind, dec), 'dial'],
-        [fmt(U.fromSI(S.units, 'drop', row[1] * 1e-2), 1), 'sub'],
-        [fmt(U.fromSI(S.units, 'velocity', row[7]), 0), 'sub'],
-        [fmt(row[8], 2), 'sub'],
-        [fmt(row[9], 2), 'sub'],
-        [fmt(U.fromSI(S.units, 'energy', row[10]), 0), 'sub']
-      ];
-      for (var c = 0; c < cells.length; c++) {
-        var td = document.createElement('td');
-        td.textContent = cells[c][0];
-        if (cells[c][1]) td.className = cells[c][1];
-        tr.appendChild(td);
-      }
-      tr.addEventListener('click', function () {
-        S.holdRange = parseFloat(this.dataset.range);
-        save(); render();
-      });
-      body.appendChild(tr);
+    for (i = 0; i < S.rows.length; i++) {
+      body.appendChild(buildRow(i));
     }
   }
 
+  function buildRow(idx) {
+    var tr = document.createElement('tr');
+    tr.dataset.idx = idx;
+
+    var tdD = document.createElement('td');
+    var inp = document.createElement('input');
+    inp.type = 'text';
+    inp.inputMode = 'decimal';
+    inp.className = 'dist';
+    inp.setAttribute('aria-label', 'Distance for row ' + (idx + 1));
+    var d = S.rows[idx];
+    inp.value = Number.isFinite(d) ? distDisp(d) : '';
+    inp.addEventListener('input', function () {
+      var v = parseNum(this.value);
+      var i = parseInt(this.closest('tr').dataset.idx, 10);
+      S.rows[i] = Number.isFinite(v)
+        ? Math.min(U.toSI(S.units, 'distance', v), MAX_DISTANCE) : null;
+      save(); scheduleSolve();
+    });
+    /* Enter moves to the next row, adding one if this is the last: the
+     * whole point of the worksheet is typing a column of distances. */
+    inp.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Enter') return;
+      ev.preventDefault();
+      var i = parseInt(this.closest('tr').dataset.idx, 10);
+      if (i === S.rows.length - 1) { addRow(); }
+      var next = $('dope-body').rows[i + 1];
+      var box = next && next.querySelector('input.dist');
+      if (box) { box.focus(); box.select(); }
+    });
+    tdD.appendChild(inp);
+    tr.appendChild(tdD);
+
+    for (var c = 1; c <= 7; c++) {
+      var td = document.createElement('td');
+      td.className = (c <= 2) ? 'solution' : 'sub';
+      td.textContent = '—';
+      td.addEventListener('click', function () {
+        var i = parseInt(this.closest('tr').dataset.idx, 10);
+        selectRow(S.rows[i]);
+      });
+      tr.appendChild(td);
+    }
+
+    var tdX = document.createElement('td');
+    tdX.className = 'rowdel';
+    var del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'del';
+    del.textContent = '✕';
+    del.title = 'Remove this distance';
+    del.setAttribute('aria-label', 'Remove row ' + (idx + 1));
+    del.addEventListener('click', function () {
+      var i = parseInt(this.closest('tr').dataset.idx, 10);
+      S.rows.splice(i, 1);
+      save(); rebuildTable(); fillResults(); scheduleSolve(0);
+    });
+    tdX.appendChild(del);
+    tr.appendChild(tdX);
+    return tr;
+  }
+
+  /* Only the computed cells are touched here, never the distance inputs:
+   * rewriting those would fight the keyboard while someone is typing. */
+  function fillResults() {
+    var body = $('dope-body'), res = displayed();
+    if (!body.rows.length || !COLS) return;
+    for (var r = 0; r < body.rows.length; r++) {
+      var tr = body.rows[r];
+      if (tr.classList.contains('empty')) continue;
+      var idx = parseInt(tr.dataset.idx, 10);
+      var d = S.rows[idx];
+      var cells = tr.cells;
+      var row = (res && Number.isFinite(d) && d > 0)
+        ? cardAt(res.card, d) : null;
+
+      tr.classList.toggle('trans', !!row && row[8] < 1.2 && row[8] > 0.8);
+
+      if (!row) {
+        var msg = (!Number.isFinite(d) || d <= 0) ? '—' : 'out of range';
+        for (var c = 1; c <= 7; c++) cells[c].textContent = c === 1 ? msg : '—';
+        continue;
+      }
+      cells[1].textContent = elevCall(row).text;
+      cells[2].textContent = windCall(row).text;
+      cells[3].textContent = fmt(U.fromSI(S.units, 'velocity', row[7]), 0);
+      cells[4].textContent = fmt(row[8], 2);
+      cells[5].textContent = fmt(row[9], 2);
+      cells[6].textContent = fmt(U.fromSI(S.units, 'drop', row[1] * 1e-2), 1);
+      cells[7].textContent = fmt(U.fromSI(S.units, 'energy', row[10]), 0);
+    }
+    markSelected();
+  }
+
+  function addRow(metres) {
+    var d = metres;
+    if (d === undefined) {
+      /* Continue the series the shooter has already established. */
+      var dd = distances();
+      if (dd.length >= 2) {
+        var step = dd[dd.length - 1] - dd[dd.length - 2];
+        d = dd[dd.length - 1] + (step > 0 ? step : 100);
+      } else if (dd.length === 1) { d = dd[0] + 100; }
+      else { d = 100; }
+      d = Math.min(d, MAX_DISTANCE);
+    }
+    S.rows.push(d);
+    save(); rebuildTable(); fillResults(); scheduleSolve(0);
+  }
+
+  // ------------------------------------------------------------------
+  // shot detail
+  // ------------------------------------------------------------------
+  /* Tapping a row selects it: the readout above the table updates in
+   * place. The full-detail screen is one further tap, so the common case
+   * -- "what do I dial for that one" -- costs nothing. */
+  function selectRow(d) {
+    if (!Number.isFinite(d) || d <= 0) return;
+    S.shotRange = d;
+    save();
+    markSelected();
+    renderReadout();
+    renderReticle();
+    if ($('screen-shot').classList.contains('on')) renderShot();
+  }
+
+  function markSelected() {
+    var body = $('dope-body');
+    for (var r = 0; r < body.rows.length; r++) {
+      var tr = body.rows[r];
+      if (tr.classList.contains('empty')) continue;
+      var d = S.rows[parseInt(tr.dataset.idx, 10)];
+      tr.classList.toggle('sel', Number.isFinite(d) && d === S.shotRange);
+    }
+  }
+
+  /* Keep the selection on a distance that still exists. */
+  function resolveSelection() {
+    var dd = distances();
+    if (!dd.length) { S.shotRange = null; return; }
+    if (!dd.some(function (d) { return d === S.shotRange; })) {
+      S.shotRange = dd[Math.min(dd.length - 1, 4)];
+    }
+  }
+
+  function renderShot() {
+    var d = S.shotRange, res = displayed();
+    var row = (res && Number.isFinite(d)) ? cardAt(res.card, d) : null;
+    $('shot-title').textContent = Number.isFinite(d)
+      ? distDisp(d) + ' ' + U.label(S.units, 'distance') : '—';
+
+    var cu = U.correctionLabel(S.out.corr, S.units, S.out.click);
+    if (!row) {
+      $('shot-elev').textContent = '—';
+      $('shot-wind').textContent = '—';
+      $('shot-elev-unit').textContent = 'out of range';
+      $('shot-wind-unit').textContent = '';
+      $('shot-secondary').innerHTML = '';
+      $('shot-hold-note').textContent =
+        'The bullet does not reach this distance with the current setup.';
+      PBReticle.draw($('shot-ret'), currentReticle(),
+                     { size: $('shot-ret').clientWidth || 320,
+                       zoomMil: S.zoom, hold: null });
+      return;
+    }
+
+    var e = elevCall(row), w = windCall(row);
+    $('shot-elev').textContent = e.text;
+    $('shot-wind').textContent = w.text;
+    $('shot-elev-unit').textContent = cu +
+      (e.letter === 'U' ? ' up' : e.letter === 'D' ? ' down' : '');
+    $('shot-wind-unit').textContent = cu +
+      (w.letter === 'L' ? ' left' : w.letter === 'R' ? ' right' : '');
+
+    var sec = [
+      ['Velocity', fmt(U.fromSI(S.units, 'velocity', row[7]), 0) + ' ' +
+        U.label(S.units, 'velocity')],
+      ['Mach', fmt(row[8], 2)],
+      ['Time of flight', fmt(row[9], 2) + ' s'],
+      ['Drop', fmt(U.fromSI(S.units, 'drop', row[1] * 1e-2), 1) + ' ' +
+        U.label(S.units, 'drop')],
+      ['Drift', fmt(U.fromSI(S.units, 'drop', row[4] * 1e-2), 1) + ' ' +
+        U.label(S.units, 'drop')],
+      ['Energy', fmt(U.fromSI(S.units, 'energy', row[10]), 0) + ' ' +
+        U.label(S.units, 'energy')]
+    ];
+    if (row[8] < 1.2 && row[8] > 0.8) {
+      sec.push(['Note', 'transonic']);
+    }
+    $('shot-secondary').innerHTML = sec.map(function (kv) {
+      return '<div><span class="k">' + kv[0] + '</span>' +
+             '<span class="v">' + kv[1] + '</span></div>';
+    }).join('');
+
+    var hold = holdResidual(d);
+    PBReticle.draw($('shot-ret'), currentReticle(),
+                   { size: $('shot-ret').clientWidth || 320,
+                     zoomMil: S.zoom, hold: hold, ladder: holdLadder() });
+    $('shot-hold-note').textContent = holdNoteFor(hold);
+    $('shot-ladder-note').textContent = ladderNote();
+  }
+
+  // ------------------------------------------------------------------
+  // rendering
+  // ------------------------------------------------------------------
   function renderSummary() {
     var n = $('solution-summary');
     if (!resPhys) { n.textContent = 'no solution'; return; }
@@ -3293,8 +4240,7 @@ var PBChart = (function () {
     var parts = [
       '<b>' + escapeHtml(b.name) + '</b>',
       b.dragModel + ' BC ' + b.bc.toFixed(3),
-      'zero ' + fmt(U.fromSI(S.units, 'distance', S.rifle.zeroRange), 0) +
-        ' ' + U.label(S.units, 'distance'),
+      'zero ' + distDisp(S.rifle.zeroRange) + ' ' + U.label(S.units, 'distance'),
       'scope angle ' + moa.toFixed(2) + ' MOA'
     ];
     if (hasWind()) {
@@ -3305,8 +4251,6 @@ var PBChart = (function () {
     n.innerHTML = parts.join(' &middot; ');
   }
 
-  /* Bullet names come from a shipped JSON file, not from the user, but
-   * they still reach innerHTML -- escape rather than trust the asset. */
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, function (ch) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;',
@@ -3314,24 +4258,62 @@ var PBChart = (function () {
     });
   }
 
-  /* A card that stops short of the range asked for is the failure mode a
-   * shooter would never notice: the table just ends. Say it out loud. */
   function renderRangeWarning() {
     var el = $('range-warning'), res = displayed();
     function hide() { el.hidden = true; el.textContent = ''; }
     if (!res || !res.card.length) { hide(); return; }
-    var step = clamp('out.step', S.out.step);
-    var asked = clamp('out.maxRange', S.out.maxRange);
-    var expect = Math.floor(asked / step) * step;
-    var got = res.card[res.card.length - 1][0];
-    if (got >= expect - 1e-6) { hide(); return; }
+    var reach = res.card[res.card.length - 1][0];
+    var over = distances().filter(function (d) { return d > reach + 1e-9; });
+    if (!over.length) { hide(); return; }
     el.hidden = false;
-    el.textContent = 'The card stops at ' +
-      fmt(U.fromSI(S.units, 'distance', got), 0) + ' ' +
-      U.label(S.units, 'distance') + ', short of the ' +
-      fmt(U.fromSI(S.units, 'distance', expect), 0) + ' ' +
-      U.label(S.units, 'distance') + ' asked for: the bullet does not ' +
-      'get that far with this muzzle velocity and BC.';
+    el.textContent = over.length + ' distance' + (over.length > 1 ? 's are' : ' is') +
+      ' past where the bullet gets with this setup (it reaches about ' +
+      distDisp(reach) + ' ' + U.label(S.units, 'distance') +
+      '). Those rows read “out of range” rather than a made-up number.';
+  }
+
+  /* What the zeroing-weather correction is worth, in the unit the shooter
+   * dials, at the longest distance on the card. A checkbox whose effect
+   * you cannot see is a checkbox nobody trusts. */
+  function renderZeroWxNote() {
+    var el = $('zwx-note');
+    if (!S.zeroWx.enabled) {
+      el.textContent = '';
+      el.classList.remove('warn');
+      return;
+    }
+    var diag = C.defaults().diag;
+    var rhoZero = PBEnv.airDensity(clamp('zeroWx.temp', S.zeroWx.temp),
+                                   clamp('zeroWx.humidity', S.zeroWx.humidity),
+                                   clamp('zeroWx.pressure', S.zeroWx.pressure),
+                                   0, false);
+    var rhoNow = PBEnv.airDensity(clamp('atmo.temp', S.atmo.temp),
+                                  clamp('atmo.humidity', S.atmo.humidity),
+                                  clamp('atmo.pressure', S.atmo.pressure),
+                                  0, false);
+    var txt = 'Zero-day air ' + rhoZero.toFixed(4) + ' kg/m³ against ' +
+      rhoNow.toFixed(4) + ' today (' +
+      ((rhoZero / rhoNow - 1) * 100).toFixed(1) + '%).';
+
+    var dd = distances();
+    if (resPhys && resNoZwx && dd.length) {
+      var d = Math.max.apply(null, dd);
+      var a = cardAt(resPhys.card, d), b = cardAt(resNoZwx.card, d);
+      if (a && b) {
+        var withC = -U.correction(a, 'drop', S.out.corr, S.units,
+                                  S.out.click, S.out.turret);
+        var without = -U.correction(b, 'drop', S.out.corr, S.units,
+                                    S.out.click, S.out.turret);
+        var delta = withC - without;
+        var cu = U.correctionLabel(S.out.corr, S.units, S.out.click);
+        txt += ' Worth ' + (delta >= 0 ? '+' : '') +
+          fmt(delta, U.decimals(S.out.corr) + 1) + ' ' + cu + ' at ' +
+          distDisp(d) + ' ' + U.label(S.units, 'distance') +
+          ' against ignoring it.';
+      }
+    }
+    el.textContent = txt;
+    el.classList.remove('warn');
   }
 
   function renderStability() {
@@ -3341,8 +4323,8 @@ var PBChart = (function () {
     var txt = 'Miller stability factor Sg = ' + r.sg.toFixed(2) +
       ' (' + r.verdict + ').';
     if (r.verdict === 'unstable') {
-      txt += ' This twist will not stabilise this bullet — the trajectory ' +
-        'below is what the model computes, not what the rifle will do.';
+      txt += ' This twist will not stabilise this bullet — the numbers ' +
+        'are what the model computes, not what the rifle will do.';
     } else if (r.verdict === 'marginal') {
       txt += ' Below 1.4 the bullet flies with residual yaw: expect more ' +
         'drag and a wider group than the card suggests.';
@@ -3350,16 +4332,17 @@ var PBChart = (function () {
     txt += ' Empirical estimate (Miller twist rule), not the 6DOF result.';
     el.textContent = txt;
     el.classList.toggle('warn', r.verdict !== 'stable');
+    return r;
   }
 
   function renderChart() {
     var res = displayed();
     if (!res) return;
     var svg = $('chart');
-    var w = svg.clientWidth || 600;
+    var w = svg.clientWidth;
+    if (!w) return;                     /* hidden screen: nothing to size to */
     PBChart.draw(svg, res.card, {
-      sys: S.units, width: w, height: 260,
-      marks: S.holdRange === null ? [] : [S.holdRange]
+      sys: S.units, width: w, height: 260, marks: distances()
     });
   }
 
@@ -3372,81 +4355,156 @@ var PBChart = (function () {
 
   /* Residual hold = physical minus displayed. Wind in dope -> centre;
    * hold-yourself -> the dot IS the wind hold. Never the raw dope. */
-  function holdResidual() {
-    if (!resPhys || S.holdRange === null) return null;
-    var disp = displayed();
-    var a = null, b = null, i;
-    for (i = 0; i < resPhys.card.length; i++) {
-      if (Math.abs(resPhys.card[i][0] - S.holdRange) < 1e-6) a = resPhys.card[i];
-    }
-    for (i = 0; i < disp.card.length; i++) {
-      if (Math.abs(disp.card[i][0] - S.holdRange) < 1e-6) b = disp.card[i];
-    }
+  function holdResidual(d) {
+    if (!resPhys || !Number.isFinite(d)) return null;
+    var a = cardAt(resPhys.card, d);
+    var b = cardAt(displayed().card, d);
     if (!a || !b) return null;
     /* Card MIL columns: [2] drop, [5] drift. A residual drop below the
-     * sight line is held DOWN-reticle (+y), and a residual drift to the
-     * right is held left (-x). */
+     * sight line is held DOWN-reticle (+y); a residual drift to the right
+     * is held left (-x). */
     return { mil_y: -(a[2] - b[2]), mil_x: -(a[5] - b[5]) };
+  }
+
+  function holdNoteFor(hold) {
+    if (!hold) return 'Pick a distance to place the hold dot.';
+    if (S.windInDope) {
+      return 'Wind is in the dope: dial both numbers and aim dead centre. ' +
+        'The dot sits at the crosshair.';
+    }
+    if (!hasWind()) {
+      return 'No wind entered, so there is nothing to hold for. Enter a ' +
+        'wind speed to see the hold.';
+    }
+    return 'Hold yourself: dial elevation only, then aim AT the dot — ' +
+      Math.abs(hold.mil_x).toFixed(2) + ' MIL ' +
+      (hold.mil_x < 0 ? 'left' : 'right') + '.';
+  }
+
+  /* The table, drawn on the reticle.
+   *
+   * A mark per listed distance at its FULL hold from the zero -- what you
+   * would aim with if you dialled nothing. That is the picture a shooter
+   * means by "where is 700 m on my reticle", and it is why the residual
+   * dot alone was not enough: with the wind dialled in, that dot sits on
+   * the crosshair for every distance, so selecting rows changed nothing
+   * you could see.
+   *
+   * Built from the PHYSICAL trajectory, not the displayed one: dialling
+   * nothing means holding for everything, wind included. */
+  function holdLadder() {
+    if (!S.ladder || !resPhys) return [];
+    var out = [];
+    distances().forEach(function (d) {
+      var row = cardAt(resPhys.card, d);
+      if (!row) return;
+      out.push({
+        mil_x: -row[5], mil_y: -row[2],
+        label: distDisp(d),
+        selected: d === S.shotRange
+      });
+    });
+    return out;
+  }
+
+  function ladderNote() {
+    if (!S.ladder) return '';
+    var n = holdLadder().length;
+    if (!n) return '';
+    return 'The ' + n + ' blue marks are the table: where each distance ' +
+      'falls if you dial nothing beyond your ' +
+      distDisp(S.rifle.zeroRange) + ' ' + U.label(S.units, 'distance') +
+      ' zero. The green one is the row you have selected.';
   }
 
   function renderReticle() {
     var svg = $('reticle');
-    var size = svg.clientWidth || 320;
-    var hold = holdResidual();
+    var size = svg.clientWidth;
+    if (!size) return;
+    var d = Number.isFinite(S.shotRange) ? S.shotRange
+                                         : (distances().slice(-1)[0]);
+    var hold = holdResidual(d);
     PBReticle.draw(svg, currentReticle(), {
-      size: size, zoomMil: S.zoom, hold: hold
+      size: size, zoomMil: S.zoom, hold: hold, ladder: holdLadder()
     });
-    var note = $('hold-note');
-    if (!hold) {
-      note.textContent = 'Pick a range in the table to place the hold dot.';
-    } else if (S.windInDope) {
-      note.textContent = 'Wind is in the dope: dial both columns and aim ' +
-        'dead centre. The dot sits at the crosshair.';
-    } else if (!hasWind()) {
-      note.textContent = 'No wind entered, so there is nothing to hold ' +
-        'for and the dot sits at the crosshair. Enter a wind speed to see ' +
-        'the hold.';
-    } else {
-      note.textContent = 'Hold yourself: dial elevation only, then aim AT ' +
-        'the dot — ' + Math.abs(hold.mil_x).toFixed(2) + ' MIL ' +
-        (hold.mil_x < 0 ? 'left' : 'right') + '.';
-    }
+    $('hold-note').textContent = holdNoteFor(hold);
+    $('ladder-note').textContent = ladderNote();
   }
 
-  function renderHoldOptions() {
-    var sel = $('in-hold'), res = displayed();
-    sel.innerHTML = '';
-    if (!res) return;
-    for (var i = 0; i < res.card.length; i++) {
-      var r = res.card[i];
-      if (r[0] === 0) continue;
-      var o = document.createElement('option');
-      o.value = r[0];
-      o.textContent = fmt(U.fromSI(S.units, 'distance', r[0]), 0) + ' ' +
-                      U.label(S.units, 'distance');
-      sel.appendChild(o);
-    }
-    if (S.holdRange !== null) sel.value = String(S.holdRange);
+  function renderRose() {
+    var svg = $('wind-rose');
+    var size = svg.clientWidth || 300;
+    PBWindRose.draw(svg, clamp('wind.dir', S.wind.dir), { size: size });
   }
 
-  function renderClock() {
-    var btns = $('wind-clock').querySelectorAll('button');
-    var h = U.degToClock(clamp('wind.dir', S.wind.dir));
-    for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.toggle('on', parseInt(btns[i].dataset.hour, 10) === h);
+  /* Each tile carries its own state, so the setup is readable without
+   * opening anything -- the desktop's big buttons do the same. */
+  function renderNav() {
+    var b = S.bullet, sg = null;
+    try {
+      sg = PBStability.millerSg(b.mass, b.d, b.L, S.rifle.twist, S.rifle.mv,
+                                S.atmo.temp, S.atmo.pressure);
+    } catch (e) { /* not fatal for a label */ }
+    $('nav-equipment').textContent =
+      (b.name.length > 24 ? b.name.slice(0, 23) + '…' : b.name) + '\n' +
+      b.dragModel + ' ' + b.bc.toFixed(3) + ' · ' +
+      fmt(U.fromSI(S.units, 'velocity', S.rifle.mv), 0) + ' ' +
+      U.label(S.units, 'velocity') + ' · zero ' +
+      distDisp(S.rifle.zeroRange) + (sg ? ' · Sg ' + sg.sg.toFixed(2) : '');
+    $('nav-environment').textContent =
+      fmt(U.fromSI(S.units, 'temp', S.atmo.temp), 0) + U.label(S.units, 'temp') +
+      ' · ' + fmt(U.fromSI(S.units, 'pressure', S.atmo.pressure), 0) + ' ' +
+      U.label(S.units, 'pressure') + '\n' +
+      (hasWind()
+        ? fmt(U.fromSI(S.units, 'wind', S.wind.speed), 1) + ' ' +
+          U.label(S.units, 'wind') + ' @ ' + U.degToClock(S.wind.dir) +
+          " o'clock"
+        : 'calm') +
+      (S.geom.los ? ' · ' + fmt(S.geom.los, 0) + '° angle' : '');
+    /* One line, not two: this tile is a wide row at the foot of the
+     * screen rather than a square at the top. */
+    $('nav-output').textContent =
+      U.correctionLabel(S.out.corr, S.units, S.out.click) + ' · ' +
+      S.rows.length + ' distance' + (S.rows.length === 1 ? '' : 's');
+  }
+
+  /* The selected row, full size, above the table. This is the number the
+   * shooter dials, so it does not live inside a 13 px table cell. */
+  function renderReadout() {
+    var d = S.shotRange, res = displayed();
+    var row = (res && Number.isFinite(d)) ? cardAt(res.card, d) : null;
+    var cu = U.correctionLabel(S.out.corr, S.units, S.out.click);
+    $('ro-range').textContent = Number.isFinite(d)
+      ? distDisp(d) + ' ' + U.label(S.units, 'distance') : '—';
+    if (!row) {
+      $('ro-elev').textContent = '—';
+      $('ro-wind').textContent = '—';
+      $('ro-elev-unit').textContent = Number.isFinite(d) ? 'out of range' : '';
+      $('ro-wind-unit').textContent = '';
+      return;
     }
+    var e = elevCall(row), w = windCall(row);
+    $('ro-elev').textContent = e.text;
+    $('ro-wind').textContent = w.text;
+    $('ro-elev-unit').textContent = cu +
+      (e.letter === 'U' ? ' up' : e.letter === 'D' ? ' down' : '');
+    $('ro-wind-unit').textContent = cu +
+      (w.letter === 'L' ? ' left' : w.letter === 'R' ? ' right' : '');
   }
 
   function render() {
-    resolveHoldRange();
+    resolveSelection();
+    renderNav();
     renderSummary();
     renderRangeWarning();
     renderStability();
-    renderTable();
-    renderHoldOptions();
-    renderClock();
+    renderZeroWxNote();
+    fillResults();
+    renderReadout();
+    updateRifleStatus();
     renderChart();
     renderReticle();
+    if ($('screen-shot').classList.contains('on')) renderShot();
     var badge = $('wind-badge');
     badge.textContent = S.windInDope ? 'WIND IN DOPE' : 'HOLD YOURSELF';
     badge.classList.toggle('hold', !S.windInDope);
@@ -3456,7 +4514,6 @@ var PBChart = (function () {
   // ------------------------------------------------------------------
   // input binding
   // ------------------------------------------------------------------
-  /* id, state group, key, unit quantity, display decimals */
   var BINDINGS = [
     ['in-mass', 'bullet', 'mass', 'mass', 1],
     ['in-cal', 'bullet', 'd', 'calibre', 3],
@@ -3468,26 +4525,26 @@ var PBChart = (function () {
     ['in-press', 'atmo', 'pressure', 'pressure', 2],
     ['in-alt', 'atmo', 'altitude', 'altitude', 0],
     ['in-wspd', 'wind', 'speed', 'wind', 1],
-    ['in-maxrange', 'out', 'maxRange', 'distance', 0],
-    ['in-step', 'out', 'step', 'distance', 0]
+    ['in-zwx-temp', 'zeroWx', 'temp', 'temp', 1],
+    ['in-zwx-press', 'zeroWx', 'pressure', 'pressure', 2]
   ];
-  /* plain numbers, no unit conversion */
   var PLAIN = [
     ['in-bc', 'bullet', 'bc', 3],
     ['in-twist', 'rifle', 'twist', 2],
     ['in-hum', 'atmo', 'humidity', 0],
     ['in-wdir', 'wind', 'dir', 0],
     ['in-los', 'geom', 'los', 1],
-    ['in-lat', 'geom', 'lat', 1],
+    ['in-lat', 'geom', 'lat', 4],
+    ['in-lon', 'geom', 'lon', 4],
     ['in-az', 'geom', 'az', 0],
-    ['in-turret', 'out', 'turret', 3]
+    ['in-turret', 'out', 'turret', 3],
+    ['in-zwx-hum', 'zeroWx', 'humidity', 0]
   ];
 
   /* Editing a physical dimension invalidates the inertias: IP and IT are
    * properties of THIS bullet, and leaving the previous ones in place
    * would fly the new dimensions with the old bullet's spin dynamics --
-   * wrong spin drift, silently. Re-estimate and say the values are
-   * estimates now. */
+   * wrong spin drift, silently. */
   function onBulletGeometryChanged() {
     var b = S.bullet;
     var inert = PBInertia.estimate(clamp('bullet.d', b.d),
@@ -3514,7 +4571,12 @@ var PBChart = (function () {
     $('in-click').value = S.out.click;
     $('in-profile').value = S.bullet.profileId;
     $('in-reticle').value = currentReticle().id;
+    $('in-reticle-main').value = currentReticle().id;
     $('in-zoom').value = S.zoom;
+    $('in-ladder').checked = !!S.ladder;
+    $('in-zwx').checked = !!S.zeroWx.enabled;
+    $('zwx-fields').style.display = S.zeroWx.enabled ? '' : 'none';
+    renderZeroWxNote();
     var isClicks = S.out.corr === 'clicks';
     $('click-field').style.display = isClicks ? '' : 'none';
     $('turret-field').style.display = isClicks ? '' : 'none';
@@ -3532,6 +4594,7 @@ var PBChart = (function () {
       (S.bullet.vendor && S.bullet.vendor !== 'built-in'
         ? ' — ' + S.bullet.vendor : ' — built-in reference');
     renderProvenance();
+    renderQuickFill();
   }
 
   function renderProvenance() {
@@ -3552,8 +4615,7 @@ var PBChart = (function () {
     }
     if (b.bands) {
       notes.push('Velocity-banded BC in use: ' + b.bands.length +
-                 ' bands converted to Mach at the ICAO sea-level speed of ' +
-                 'sound.');
+                 ' bands converted to Mach at the ICAO sea-level speed of sound.');
     }
     $('coef-provenance').textContent = notes.join(' ');
   }
@@ -3573,20 +4635,15 @@ var PBChart = (function () {
           save(); scheduleSolve();
         });
         /* Clamp on commit, not on keystroke: snapping mid-typing makes a
-         * field with a minimum impossible to type into.
-         *
-         * Re-read the field here rather than trusting the state the
-         * `input` handler left. Normally `input` fires first and the two
-         * agree, but paste-then-Enter, autofill and programmatic writes
-         * can deliver `change` alone, and clamping a stale state value
-         * would then throw the edit away without a word. */
+         * field with a minimum impossible to type into. Re-read the field
+         * rather than trusting the state `input` left -- paste-then-Enter
+         * and autofill can deliver `change` alone. */
         el.addEventListener('change', function () {
           var typed = parseNum(this.value);
           if (Number.isFinite(typed)) {
             S[b[1]][b[2]] = U.toSI(S.units, b[3], typed);
           }
-          var v = clamp(b[1] + '.' + b[2], S[b[1]][b[2]]);
-          S[b[1]][b[2]] = v;
+          S[b[1]][b[2]] = clamp(b[1] + '.' + b[2], S[b[1]][b[2]]);
           if (GEOMETRY_KEYS[b[0]]) onBulletGeometryChanged();
           save(); refreshInputs(); scheduleSolve(0);
         });
@@ -3599,6 +4656,7 @@ var PBChart = (function () {
           var v = parseNum(this.value);
           if (!Number.isFinite(v)) return;
           S[b[1]][b[2]] = v;
+          if (b[0] === 'in-wdir') renderRose();
           save(); scheduleSolve();
         });
         el.addEventListener('change', function () {
@@ -3607,6 +4665,7 @@ var PBChart = (function () {
           var v = clamp(b[1] + '.' + b[2], S[b[1]][b[2]]);
           S[b[1]][b[2]] = v;
           this.value = Number(v).toFixed(b[3]);
+          if (b[0] === 'in-wdir') renderRose();
           save(); scheduleSolve(0);
         });
       })(PLAIN[i]);
@@ -3622,27 +4681,47 @@ var PBChart = (function () {
       applyProfileDefaults(this.value);
       refreshInputs(); save(); scheduleSolve(0);
     });
-    $('in-reticle').addEventListener('change', function () {
-      S.reticleId = this.value; save(); renderReticle();
-    });
+    function pickReticle(v) {
+      S.reticleId = v; save();
+      $('in-reticle').value = v; $('in-reticle-main').value = v;
+      renderReticle();
+      if ($('screen-shot').classList.contains('on')) renderShot();
+    }
+    $('in-reticle').addEventListener('change', function () { pickReticle(this.value); });
+    $('in-reticle-main').addEventListener('change', function () { pickReticle(this.value); });
     $('in-corr').addEventListener('change', function () {
-      S.out.corr = this.value; save(); refreshInputs(); render();
+      S.out.corr = this.value; save(); refreshInputs();
+      rebuildTable(); render();
     });
     $('in-click').addEventListener('change', function () {
-      S.out.click = this.value; save(); render();
-    });
-    $('in-hold').addEventListener('change', function () {
-      S.holdRange = parseFloat(this.value); save(); render();
+      S.out.click = this.value; save(); rebuildTable(); render();
     });
     $('in-zoom').addEventListener('input', function () {
       S.zoom = parseFloat(this.value); save(); renderReticle();
+      if ($('screen-shot').classList.contains('on')) renderShot();
+    });
+    $('in-ladder').addEventListener('change', function () {
+      S.ladder = this.checked; save(); renderReticle();
+      if ($('screen-shot').classList.contains('on')) renderShot();
+    });
+
+    $('in-zwx').addEventListener('change', function () {
+      S.zeroWx.enabled = this.checked;
+      save(); refreshInputs(); scheduleSolve(0);
+    });
+    $('btn-zwx-today').addEventListener('click', function () {
+      S.zeroWx.temp = S.atmo.temp;
+      S.zeroWx.pressure = S.atmo.pressure;
+      S.zeroWx.humidity = S.atmo.humidity;
+      if (!S.zeroWx.enabled) S.zeroWx.enabled = true;
+      save(); refreshInputs(); scheduleSolve(0);
     });
 
     var segBtns = document.querySelectorAll('#unit-seg button');
     for (i = 0; i < segBtns.length; i++) {
       segBtns[i].addEventListener('click', function () {
         S.units = this.dataset.units;
-        save(); refreshInputs(); render();
+        save(); refreshInputs(); rebuildTable(); render();
       });
     }
 
@@ -3651,26 +4730,483 @@ var PBChart = (function () {
       save(); render();
     });
 
+    $('btn-add-row').addEventListener('click', function () { addRow(); });
+    $('btn-clear-rows').addEventListener('click', function () {
+      if (!S.rows.length) return;
+      if (!window.confirm('Remove every distance from the table?')) return;
+      S.rows = [];
+      save(); rebuildTable(); render();
+    });
+    $('quick-fill').addEventListener('change', function () {
+      if (!this.value) return;
+      var p = this.value.split(',').map(Number);
+      var rows = [];
+      for (var v = p[0]; v <= p[1] + 1e-9; v += p[2]) {
+        rows.push(U.toSI(S.units, 'distance', v));
+      }
+      S.rows = rows;
+      this.value = '';
+      save(); rebuildTable(); fillResults(); scheduleSolve(0);
+    });
+
     $('btn-reset').addEventListener('click', function () {
       if (!window.confirm('Reset every input to the built-in M852 reference?')) {
         return;
       }
       S = defaults();
-      if (!S.reticleId) S.reticleId = defaultReticleId();
-      save(); populateSelects(); refreshInputs(); scheduleSolve(0);
+      S.reticleId = defaultReticleId();
+      save(); populateSelects(); refreshInputs(); rebuildTable();
+      showScreen('screen-main'); scheduleSolve(0);
     });
     $('btn-print').addEventListener('click', function () { window.print(); });
     $('btn-csv').addEventListener('click', exportCsv);
+    $('btn-locate').addEventListener('click', doLocate);
+    $('btn-weather').addEventListener('click', doWeather);
+
+    $('rifle-select').addEventListener('change', function () {
+      selectRifle(this.value);
+    });
+    $('btn-rifle-save').addEventListener('click', function () { saveRifle(false); });
+    $('btn-rifle-new').addEventListener('click', function () { saveRifle(true); });
+    $('btn-rifle-del').addEventListener('click', deleteRifle);
+    $('btn-lib-export').addEventListener('click', exportLibrary);
+    $('btn-lib-import').addEventListener('click', function () {
+      $('lib-file').click();
+    });
+    $('lib-file').addEventListener('change', function () {
+      if (this.files && this.files[0]) importLibrary(this.files[0]);
+      this.value = '';                 /* so the same file can be re-picked */
+    });
+
+    /* screen navigation */
+    var nav = document.querySelectorAll('.sb-app [data-goto]');
+    for (i = 0; i < nav.length; i++) {
+      nav[i].addEventListener('click', function () {
+        showScreen(this.dataset.goto);
+      });
+    }
+
+    /* the wind rose */
+    PBWindRose.attach($('wind-rose'),
+      function () { return clamp('wind.dir', S.wind.dir); },
+      function (deg) {
+        S.wind.dir = deg;
+        $('in-wdir').value = deg.toFixed(0);
+        renderRose();
+      },
+      function () { save(); scheduleSolve(0); });
 
     var rt = null;
     window.addEventListener('resize', function () {
       if (rt) clearTimeout(rt);
-      rt = setTimeout(function () { renderChart(); renderReticle(); }, 120);
+      rt = setTimeout(function () {
+        renderChart(); renderReticle(); renderRose();
+        if ($('screen-shot').classList.contains('on')) renderShot();
+      }, 120);
     });
   }
 
-  /* A profile carries measured inertias and its own curves; selecting one
-   * replaces the estimates a catalogue pick left behind. */
+  // ------------------------------------------------------------------
+  // rifle library
+  // ------------------------------------------------------------------
+  var LIB_FORMAT = 'superior-ballistics-rifles-1';
+
+  /* What a rifle is. Atmosphere, wind and the distance list are excluded
+   * on purpose: recalling last month's weather with the rifle would be
+   * worse than useless, because it would look like a setup rather than a
+   * stale reading. */
+  function snapshot() {
+    return JSON.parse(JSON.stringify({
+      bullet: S.bullet,
+      rifle: S.rifle,
+      zeroWx: S.zeroWx,
+      reticleId: S.reticleId,
+      zoom: S.zoom,
+      out: S.out
+    }));
+  }
+
+  function applySnapshot(snap) {
+    var s = JSON.parse(JSON.stringify(snap));
+    if (s.bullet) S.bullet = s.bullet;
+    if (s.rifle) S.rifle = s.rifle;
+    if (s.zeroWx) S.zeroWx = s.zeroWx;
+    if (s.reticleId) S.reticleId = s.reticleId;
+    if (Number.isFinite(s.zoom)) S.zoom = s.zoom;
+    if (s.out) S.out = s.out;
+    /* An older export may predate a field; fill the gaps from defaults
+     * rather than leaving undefined to reach the solver. */
+    var d = defaults();
+    ['bullet', 'rifle', 'zeroWx', 'out'].forEach(function (grp) {
+      for (var k in d[grp]) {
+        if (S[grp][k] === undefined) S[grp][k] = d[grp][k];
+      }
+    });
+  }
+
+  function activeRifle() {
+    for (var i = 0; i < S.rifles.length; i++) {
+      if (S.rifles[i].id === S.activeRifle) return S.rifles[i];
+    }
+    return null;
+  }
+
+  /* Has the setup drifted from what was saved? Without this the select
+   * keeps showing "My 6.5" after you have changed the muzzle velocity,
+   * and you believe you are shooting the rifle you saved. */
+  function rifleModified() {
+    var r = activeRifle();
+    if (!r) return false;
+    return JSON.stringify(snapshot()) !== JSON.stringify(r.setup);
+  }
+
+  function newRifleId() {
+    return 'r' + Date.now().toString(36) +
+           Math.floor(Math.random() * 1e4).toString(36);
+  }
+
+  /* Rebuilding a <select> under a user who has it open is hostile, and
+   * render() runs after every solve. Split it: the options change rarely,
+   * the "modified" state changes constantly. */
+  function updateRifleStatus() {
+    var r = activeRifle();
+    if (!r) { renderRifleNote(false, null); return; }
+    var mod = rifleModified();
+    var sel = $('rifle-select');
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === r.id) {
+        sel.options[i].textContent = r.name + (mod ? '  · modified' : '');
+      }
+    }
+    renderRifleNote(mod, r);
+  }
+
+  function renderRifleNote(mod, r) {
+    var note = $('rifle-note');
+    if (!S.rifles.length) {
+      note.textContent = 'Set the bullet, barrel and sight below, then ' +
+        '“Save as new” to keep them together. A rifle stores the bullet, ' +
+        'muzzle velocity, twist, sight height, zero, reticle and turret — ' +
+        'not the weather or the distances, which change every outing.';
+      note.classList.remove('warn');
+    } else if (r && mod) {
+      note.textContent = '“' + r.name + '” has unsaved changes. “Save” ' +
+        'writes them into it; “Save as new” keeps both.';
+      note.classList.add('warn');
+    } else if (r) {
+      note.textContent = 'Shooting “' + r.name + '”.';
+      note.classList.remove('warn');
+    } else {
+      note.textContent = 'Pick a saved rifle, or “Save as new” to keep ' +
+        'the current setup.';
+      note.classList.remove('warn');
+    }
+  }
+
+  function renderRifleLibrary() {
+    var sel = $('rifle-select');
+    var mod = rifleModified();
+    sel.innerHTML = '';
+    var none = document.createElement('option');
+    none.value = '';
+    none.textContent = S.rifles.length ? '— not saved —' : '— no rifles saved —';
+    sel.appendChild(none);
+    S.rifles.forEach(function (r) {
+      var o = document.createElement('option');
+      o.value = r.id;
+      o.textContent = r.name + (r.id === S.activeRifle && mod ? '  · modified' : '');
+      sel.appendChild(o);
+    });
+    sel.value = S.activeRifle || '';
+
+    var r = activeRifle();
+    $('btn-rifle-save').disabled = !r;
+    $('btn-rifle-del').disabled = !r;
+    renderRifleNote(mod, r);
+  }
+
+  function saveRifle(asNew) {
+    var name;
+    if (asNew) {
+      var suggested = S.bullet.name && S.bullet.vendor !== 'built-in'
+        ? S.bullet.vendor + ' ' + (S.bullet.mass / U.K.GRAIN_KG).toFixed(0) + ' gr'
+        : 'My rifle';
+      name = window.prompt('Name this rifle', suggested);
+      if (name === null) return;
+      name = name.trim();
+      if (!name) return;
+      /* Two rifles with the same name are indistinguishable in the list
+       * and both get overwritten on import, which merges by name. Ask
+       * instead of quietly making a second one. */
+      var clash = null;
+      for (var i = 0; i < S.rifles.length; i++) {
+        if (S.rifles[i].name === name) clash = S.rifles[i];
+      }
+      if (clash) {
+        if (!window.confirm('“' + name + '” already exists. Replace it?')) {
+          return;
+        }
+        clash.setup = snapshot();
+        S.activeRifle = clash.id;
+      } else {
+        S.rifles.push({ id: newRifleId(), name: name, setup: snapshot() });
+        S.activeRifle = S.rifles[S.rifles.length - 1].id;
+      }
+    } else {
+      var r = activeRifle();
+      if (!r) return;
+      r.setup = snapshot();
+    }
+    save(); renderRifleLibrary();
+  }
+
+  function deleteRifle() {
+    var r = activeRifle();
+    if (!r) return;
+    if (!window.confirm('Delete “' + r.name + '” from the library?')) return;
+    S.rifles = S.rifles.filter(function (x) { return x.id !== r.id; });
+    S.activeRifle = null;
+    save(); renderRifleLibrary();
+  }
+
+  function selectRifle(id) {
+    if (!id) { S.activeRifle = null; save(); renderRifleLibrary(); return; }
+    for (var i = 0; i < S.rifles.length; i++) {
+      if (S.rifles[i].id !== id) continue;
+      if (rifleModified() &&
+          !window.confirm('“' + activeRifle().name + '” has unsaved ' +
+                          'changes. Switch anyway and lose them?')) {
+        renderRifleLibrary();
+        return;
+      }
+      applySnapshot(S.rifles[i].setup);
+      S.activeRifle = id;
+      save(); refreshInputs(); rebuildTable(); scheduleSolve(0);
+      return;
+    }
+  }
+
+  /* The library lives in localStorage, which is per-browser and vanishes
+   * with the site data. Export is the only way to move a setup to a
+   * phone or keep it after clearing the cache. */
+  function exportLibrary() {
+    var doc = { format: LIB_FORMAT, exported: new Date().toISOString(),
+                rifles: S.rifles };
+    var blob = new Blob([JSON.stringify(doc, null, 1)],
+                        { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'rifles.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  function importLibrary(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var note = $('rifle-note');
+      try {
+        var doc = JSON.parse(reader.result);
+        if (!doc || doc.format !== LIB_FORMAT || !Array.isArray(doc.rifles)) {
+          throw new Error('not a rifle library exported by this app');
+        }
+        var added = 0, merged = 0;
+        doc.rifles.forEach(function (r) {
+          if (!r || !r.name || !r.setup) return;
+          var existing = null;
+          for (var i = 0; i < S.rifles.length; i++) {
+            if (S.rifles[i].name === r.name) existing = S.rifles[i];
+          }
+          if (existing) { existing.setup = r.setup; merged++; }
+          else { S.rifles.push({ id: newRifleId(), name: r.name,
+                                 setup: r.setup }); added++; }
+        });
+        save(); renderRifleLibrary();
+        note.textContent = 'Imported: ' + added + ' new, ' + merged +
+          ' updated by name.';
+        note.classList.remove('warn');
+      } catch (e) {
+        note.textContent = 'Could not import that file: ' + e.message + '.';
+        note.classList.add('warn');
+      }
+    };
+    reader.onerror = function () {
+      $('rifle-note').textContent = 'Could not read that file.';
+    };
+    reader.readAsText(file);
+  }
+
+  // ---- factory twist rates -----------------------------------------
+  var rifleIndex = null;
+
+  function searchRifles(q) {
+    if (typeof PB_RIFLES === 'undefined') {
+      /* A missing data asset threw inside the input handler and left the
+       * results list simply empty -- indistinguishable from "no match".
+       * Say which it is. */
+      throw new Error('PB_RIFLES asset is not loaded (data/rifles.js)');
+    }
+    if (!rifleIndex) {
+      rifleIndex = PB_RIFLES.map(function (r, i) {
+        return { i: i, key: (r.mk + ' ' + r.md + ' ' + (r.vr || '') + ' ' +
+                             r.c).toLowerCase() };
+      });
+    }
+    var terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) return [];
+    var out = [];
+    for (var i = 0; i < rifleIndex.length && out.length < 40; i++) {
+      var k = rifleIndex[i].key, ok = true;
+      for (var t = 0; t < terms.length; t++) {
+        if (k.indexOf(terms[t]) < 0) { ok = false; break; }
+      }
+      if (ok) out.push(PB_RIFLES[rifleIndex[i].i]);
+    }
+    return out;
+  }
+
+  function bindRifleSearch() {
+    var box = $('rifle-search'), list = $('rifle-results');
+    box.addEventListener('input', function () {
+      var q = this.value.trim();
+      if (q.length < 2) { list.hidden = true; return; }
+      var hits;
+      try { hits = searchRifles(q); }
+      catch (e) {
+        list.innerHTML = '';
+        var bad = document.createElement('div');
+        bad.className = 'none';
+        bad.textContent = 'factory list unavailable: ' + e.message;
+        list.appendChild(bad);
+        list.hidden = false;
+        return;
+      }
+      list.innerHTML = '';
+      if (!hits.length) {
+        var none = document.createElement('div');
+        none.className = 'none';
+        none.textContent = 'nothing matches “' + q + '”';
+        list.appendChild(none);
+      }
+      hits.forEach(function (r) {
+        var d = document.createElement('div');
+        d.setAttribute('role', 'option');
+        var name = document.createElement('span');
+        name.textContent = r.mk + ' ' + r.md + (r.vr ? ' ' + r.vr : '') + ' ';
+        var meta = document.createElement('span');
+        meta.className = 'meta';
+        meta.textContent = r.c + ' · 1:' + r.t + '″' +
+          (r.b ? ' · ' + r.b + '″ barrel' : '') +
+          (r.td ? ' · ' + r.td + 'H' : '');
+        d.appendChild(name); d.appendChild(meta);
+        d.addEventListener('mousedown', function (ev) {
+          ev.preventDefault();
+          S.rifle.twist = r.t;
+          if (r.td) S.rifle.twistLH = (String(r.td).toUpperCase()[0] === 'L');
+          box.value = '';
+          list.hidden = true;
+          save(); refreshInputs(); scheduleSolve(0);
+          /* Its own element: the library note below is rewritten by
+           * render() after every solve, so a message left there would
+           * vanish a heartbeat after it appeared. */
+          $('twist-note').textContent = 'Twist set to 1:' + r.t + '″ from ' +
+            r.mk + ' ' + r.md + (r.vr ? ' ' + r.vr : '') + ' in ' + r.c +
+            (r.p ? ' — ' + r.p : '') +
+            '. Twist varies between variants of a model and a rebarrelled ' +
+            'rifle carries whatever it was rebarrelled with, so check yours.';
+        });
+        list.appendChild(d);
+      });
+      list.hidden = false;
+    });
+    box.addEventListener('blur', function () {
+      setTimeout(function () { list.hidden = true; }, 180);
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // the two online helpers
+  // ------------------------------------------------------------------
+  function onlineNote(msg, kind) {
+    var el = $('online-note');
+    el.textContent = msg;
+    el.classList.toggle('warn', kind === 'warn');
+  }
+
+  function doLocate() {
+    var btn = $('btn-locate');
+    btn.disabled = true;
+    onlineNote('Asking the browser for your position…');
+    PBOnline.geolocate().then(function (p) {
+      S.geom.lat = p.lat;
+      S.geom.lon = p.lon;
+      /* GPS altitude is frequently absent and, when present, is often
+       * tens of metres out; take it only when the fix actually carries
+       * one and say where it came from. */
+      var altNote = '';
+      if (p.alt !== null) {
+        S.atmo.altitude = p.alt;
+        altNote = ', altitude ' + p.alt.toFixed(0) + ' m (from GPS — check it)';
+      }
+      save(); refreshInputs(); scheduleSolve(0);
+      onlineNote('Position set: ' + p.lat.toFixed(4) + '°, ' +
+                 p.lon.toFixed(4) + '° (±' + Math.round(p.accuracy) + ' m)' +
+                 altNote + '. Latitude feeds the Coriolis term; set the ' +
+                 'azimuth of fire yourself.');
+    }).catch(function (e) {
+      onlineNote('Could not get your position: ' + e.message + '.', 'warn');
+    }).then(function () { btn.disabled = false; });
+  }
+
+  function doWeather() {
+    var btn = $('btn-weather');
+    var lat = clamp('geom.lat', S.geom.lat), lon = clamp('geom.lon', S.geom.lon);
+    if (!lat && !lon) {
+      onlineNote('Set a latitude and longitude first, or press “Use my ' +
+                 'location”. Open-Meteo needs somewhere to look up.', 'warn');
+      return;
+    }
+    btn.disabled = true;
+    onlineNote('Fetching current conditions from Open-Meteo…');
+    PBOnline.fetchWeather(lat, lon).then(function (w) {
+      var got = [];
+      if (w.temp !== undefined) {
+        S.atmo.temp = w.temp;
+        got.push(w.temp.toFixed(1) + ' °C');
+      }
+      if (w.pressure !== undefined) {
+        S.atmo.pressure = w.pressure;
+        got.push((w.pressure / 100).toFixed(0) + ' hPa');
+      }
+      if (w.humidity !== undefined) {
+        S.atmo.humidity = w.humidity;
+        got.push(w.humidity.toFixed(0) + ' %RH');
+      }
+      if (w.windSpeed !== undefined) {
+        S.wind.speed = w.windSpeed;
+        got.push(w.windSpeed.toFixed(1) + ' m/s wind');
+      }
+      if (w.windFromTrue !== undefined) {
+        /* Open-Meteo reports a true bearing; the dial is relative to the
+         * shot, so subtract the azimuth of fire -- the same conversion
+         * the desktop does in _rf_wx_done. */
+        S.wind.dir = ((w.windFromTrue - clamp('geom.az', S.geom.az)) % 360 +
+                      360) % 360;
+        got.push('from ' + w.windFromTrue.toFixed(0) + '° true (' +
+                 U.degToClock(S.wind.dir) + " o'clock for your azimuth)");
+      }
+      save(); refreshInputs(); renderRose(); scheduleSolve(0);
+      onlineNote('Applied: ' + got.join(', ') +
+                 '. Wind is the 10 m forecast value — it is not what your ' +
+                 'flags are doing at the firing line, so treat it as a ' +
+                 'starting point.' +
+                 (w.time ? ' Observation ' + w.time + '.' : ''));
+    }).catch(function (e) {
+      onlineNote('Weather lookup failed: ' + e.message + '. Everything ' +
+                 'else still works offline — type the conditions in.', 'warn');
+    }).then(function () { btn.disabled = false; });
+  }
+
   function applyProfileDefaults(id) {
     for (var i = 0; i < PB_PROFILES.length; i++) {
       var p = PB_PROFILES[i];
@@ -3683,7 +5219,9 @@ var PBChart = (function () {
       S.bullet.IP = p.physical.IP_kgm2;
       S.bullet.IT = p.physical.IT_kgm2;
       S.bullet.bc = p.ballistic.BC_G7;
-      S.bullet.dragModel = p.ballistic.drag_model;
+      /* Profiles are fitted against G7; the McCoy and tabulated paths are
+       * still in the engine but are not offered here. */
+      S.bullet.dragModel = (p.ballistic.drag_model === 'G1') ? 'G1' : 'G7';
       S.bullet.bands = null;
       S.bullet.profileId = id;
       S.bullet.lengthEstimated = false;
@@ -3699,15 +5237,12 @@ var PBChart = (function () {
   // ------------------------------------------------------------------
   var catIndex = null, activeHit = -1, lastHits = [];
 
-  /* Calibre aliases for the search box ONLY -- never physics.
-   *
-   * Shooters look for "6.5 140" or "308 175", but the catalogue stores
-   * Berger's 6.5 mm bullets as "Match VLD" at d = 6.7056 mm and exactly
-   * one record out of 3 965 has "6.5" anywhere in its name. Without this
-   * the most natural query in the sport returns nothing. Diameters are
-   * exact inch values, so the inch forms are derived; the metric
-   * designations are the standard SAAMI/CIP names for those diameters.
-   */
+  /* Calibre aliases for the search box ONLY -- never physics. Shooters
+   * look for "6.5 140", but the catalogue stores Berger's 6.5 mm bullets
+   * as "Match VLD" at d = 6.7056 mm and exactly one record out of 3 965
+   * has "6.5" anywhere in its name. Diameters are exact inch values, so
+   * the inch forms are derived; the metric designations are the standard
+   * SAAMI/CIP names for those diameters. */
   var CAL_NAMES = {
     '0.172': '17', '0.204': '20', '0.224': '22 5.56mm',
     '0.243': '243 6mm', '0.257': '25 6.35mm', '0.264': '6.5mm 65',
@@ -3723,8 +5258,7 @@ var PBChart = (function () {
   function calAliases(dMm) {
     var inch = dMm / 25.4;
     var s3 = inch.toFixed(3);
-    var parts = [s3, s3.replace(/^0/, ''), s3.slice(2),
-                 dMm.toFixed(2) + 'mm'];
+    var parts = [s3, s3.replace(/^0/, ''), s3.slice(2), dMm.toFixed(2) + 'mm'];
     if (CAL_NAMES[s3]) parts.push(CAL_NAMES[s3]);
     return parts.join(' ');
   }
@@ -3761,8 +5295,8 @@ var PBChart = (function () {
   var FT_M = 0.3048;
 
   function pickBullet(b) {
-    /* Prefer G7 bands when present: a G7 BC on a boat-tail match bullet
-     * is a far better description of its drag than the G1 equivalent. */
+    /* Prefer G7 when present: a G7 BC on a boat-tail match bullet is a
+     * far better description of its drag than the G1 equivalent. */
     var hasG7 = b.b.some(function (x) { return x[0] === 'G7'; });
     var model = hasG7 ? 'G7' : 'G1';
     var bands = b.b.filter(function (x) { return x[0] === model; });
@@ -3798,8 +5332,7 @@ var PBChart = (function () {
   }
 
   function closeResults() {
-    var list = $('bullet-results');
-    list.hidden = true;
+    $('bullet-results').hidden = true;
     activeHit = -1;
     $('bullet-search').setAttribute('aria-expanded', 'false');
   }
@@ -3840,8 +5373,7 @@ var PBChart = (function () {
           ' mm · ' + bc[0] + ' ' + bc[1] + (b.L ? '' : ' · no length');
         var name = document.createElement('span');
         name.textContent = b.n + ' ';
-        d.appendChild(name);
-        d.appendChild(meta);
+        d.appendChild(name); d.appendChild(meta);
         d.addEventListener('mousedown', function (ev) {
           ev.preventDefault();          /* keep focus so blur cannot race */
           pickBullet(b);
@@ -3852,30 +5384,22 @@ var PBChart = (function () {
       box.setAttribute('aria-expanded', 'true');
     });
 
-    /* Keyboard: a search box you can only use with a mouse is not usable
-     * on a desktop, and the list can be 60 items long. */
     box.addEventListener('keydown', function (ev) {
       if (list.hidden) return;
       if (ev.key === 'ArrowDown') { ev.preventDefault(); highlight(activeHit + 1); }
       else if (ev.key === 'ArrowUp') { ev.preventDefault(); highlight(activeHit - 1); }
       else if (ev.key === 'Enter') {
         if (activeHit >= 0 && lastHits[activeHit]) {
-          ev.preventDefault();
-          pickBullet(lastHits[activeHit]);
+          ev.preventDefault(); pickBullet(lastHits[activeHit]);
         }
       } else if (ev.key === 'Escape') { closeResults(); }
     });
 
-    box.addEventListener('blur', function () {
-      setTimeout(closeResults, 180);
-    });
+    box.addEventListener('blur', function () { setTimeout(closeResults, 180); });
   }
 
   // ------------------------------------------------------------------
   function defaultReticleId() {
-    /* A plain mil-dot reads at a glance; the christmas-tree patterns are
-     * there for anyone who runs one, but they are a dense first
-     * impression. */
     var pref = PB_RETICLES.filter(function (r) {
       return r.id === 'mildot_military';
     });
@@ -3890,12 +5414,13 @@ var PBChart = (function () {
       o.value = p.profile_id; o.textContent = p.name;
       sel.appendChild(o);
     });
-    var r = $('in-reticle');
-    r.innerHTML = '';
-    PB_RETICLES.forEach(function (x) {
-      var o = document.createElement('option');
-      o.value = x.id; o.textContent = x.name + ' (' + x.unit + ')';
-      r.appendChild(o);
+    [$('in-reticle'), $('in-reticle-main')].forEach(function (r) {
+      r.innerHTML = '';
+      PB_RETICLES.forEach(function (x) {
+        var o = document.createElement('option');
+        o.value = x.id; o.textContent = x.name + ' (' + x.unit + ')';
+        r.appendChild(o);
+      });
     });
     var ck = $('in-click');
     ck.innerHTML = '';
@@ -3906,24 +5431,21 @@ var PBChart = (function () {
     });
   }
 
-  function buildClock() {
-    var box = $('wind-clock');
-    box.innerHTML = '';
-    for (var h = 1; h <= 12; h++) {
-      (function (hour) {
-        var b = document.createElement('button');
-        b.type = 'button';
-        b.dataset.hour = hour;
-        b.textContent = hour;
-        b.setAttribute('aria-label', hour + " o'clock wind");
-        b.addEventListener('click', function () {
-          S.wind.dir = U.clockToDeg(hour);
-          $('in-wdir').value = S.wind.dir.toFixed(0);
-          save(); scheduleSolve(0);
-        });
-        box.appendChild(b);
-      })(h);
-    }
+  /* Series offered in whatever unit the shooter is working in, so a
+   * yards user is not handed a list of metres. */
+  function renderQuickFill() {
+    var sel = $('quick-fill');
+    var series = (S.units === 'imperial')
+      ? [[100, 1000, 100], [100, 600, 50], [200, 1400, 200], [25, 300, 25]]
+      : [[100, 1000, 100], [100, 600, 50], [200, 2000, 200], [25, 300, 25]];
+    var lab = U.label(S.units, 'distance');
+    sel.innerHTML = '<option value="">Fill series…</option>';
+    series.forEach(function (p) {
+      var o = document.createElement('option');
+      o.value = p.join(',');
+      o.textContent = p[0] + '–' + p[1] + ' by ' + p[2] + ' ' + lab;
+      sel.appendChild(o);
+    });
   }
 
   function exportCsv() {
@@ -3954,21 +5476,26 @@ var PBChart = (function () {
       '# geometry: shot angle ' + S.geom.los + ' deg, latitude ' +
         S.geom.lat + ' deg, azimuth ' + S.geom.az + ' deg',
       '# solved scope angle: ' + (resPhys.scope_angle * 60).toFixed(4) + ' MOA',
-      '# solver: PyBallisticsV2 6DOF ported to JS; drag + lift + ' +
-        'overturning + spin damping + Coriolis',
-      ['range_' + U.label(S.units, 'distance'), 'elev_' + cu, 'wind_' + cu,
-       'drop_' + U.label(S.units, 'drop'),
+      '# each row interpolated linearly from a ' +
+        buildConfig(true).diag.card_step_m + ' m card grid',
+      ['distance_' + U.label(S.units, 'distance'), 'elev_' + cu,
+       'wind_' + cu, 'drop_' + U.label(S.units, 'drop'),
+       'drift_' + U.label(S.units, 'drop'),
        'vel_' + U.label(S.units, 'velocity'),
        'mach', 'tof_s', 'energy_' + U.label(S.units, 'energy')].join(',')
     ];
-    res.card.forEach(function (row) {
+    distances().forEach(function (d) {
+      var row = cardAt(res.card, d);
+      if (!row) {
+        lines.push(U.fromSI(S.units, 'distance', d).toFixed(1) +
+                   ',out of range,,,,,,,');
+        return;
+      }
       lines.push([
-        U.fromSI(S.units, 'distance', row[0]).toFixed(1),
-        (-U.correction(row, 'drop', S.out.corr, S.units, S.out.click,
-                       S.out.turret)).toFixed(3),
-        (-U.correction(row, 'drift', S.out.corr, S.units, S.out.click,
-                       S.out.turret)).toFixed(3),
+        U.fromSI(S.units, 'distance', d).toFixed(1),
+        elevCall(row).text, windCall(row).text,
         U.fromSI(S.units, 'drop', row[1] * 1e-2).toFixed(2),
+        U.fromSI(S.units, 'drop', row[4] * 1e-2).toFixed(2),
         U.fromSI(S.units, 'velocity', row[7]).toFixed(1),
         row[8].toFixed(3), row[9].toFixed(4),
         U.fromSI(S.units, 'energy', row[10]).toFixed(1)
@@ -3989,17 +5516,25 @@ var PBChart = (function () {
     R.setAssets(PB_DRAG_STD, PB_COEF_M852);
     load();
     if (!S.reticleId) S.reticleId = defaultReticleId();
+    /* Older saved sessions may carry McCoy or Tabulated; those paths are
+     * still in the engine but no longer offered, so fold them onto G7. */
+    if (S.bullet.dragModel !== 'G7' && S.bullet.dragModel !== 'G1') {
+      S.bullet.dragModel = 'G7';
+    }
     populateSelects();
-    buildClock();
     bindInputs();
     bindSearch();
+    bindRifleSearch();
     refreshInputs();
+    renderRifleLibrary();
+    rebuildTable();
+    renderRose();
     runSolve();
 
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.0.0',
+      version: '1.1.0',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(true), k, sub;
         for (k in (cfgOverrides || {})) {
@@ -4015,6 +5550,11 @@ var PBChart = (function () {
         var r = displayed();
         return r ? r.card.map(function (row) { return row.slice(); }) : null;
       },
+      at: function (metres) {
+        var r = displayed();
+        return r ? cardAt(r.card, metres) : null;
+      },
+      showScreen: showScreen,
       columns: R.CARD_COLUMNS
     };
   }

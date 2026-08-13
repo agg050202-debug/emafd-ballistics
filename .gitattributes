@@ -4,8 +4,8 @@
 # bug report is matched to the build it came from.
 #
 # Re-verify after any tooling change:  sha256sum index.html
-#   expected  0f945e2cdf3da20fc3d35e3cf9942e986e2f5f005eddf7d9a81e2adfe93ff3e2
-#   expected  1013475 bytes
+# The expected value lives in README.md rather than here, because it changes
+# with every release and a hash pinned in two places goes stale in one of them.
 
 /index.html -text
 
