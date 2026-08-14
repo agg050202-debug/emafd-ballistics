@@ -11,10 +11,14 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  af6d467fe9eec9a407ca3ed9dd74931e0e92ca1e3f3bcb533804f58c66a3cde0
-bytes   1090624
-stamp   1.1.0 · 2026-08-13 17:49 UTC   (shown in the page footer)
+sha256  362331f0871a5a52912b90d83e39995967805fca6444cf0e14ec08585a74abbe
+bytes   1115181
+stamp   1.1.0 · 2026-08-14 02:22 UTC   (shown in the page footer)
 ```
+
+Note the version number did not move: this build and the one before it are both
+`1.1.0`, and only the timestamp tells them apart. Match on the whole stamp, not
+on the version.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has

@@ -268,7 +268,44 @@
   font-size: 11.5px; color: var(--sb-fg-dim); text-transform: uppercase;
   letter-spacing: .04em; font-family: var(--sb-sans); display: block;
 }
-.sb-app label u { text-decoration: none; color: var(--sb-accent); }
+/* The unit chip is a control, not decoration: it opens a menu of the
+   units that quantity can be shown in. Underlined on hover so it reads as
+   something you can press, and marked when it differs from the system. */
+.sb-app label u {
+  text-decoration: none; color: var(--sb-accent); cursor: pointer;
+  padding: 0 1px; border-radius: 3px;
+}
+.sb-app label u:hover { text-decoration: underline; }
+.sb-app label u:focus-visible {
+  outline: 2px solid var(--sb-accent); outline-offset: 1px;
+}
+.sb-app label u.overridden {
+  background: color-mix(in srgb, var(--sb-accent) 20%, transparent);
+}
+
+.sb-app .sb-unitmenu {
+  position: absolute; z-index: 999;
+  background: var(--sb-bg-2);
+  border: 1px solid var(--sb-line);
+  border-radius: 8px; padding: 4px; min-width: 92px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sb-app .sb-unitmenu button {
+  border: 0; background: transparent; color: var(--sb-fg);
+  font: 13px ui-monospace, Menlo, Consolas, monospace;
+  padding: 7px 12px; border-radius: 5px; text-align: left; cursor: pointer;
+  white-space: nowrap;
+}
+.sb-app .sb-unitmenu button:hover,
+.sb-app .sb-unitmenu button:focus {
+  background: var(--sb-accent); color: #fff; outline: none;
+}
+.sb-app .sb-unitmenu button.on {
+  font-weight: 700; color: var(--sb-accent);
+}
+.sb-app .sb-unitmenu button.on:hover,
+.sb-app .sb-unitmenu button.on:focus { color: #fff; }
 
 .sb-app input, .sb-app select {
   width: 100%; padding: 8px 10px; margin: 0;
@@ -542,6 +579,70 @@
   .sb-app .dope td.rowdel { display: none; }
 }
 
+/* ---------------- projectile silhouette ---------------- */
+.sb-app .bullet-pic {
+  background: var(--sb-bg-2); border: 1px solid var(--sb-line);
+  border-radius: var(--sb-radius); padding: 12px 14px 10px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.sb-app #bullet-svg { width: 100%; height: 132px; display: block; }
+.sb-app .bullet-body {
+  fill: color-mix(in srgb, var(--sb-accent) 26%, transparent);
+  stroke: var(--sb-accent); stroke-width: .2; stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.sb-app .bullet-axis {
+  stroke: var(--sb-fg-dim); stroke-width: .1; stroke-dasharray: 1.2 .9;
+  opacity: .55; vector-effect: non-scaling-stroke;
+}
+.sb-app .bullet-dim {
+  stroke: var(--sb-fg-dim); stroke-width: .1;
+  vector-effect: non-scaling-stroke;
+}
+.sb-app .bullet-label {
+  fill: var(--sb-fg-dim); font: 1.5px var(--sb-mono);
+}
+.sb-app .bullet-note {
+  fill: var(--sb-warn); font: italic 1.3px var(--sb-sans);
+}
+
+/* ---------------- wind rose readout, outside the dial ---------------- */
+.sb-app .rose-box { position: relative; display: inline-block; }
+.sb-app .rose-readout {
+  position: absolute; top: 0; right: 0; text-align: right;
+  pointer-events: none; line-height: 1.15;
+}
+.sb-app .rose-readout b {
+  display: block; font: 700 22px var(--sb-mono); color: var(--sb-fg);
+  font-variant-numeric: tabular-nums;
+}
+.sb-app .rose-readout span {
+  display: block; font: 11px var(--sb-mono); color: var(--sb-fg-dim);
+}
+
+/* ---------------- tap-to-change-unit tiles ---------------- */
+.sb-app .shot-secondary div.tappable { cursor: pointer; }
+.sb-app .shot-secondary div.tappable:hover {
+  border-color: var(--sb-accent);
+}
+.sb-app .shot-secondary div.tappable:focus-visible {
+  outline: 2px solid var(--sb-accent); outline-offset: 1px;
+}
+.sb-app .shot-secondary div.tappable .v { color: var(--sb-accent); }
+
+/* A single-box row: the reticle and, at the foot, the trajectory. */
+.sb-app .viz.single { grid-template-columns: 1fr; }
+
+/* Extra actions under a rule in the unit menu. */
+.sb-app .sb-unitmenu hr {
+  border: 0; border-top: 1px solid var(--sb-line); margin: 4px 2px;
+}
+.sb-app .sb-unitmenu button.extra {
+  font-family: var(--sb-sans); font-size: 12.5px; color: var(--sb-fg-dim);
+}
+.sb-app .sb-unitmenu button.extra:hover,
+.sb-app .sb-unitmenu button.extra:focus { color: #fff; }
+
 </style>
 <style>
 /* STANDALONE PAGE ONLY. style.css is scoped entirely under .sb-app so it
@@ -568,6 +669,10 @@ body { background: #101317; }
     <div class="seg" id="unit-seg" role="group" aria-label="Unit system">
       <button type="button" data-units="metric" class="on">Metric</button>
       <button type="button" data-units="imperial">Imperial</button>
+    </div>
+    <div class="seg" id="corr-seg" role="group" aria-label="Sight adjustment unit">
+      <button type="button" data-corr="MIL">MRAD</button>
+      <button type="button" data-corr="MOA">MOA</button>
     </div>
     <div id="status" class="status" role="status" aria-live="polite">ready</div>
   </div>
@@ -634,12 +739,7 @@ body { background: #101317; }
   <p class="hint">Type the distances you are shooting. Tap a row to put it
   in the readout above.</p>
 
-  <div class="viz">
-    <div class="viz-box">
-      <h2>Trajectory</h2>
-      <svg id="chart" class="chart" preserveAspectRatio="none"
-           role="img" aria-label="Drop against range"></svg>
-    </div>
+  <div class="viz single">
     <div class="viz-box">
       <h2>Reticle &mdash; residual hold</h2>
       <svg id="reticle" class="reticle" role="img"
@@ -656,6 +756,18 @@ body { background: #101317; }
       </label>
       <p class="hint" id="hold-note"></p>
       <p class="hint" id="ladder-note"></p>
+    </div>
+  </div>
+
+
+  <!-- Trajectory last: it is the picture you glance at, not the number
+       you dial, so it sits below the sight picture rather than beside
+       it and gets the full width. -->
+  <div class="viz single">
+    <div class="viz-box">
+      <h2>Trajectory</h2>
+      <svg id="chart" class="chart" preserveAspectRatio="none"
+           role="img" aria-label="Drop against range"></svg>
     </div>
   </div>
 
@@ -708,23 +820,12 @@ body { background: #101317; }
   </div>
   <div class="page-body">
 
-    <h3 class="section">Rifle library</h3>
-    <div class="library">
-      <select id="rifle-select" aria-label="Saved rifles"></select>
-      <div class="lib-actions">
-        <button type="button" id="btn-rifle-save">Save</button>
-        <button type="button" id="btn-rifle-new">Save as new&hellip;</button>
-        <button type="button" id="btn-rifle-del" class="ghost">Delete</button>
-      </div>
-    </div>
-    <p class="hint" id="rifle-note"></p>
-    <div class="lib-actions">
-      <button type="button" id="btn-lib-export" class="ghost">Export library</button>
-      <button type="button" id="btn-lib-import" class="ghost">Import library</button>
-      <input type="file" id="lib-file" accept="application/json,.json" hidden>
-    </div>
-
     <h3 class="section">Projectile</h3>
+    <div class="bullet-pic">
+      <svg id="bullet-svg" role="img"
+           aria-label="Projectile silhouette drawn from its dimensions"></svg>
+      <p class="hint" id="bullet-caption"></p>
+    </div>
     <div class="field wide">
       <label for="bullet-search">Search the catalogue</label>
       <input type="search" id="bullet-search" autocomplete="off"
@@ -757,6 +858,21 @@ body { background: #101317; }
     <p class="hint" id="coef-provenance"></p>
 
     <h3 class="section">Rifle</h3>
+    <div class="library">
+      <select id="rifle-select" aria-label="Saved rifles"></select>
+      <div class="lib-actions">
+        <button type="button" id="btn-rifle-save">Save</button>
+        <button type="button" id="btn-rifle-new">Save as new&hellip;</button>
+        <button type="button" id="btn-rifle-del" class="ghost">Delete</button>
+      </div>
+    </div>
+    <p class="hint" id="rifle-note"></p>
+    <div class="lib-actions">
+      <button type="button" id="btn-lib-export" class="ghost">Export library</button>
+      <button type="button" id="btn-lib-import" class="ghost">Import library</button>
+      <input type="file" id="lib-file" accept="application/json,.json" hidden>
+    </div>
+
     <div class="field wide">
       <label for="rifle-search">Factory twist rates</label>
       <input type="search" id="rifle-search" autocomplete="off"
@@ -863,9 +979,15 @@ body { background: #101317; }
 
     <h3 class="section">Wind</h3>
     <div class="rose-wrap">
-      <svg id="wind-rose" class="rose" role="slider" tabindex="0"
-           aria-label="Wind direction relative to the shot"
-           aria-valuemin="0" aria-valuemax="359" aria-valuenow="90"></svg>
+      <div class="rose-box">
+        <svg id="wind-rose" class="rose" role="slider" tabindex="0"
+             aria-label="Wind direction relative to the shot"
+             aria-valuemin="0" aria-valuemax="359" aria-valuenow="90"></svg>
+        <div class="rose-readout" id="rose-readout">
+          <b id="rose-deg">90&deg;</b>
+          <span id="rose-clock">3 o'clock</span>
+        </div>
+      </div>
       <p class="hint">Drag the dial, or use the arrow keys. The clock is
       relative to your shot: 12 o'clock blows from the target into your
       face, 3 o'clock from your right.</p>
@@ -917,7 +1039,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.1.0 · 2026-08-13 17:49 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.1.0 · 2026-08-14 02:22 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -2766,12 +2888,27 @@ var PB_RIFLES = [{"mk":"Barrett","md":"MRAD","c":"300 Norma Magnum","t":8.0,"vr"
 
 </script>
 <script>
-/* Unit handling. The solver works in SI, always; state is held in SI and
- * converted only at the edges. That is the same discipline the desktop
- * build follows, and for the same reason: a value that round-trips
- * through the display on every keystroke accumulates rounding, and a
- * range card that drifts because someone toggled yards is worse than one
- * that is simply wrong.
+/* 3 starting rifles ported from the desktop's rangefield.json (see export_assets.py for what was substituted and what was left out) */
+var PB_RIFLE_PRESETS = [{"name":"Ruger Precision Rifle - .308 Win","setup":{"bullet":{"name":"7.62 mm M852 (168 gr Sierra MatchKing)","vendor":"built-in","mass":0.01089,"d":0.00782,"L":0.0311236,"bc":0.267,"dragModel":"G7","bands":null,"profileId":"m852_168gr_smk","lengthEstimated":false,"inertiaEstimated":false,"IP":7.22e-08,"IT":5.38e-07},"rifle":{"mv":783.0,"twist":10.0,"twistLH":false,"sightH":0.03,"zeroRange":100.0},"zeroWx":{"enabled":false,"temp":15.0,"pressure":101325.0,"humidity":0.0},"reticleId":"mildot_military","zoom":26,"out":{"corr":"MIL","click":"0.1 MIL","turret":1.0}}},{"name":"Ruger Precision Rifle - 6.5 Creedmoor","setup":{"bullet":{"name":"Sellier & Bellot 6.5 Creedmoor 140gr FMJBT","vendor":"built-in","mass":0.0090718,"d":0.00671,"L":0.0336142,"bc":0.24831,"dragModel":"G7","bands":null,"profileId":"sb_65creedmoor_140gr_fmjbt","lengthEstimated":false,"inertiaEstimated":false,"IP":4.4718e-08,"IT":5.1846e-07},"rifle":{"mv":754.38,"twist":8.0,"twistLH":false,"sightH":0.052000000000000005,"zeroRange":91.4},"zeroWx":{"enabled":false,"temp":15.0,"pressure":101325.0,"humidity":0.0},"reticleId":"vortex_ebr_7c_mrad","zoom":26,"out":{"corr":"MIL","click":"0.1 MIL","turret":1.0}}},{"name":"Tikka T3x - 6.5 Creedmoor","setup":{"bullet":{"name":"Sellier & Bellot 6.5 Creedmoor 140gr FMJBT","vendor":"built-in","mass":0.0090718,"d":0.00671,"L":0.0336142,"bc":0.24831,"dragModel":"G7","bands":null,"profileId":"sb_65creedmoor_140gr_fmjbt","lengthEstimated":false,"inertiaEstimated":false,"IP":4.4718e-08,"IT":5.1846e-07},"rifle":{"mv":813.82,"twist":8.0,"twistLH":false,"sightH":0.052000000000000005,"zeroRange":91.44},"zeroWx":{"enabled":false,"temp":15.0,"pressure":101325.0,"humidity":0.0},"reticleId":"vortex_ebr_7c_mrad","zoom":26,"out":{"corr":"MIL","click":"0.1 MIL","turret":1.0}}}];
+
+</script>
+<script>
+/* Unit handling.
+ *
+ * The solver works in SI, always; state is held in SI and converted only
+ * at the edges. Same discipline as the desktop build, for the same
+ * reason: a value that round-trips through the display on every keystroke
+ * accumulates rounding, and a range card that drifts because someone
+ * toggled yards is worse than one that is simply wrong.
+ *
+ * Two layers decide what a number is shown in:
+ *   1. the system (metric | imperial), which sets a default per quantity
+ *   2. a per-quantity override, set by tapping the unit next to a field
+ * The override wins. Switching system clears every override, because
+ * "Metric" that leaves three fields in feet is not metric.
+ *
+ * si = display * k + o  --  the offset exists for temperature only, but
+ * carrying it uniformly is cheaper than special-casing °F everywhere.
  */
 'use strict';
 
@@ -2783,68 +2920,142 @@ var PBUnits = (function () {
     FT_M: 0.3048,
     YD_M: 0.9144,
     INHG_PA: 3386.389,
+    MMHG_PA: 133.322387415,
+    PSI_PA: 6894.757293168,
     MPH_MS: 0.44704,
     KMH_MS: 1 / 3.6,
-    MOA_PER_MIL: 3.438           /* the project's convention throughout */
+    KN_MS: 0.5144444444444445,
+    FTLB_J: 1.3558179483314004,
+    MOA_PER_MIL: 3.438            /* the project's convention throughout */
   };
 
-  /* Each quantity: [SI-per-display, label] per system. */
-  var SYS = {
-    metric: {
-      distance:  [1.0, 'm'],
-      velocity:  [1.0, 'm/s'],
-      mass:      [K.GRAIN_KG, 'gr'],      /* grains are universal in both */
-      calibre:   [1e-3, 'mm'],
-      length:    [1e-3, 'mm'],
-      sight_h:   [1e-2, 'cm'],
-      temp:      [1.0, '°C'],        /* offset handled separately */
-      pressure:  [100.0, 'hPa'],
-      altitude:  [1.0, 'm'],
-      wind:      [1.0, 'm/s'],
-      drop:      [1e-2, 'cm'],
-      energy:    [1.0, 'J']
+  /* units: [key, k, o]. First entry is the SI-natural one, but the
+   * defaults below decide what is actually shown. */
+  var Q = {
+    mass: {
+      units: [['gr', K.GRAIN_KG, 0], ['g', 1e-3, 0]],
+      metric: 'gr', imperial: 'gr', dec: { gr: 1, g: 2 }
     },
-    imperial: {
-      distance:  [K.YD_M, 'yd'],
-      velocity:  [K.FT_M, 'fps'],
-      mass:      [K.GRAIN_KG, 'gr'],
-      calibre:   [K.INCH_M, 'in'],
-      length:    [K.INCH_M, 'in'],
-      sight_h:   [K.INCH_M, 'in'],
-      temp:      [5 / 9, '°F'],
-      pressure:  [K.INHG_PA, 'inHg'],
-      altitude:  [K.FT_M, 'ft'],
-      wind:      [K.MPH_MS, 'mph'],
-      drop:      [K.INCH_M, 'in'],
-      energy:    [1.3558179483314004, 'ft·lb']
+    calibre: {
+      units: [['mm', 1e-3, 0], ['in', K.INCH_M, 0]],
+      metric: 'mm', imperial: 'in', dec: { mm: 3, in: 4 }
+    },
+    length: {
+      units: [['mm', 1e-3, 0], ['in', K.INCH_M, 0]],
+      metric: 'mm', imperial: 'in', dec: { mm: 2, in: 3 }
+    },
+    sight_h: {
+      units: [['cm', 1e-2, 0], ['mm', 1e-3, 0], ['in', K.INCH_M, 0]],
+      metric: 'cm', imperial: 'in', dec: { cm: 2, mm: 1, in: 2 }
+    },
+    distance: {
+      units: [['m', 1, 0], ['yd', K.YD_M, 0], ['ft', K.FT_M, 0]],
+      metric: 'm', imperial: 'yd', dec: { m: 0, yd: 0, ft: 0 }
+    },
+    velocity: {
+      units: [['m/s', 1, 0], ['fps', K.FT_M, 0], ['km/h', K.KMH_MS, 0]],
+      metric: 'm/s', imperial: 'fps', dec: { 'm/s': 0, fps: 0, 'km/h': 0 }
+    },
+    temp: {
+      units: [['°C', 1, 0], ['°F', 5 / 9, -32 * 5 / 9], ['K', 1, -273.15]],
+      metric: '°C', imperial: '°F', dec: { '°C': 1, '°F': 1, K: 1 }
+    },
+    pressure: {
+      units: [['hPa', 100, 0], ['inHg', K.INHG_PA, 0], ['mmHg', K.MMHG_PA, 0],
+              ['psi', K.PSI_PA, 0], ['Pa', 1, 0]],
+      metric: 'hPa', imperial: 'inHg',
+      dec: { hPa: 2, inHg: 2, mmHg: 1, psi: 3, Pa: 0 }
+    },
+    altitude: {
+      units: [['m', 1, 0], ['ft', K.FT_M, 0]],
+      metric: 'm', imperial: 'ft', dec: { m: 0, ft: 0 }
+    },
+    wind: {
+      units: [['m/s', 1, 0], ['mph', K.MPH_MS, 0], ['km/h', K.KMH_MS, 0],
+              ['kn', K.KN_MS, 0]],
+      metric: 'm/s', imperial: 'mph',
+      dec: { 'm/s': 1, mph: 1, 'km/h': 1, kn: 1 }
+    },
+    drop: {
+      units: [['cm', 1e-2, 0], ['in', K.INCH_M, 0], ['mm', 1e-3, 0]],
+      metric: 'cm', imperial: 'in', dec: { cm: 1, in: 1, mm: 0 }
+    },
+    energy: {
+      units: [['J', 1, 0], ['ft·lb', K.FTLB_J, 0]],
+      metric: 'J', imperial: 'ft·lb', dec: { J: 0, 'ft·lb': 0 }
     }
   };
 
-  function factor(sys, q) { return SYS[sys][q][0]; }
-  function label(sys, q) { return SYS[sys][q][1]; }
+  var system = 'metric';
+  var overrides = {};
 
-  function toSI(sys, q, v) {
-    if (q === 'temp') {
-      return sys === 'imperial' ? (v - 32) * 5 / 9 : v;
+  function setSystem(sys) { system = (sys === 'imperial') ? 'imperial' : 'metric'; }
+  function getSystem() { return system; }
+  /* Switching system is a clean slate: leaving a stray override behind is
+   * how you end up with a "metric" card quoting feet. */
+  function setOverrides(o) { overrides = o || {}; }
+  function clearOverrides() { overrides = {}; }
+  function setOverride(q, unit) {
+    if (!Q[q]) return;
+    if (unit === null || unit === undefined || unit === defaultFor(q)) {
+      delete overrides[q];
+    } else {
+      overrides[q] = unit;
     }
-    return v * factor(sys, q);
+  }
+  function getOverrides() { return overrides; }
+
+  function defaultFor(q) { return Q[q][system]; }
+
+  function unitOf(q) {
+    var u = overrides[q];
+    return (u && findUnit(q, u)) ? u : defaultFor(q);
   }
 
-  function fromSI(sys, q, v) {
-    if (q === 'temp') {
-      return sys === 'imperial' ? v * 9 / 5 + 32 : v;
-    }
-    return v / factor(sys, q);
+  function findUnit(q, key) {
+    var list = Q[q].units;
+    for (var i = 0; i < list.length; i++) if (list[i][0] === key) return list[i];
+    return null;
   }
+
+  function unitsFor(q) {
+    return Q[q].units.map(function (u) { return u[0]; });
+  }
+
+  function label(q) { return unitOf(q); }
+
+  function decimals(q, unit) {
+    var d = Q[q].dec || {};
+    var u = unit || unitOf(q);
+    return (d[u] === undefined) ? 2 : d[u];
+  }
+
+  function toSI(q, v, unit) {
+    var u = findUnit(q, unit || unitOf(q)) || Q[q].units[0];
+    return v * u[1] + u[2];
+  }
+
+  function fromSI(q, v, unit) {
+    var u = findUnit(q, unit || unitOf(q)) || Q[q].units[0];
+    return (v - u[2]) / u[1];
+  }
+
+  /* Next unit in the list, for tap-to-cycle. */
+  function nextUnit(q) {
+    var list = unitsFor(q), i = list.indexOf(unitOf(q));
+    return list[(i + 1) % list.length];
+  }
+
+  function isOverridden(q) { return !!overrides[q]; }
 
   /* ------------------------------------------------------------------
    * Angular corrections.
    *
    * The card carries drop/drift in cm and in MIL/MOA. Clicks need the
    * turret's own value, and a turret factor for the scopes that do not
-   * track true. Linear units (cm/in) are distance-independent readings of
-   * the same drop, so they need no range argument; angular ones are what
-   * you dial.
+   * track true. Linear units are a distance-independent reading of the
+   * same drop, so they need no range argument; angular ones are what you
+   * dial.
    * ------------------------------------------------------------------ */
   var CLICK_VALUES = {
     '0.1 MIL': { unit: 'MIL', v: 0.1 },
@@ -2854,12 +3065,7 @@ var PBUnits = (function () {
     '1/2 MOA': { unit: 'MOA', v: 0.5 }
   };
 
-  /* row = a range-card row; which = 'drop' | 'drift'. Returns the value
-   * in the requested correction unit, sign convention preserved:
-   * a negative drop means the bullet is BELOW the line of sight, so the
-   * correction you dial is UP -- the table shows the correction, so it is
-   * negated for display by the caller that wants "dial this". */
-  function correction(row, which, unit, sys, clickKey, turretFactor) {
+  function correction(row, which, unit, clickKey, turretFactor) {
     var cm = which === 'drop' ? row[1] : row[4];
     var mil = which === 'drop' ? row[2] : row[5];
     var moa = which === 'drop' ? row[3] : row[6];
@@ -2873,28 +3079,27 @@ var PBUnits = (function () {
       }
       case 'linear':
       default:
-        return fromSI(sys, 'drop', cm * 1e-2);
+        return fromSI('drop', cm * 1e-2);
     }
   }
 
-  function correctionLabel(unit, sys, clickKey) {
+  function correctionLabel(unit, clickKey) {
     if (unit === 'MIL') return 'MIL';
     if (unit === 'MOA') return 'MOA';
     if (unit === 'clicks') return 'clicks (' + clickKey + ')';
-    return label(sys, 'drop');
+    return label('drop');
   }
 
   /* Decimals that make sense for a shooter, not for a spreadsheet. */
-  function decimals(unit) {
+  function correctionDecimals(unit) {
     if (unit === 'MIL') return 2;
     if (unit === 'MOA') return 1;
     if (unit === 'clicks') return 0;
-    return 1;
+    return decimals('drop');
   }
 
-  /* Wind direction as a clock face -- 12 o'clock is a headwind. The
-   * solver's wind_dir_deg is the compass bearing the wind blows FROM,
-   * relative to the shooter's azimuth. */
+  /* Wind direction as a clock face, relative to the line of fire:
+   * 12 o'clock is a headwind straight from the target. */
   function clockToDeg(hour) { return (hour % 12) * 30.0; }
   function degToClock(deg) {
     var h = Math.round(((deg % 360) + 360) % 360 / 30);
@@ -2902,11 +3107,261 @@ var PBUnits = (function () {
   }
 
   return {
-    K: K, SYS: SYS, factor: factor, label: label, toSI: toSI, fromSI: fromSI,
+    K: K, Q: Q,
+    setSystem: setSystem, getSystem: getSystem,
+    setOverrides: setOverrides, setOverride: setOverride,
+    getOverrides: getOverrides, clearOverrides: clearOverrides,
+    unitOf: unitOf, unitsFor: unitsFor, defaultFor: defaultFor,
+    isOverridden: isOverridden, nextUnit: nextUnit,
+    label: label, decimals: decimals,
+    toSI: toSI, fromSI: fromSI,
     CLICK_VALUES: CLICK_VALUES, correction: correction,
-    correctionLabel: correctionLabel, decimals: decimals,
+    correctionLabel: correctionLabel, correctionDecimals: correctionDecimals,
     clockToDeg: clockToDeg, degToClock: degToClock
   };
+})();
+
+</script>
+<script>
+/* The little menu behind every blue unit chip.
+ *
+ * Tapping "(gr)" next to the projectile mass should let you pick grams,
+ * and the choice should hold everywhere that quantity appears. The menu
+ * itself is deliberately dumb: it lists what PBUnits offers for the
+ * quantity, reports the pick, and gets out of the way. Which units exist
+ * and what they convert by is PBUnits' business, not this file's.
+ *
+ * Positioned in the document rather than inside the field so it cannot be
+ * clipped by a panel's overflow, and closed by anything that looks like
+ * the user moving on.
+ */
+'use strict';
+
+var PBUnitMenu = (function () {
+  var el = null, onPick = null, quantity = null;
+
+  function close() {
+    if (!el) return;
+    el.remove();
+    el = null; onPick = null; quantity = null;
+    document.removeEventListener('mousedown', outside, true);
+    document.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('scroll', close, true);
+    window.removeEventListener('resize', close);
+  }
+
+  function outside(ev) {
+    if (el && !el.contains(ev.target)) close();
+  }
+
+  function onKey(ev) {
+    if (!el) return;
+    if (ev.key === 'Escape') { ev.preventDefault(); close(); return; }
+    var items = el.querySelectorAll('button');
+    var i = Array.prototype.indexOf.call(items, document.activeElement);
+    if (ev.key === 'ArrowDown') {
+      ev.preventDefault();
+      items[(i + 1 + items.length) % items.length].focus();
+    } else if (ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      items[(i - 1 + items.length) % items.length].focus();
+    }
+  }
+
+  /* anchor: the chip that was tapped. cb(unitKey) fires on a pick.
+   * opts.extra: [{label, action}] appended below a rule, for menus that
+   * offer more than a unit -- the shot detail's velocity box also lets
+   * you edit the muzzle velocity from there. */
+  function open(anchor, q, cb, opts) {
+    close();
+    quantity = q; onPick = cb;
+    opts = opts || {};
+
+    el = document.createElement('div');
+    el.className = 'sb-unitmenu';
+    el.setAttribute('role', 'menu');
+    el.setAttribute('aria-label', 'Unit for ' + q.replace('_', ' '));
+
+    var current = PBUnits.unitOf(q);
+    PBUnits.unitsFor(q).forEach(function (u) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'menuitemradio');
+      b.setAttribute('aria-checked', String(u === current));
+      b.textContent = u;
+      if (u === current) b.className = 'on';
+      b.addEventListener('click', function () {
+        var pick = onPick;
+        close();
+        if (pick) pick(u);
+      });
+      el.appendChild(b);
+    });
+
+    (opts.extra || []).forEach(function (x, i) {
+      if (i === 0) el.appendChild(document.createElement('hr'));
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'extra';
+      b.setAttribute('role', 'menuitem');
+      b.textContent = x.label;
+      b.addEventListener('click', function () {
+        var act = x.action;
+        close();
+        if (act) act();
+      });
+      el.appendChild(b);
+    });
+
+    /* Inside .sb-app, not on the body: the colours are custom properties
+     * defined there, and a menu parented to the document would render in
+     * the dark palette on a light page. Absolute positioning still
+     * resolves against the page because .sb-app is not itself
+     * positioned, so the coordinates below are unaffected. */
+    (document.querySelector('.sb-app') || document.body).appendChild(el);
+
+    /* Place under the chip, nudged back inside the viewport rather than
+     * hanging off the right edge on a phone. */
+    var r = anchor.getBoundingClientRect();
+    var w = el.offsetWidth, h = el.offsetHeight;
+    var left = r.left + window.scrollX;
+    var top = r.bottom + window.scrollY + 4;
+    if (left + w > window.scrollX + document.documentElement.clientWidth - 8) {
+      left = window.scrollX + document.documentElement.clientWidth - w - 8;
+    }
+    if (left < window.scrollX + 8) left = window.scrollX + 8;
+    if (r.bottom + h + 8 > document.documentElement.clientHeight) {
+      top = r.top + window.scrollY - h - 4;   /* flip above */
+    }
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+
+    var first = el.querySelector('button.on') || el.querySelector('button');
+    if (first) first.focus();
+
+    document.addEventListener('mousedown', outside, true);
+    document.addEventListener('keydown', onKey, true);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+  }
+
+  return { open: open, close: close, isOpen: function () { return !!el; } };
+})();
+
+</script>
+<script>
+/* The projectile silhouette, as SVG.
+ *
+ * Port of app.py::_paint_bullet: a tangent ogive with a small meplat, a
+ * cylindrical bearing surface and a boattail, all driven by the two
+ * dimensions the shooter typed. Same constants, so the web build draws
+ * the same bullet as the desktop.
+ *
+ * The aspect ratio is clamped to 2.0-6.5 calibres for DRAWING only, as it
+ * is there: an absurd length would otherwise render a sliver or a blob.
+ * The dimension labels always carry the real numbers, and a caption says
+ * when the shape has been clamped -- a picture that quietly lies about
+ * the proportions of what you are about to shoot is worse than no
+ * picture.
+ */
+'use strict';
+
+var PBBullet = (function () {
+  var NS = 'http://www.w3.org/2000/svg';
+
+  function el(name, attrs, text) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) {
+      if (Object.prototype.hasOwnProperty.call(attrs, k)) {
+        n.setAttribute(k, attrs[k]);
+      }
+    }
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  /* opts: {d_mm, L_mm, name, dText, LText} -- the two *Text strings are
+   * pre-formatted in whatever unit the user is working in. */
+  function draw(svg, opts) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var dReal = opts.d_mm, LReal = opts.L_mm;
+    if (!(dReal > 0) || !(LReal > 0)) return;
+
+    var d = dReal;
+    var ratio = LReal / dReal;
+    var ratioDraw = Math.min(Math.max(ratio, 2.0), 6.5);
+    var L = ratioDraw * d;
+    var r = d / 2.0;
+
+    var Ln = Math.min(0.46 * L, 2.4 * d);     /* ogive length */
+    var Lb = 0.13 * L;                        /* boattail length */
+    var rb = 0.41 * d;                        /* boattail base radius */
+    var rho = (Ln * Ln + r * r) / (2.0 * r);  /* tangent-ogive radius */
+
+    var N = 80, xs = [], ys = [], i;
+    for (i = 0; i < N; i++) {
+      var x = Ln * i / (N - 1);
+      var v = rho * rho - (Ln - x) * (Ln - x);
+      ys.push(Math.sqrt(Math.max(v, 0)) - (rho - r));
+      xs.push(x);
+    }
+    ys[0] = Math.max(ys[1] * 0.5, 0.04 * d);  /* tiny meplat */
+    xs.push(L - Lb); ys.push(r);
+    xs.push(L); ys.push(rb);
+
+    /* Viewport: the drawing plus room for the dimension arrows below. */
+    var padX = 0.08 * L, padY = r * 1.15;
+    var vw = L + 2 * padX;
+    var vh = r * 2 + padY * 2 + (opts.annotate === false ? 0 : r * 1.9);
+    svg.setAttribute('viewBox',
+      (-padX) + ' ' + (-(r + padY)) + ' ' + vw + ' ' + vh);
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+    var pts = [];
+    for (i = 0; i < xs.length; i++) pts.push(xs[i] + ',' + (-ys[i]));
+    for (i = xs.length - 1; i >= 0; i--) pts.push(xs[i] + ',' + ys[i]);
+
+    var g = el('g');
+    svg.appendChild(g);
+
+    /* centreline */
+    g.appendChild(el('line', {
+      x1: -padX * 0.5, y1: 0, x2: L + padX * 0.5, y2: 0,
+      class: 'bullet-axis'
+    }));
+    g.appendChild(el('polygon', { points: pts.join(' '), class: 'bullet-body' }));
+
+    if (opts.annotate !== false) {
+      var yArrow = r * 1.75;
+      g.appendChild(el('line', { x1: 0, y1: yArrow, x2: L, y2: yArrow,
+                                 class: 'bullet-dim' }));
+      g.appendChild(el('line', { x1: 0, y1: yArrow - r * 0.16, x2: 0,
+                                 y2: yArrow + r * 0.16, class: 'bullet-dim' }));
+      g.appendChild(el('line', { x1: L, y1: yArrow - r * 0.16, x2: L,
+                                 y2: yArrow + r * 0.16, class: 'bullet-dim' }));
+      var lt = el('text', { x: L / 2, y: yArrow + r * 0.78,
+                            'text-anchor': 'middle', class: 'bullet-label' });
+      lt.textContent = 'L ' + opts.LText;
+      g.appendChild(lt);
+
+      var xd = L * 0.70;
+      g.appendChild(el('line', { x1: xd, y1: -r, x2: xd, y2: r,
+                                 class: 'bullet-dim' }));
+      var dt = el('text', { x: xd + L * 0.03, y: r * 0.28,
+                            class: 'bullet-label' });
+      dt.textContent = 'd ' + opts.dText;
+      g.appendChild(dt);
+    }
+
+    if (Math.abs(ratio - ratioDraw) > 1e-9) {
+      var note = el('text', { x: L, y: -(r + padY * 0.35),
+                              'text-anchor': 'end', class: 'bullet-note' });
+      note.textContent = 'schematic (aspect clamped)';
+      g.appendChild(note);
+    }
+  }
+
+  return { draw: draw };
 })();
 
 </script>
@@ -3225,20 +3680,22 @@ var PBChart = (function () {
     return step * mag;
   }
 
-  /* card: the range card. opts: {sys, marks:[range_m], width, height} */
+  /* card: the range card. opts: {marks:[range_m], width, height}.
+   * Units come from PBUnits, which holds the system and the
+   * per-quantity overrides, so nothing needs passing in. */
   function draw(svg, card, opts) {
     while (svg.firstChild) svg.removeChild(svg.firstChild);
     if (!card || card.length < 2) return;
 
-    var U = PBUnits, sys = opts.sys;
+    var U = PBUnits;
     var W = opts.width, H = opts.height;
     var padL = 52, padR = 14, padT = 12, padB = 30;
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
 
     var xs = [], ys = [], i;
     for (i = 0; i < card.length; i++) {
-      xs.push(U.fromSI(sys, 'distance', card[i][0]));
-      ys.push(U.fromSI(sys, 'drop', card[i][1] * 1e-2));
+      xs.push(U.fromSI('distance', card[i][0]));
+      ys.push(U.fromSI('drop', card[i][1] * 1e-2));
     }
     var xMax = xs[xs.length - 1];
     var yMin = Math.min.apply(null, ys), yMax = Math.max.apply(null, ys);
@@ -3310,10 +3767,10 @@ var PBChart = (function () {
     }
 
     g.appendChild(el('text', { x: padL - 40, y: padT + 4, class: 'axis' },
-                     U.label(sys, 'drop')));
+                     U.label('drop')));
     g.appendChild(el('text', { x: W - padR, y: H - padB + 15,
                                class: 'axis', 'text-anchor': 'end' },
-                     U.label(sys, 'distance')));
+                     U.label('distance')));
   }
 
   return { draw: draw };
@@ -3404,14 +3861,12 @@ var PBWindRose = (function () {
     g.appendChild(el('circle', { cx: tail[0], cy: tail[1], r: 9,
                                  class: 'rose-grip' }));
 
-    g.appendChild(el('text', { x: cx, y: cy + 6, class: 'rose-readout',
-                               'text-anchor': 'middle' },
-                     Math.round(deg) + '°'));
+    /* The numbers used to sit at the centre, where the needle crosses
+     * them at half the bearings and they became unreadable. They live
+     * outside the dial now (see #rose-readout); the dial keeps only the
+     * pointer. */
     var oc = Math.round(((deg % 360) + 360) % 360 / 30);
     if (oc === 0) oc = 12;
-    g.appendChild(el('text', { x: cx, y: cy + 22, class: 'rose-sub',
-                               'text-anchor': 'middle' },
-                     oc + " o'clock"));
     svg.setAttribute('aria-valuenow', String(Math.round(deg)));
     svg.setAttribute('aria-valuetext', Math.round(deg) + " degrees, " +
                      oc + " o'clock");
@@ -3613,7 +4068,7 @@ var PBOnline = (function () {
   /* v3: wind.dir changed meaning, from a true bearing to one relative to
    * the line of fire. Reading a v2 session with v3 code would silently
    * reinterpret the wind, so the key moves rather than the data. */
-  var STORE_KEY = 'superior-ballistics-field-v3';
+  var STORE_KEY = 'superior-ballistics-field-v4';
 
   // ------------------------------------------------------------------
   // state (SI throughout)
@@ -3621,6 +4076,9 @@ var PBOnline = (function () {
   function defaults() {
     return {
       units: 'metric',
+      /* Per-quantity unit choices, set by tapping the blue unit beside a
+       * field. Empty means "whatever the system says". */
+      unitOverrides: {},
       bullet: {
         name: 'Sierra MatchKing 168 gr (M852)', vendor: 'built-in',
         mass: 10.89e-3, d: 7.82e-3, L: 31.1236e-3,
@@ -3737,7 +4195,7 @@ var PBOnline = (function () {
   function load() {
     try {
       var raw = localStorage.getItem(STORE_KEY);
-      if (!raw) return;
+      if (!raw) { seedRifles(); return; }
       var d = JSON.parse(raw), base = defaults(), k;
       for (k in base) {
         if (!Object.prototype.hasOwnProperty.call(base, k)) continue;
@@ -3751,6 +4209,26 @@ var PBOnline = (function () {
       }
       S = base;
     } catch (e) { S = defaults(); }
+    syncUnits();
+  }
+
+  /* A first run starts with the rifles ported from the desktop rather
+   * than an empty list. Only on a first run: re-seeding a library
+   * someone has deliberately emptied would be rude. */
+  function seedRifles() {
+    if (typeof PB_RIFLE_PRESETS === 'undefined') return;
+    S.rifles = PB_RIFLE_PRESETS.map(function (r) {
+      return { id: newRifleId(), name: r.name,
+               setup: JSON.parse(JSON.stringify(r.setup)) };
+    });
+  }
+
+  /* PBUnits holds the display system and the per-quantity overrides so
+   * that nothing else has to pass them around. Anything that changes
+   * either must call this. */
+  function syncUnits() {
+    U.setSystem(S.units);
+    U.setOverrides(S.unitOverrides || {});
   }
 
   // ------------------------------------------------------------------
@@ -3971,24 +4449,24 @@ var PBOnline = (function () {
    * way they are called on a firing line and the way the desktop shows
    * them. A signed number invites dialling the wrong way. */
   function elevCall(row) {
-    var v = U.correction(row, 'drop', S.out.corr, S.units, S.out.click,
+    var v = U.correction(row, 'drop', S.out.corr, S.out.click,
                          S.out.turret);
-    var dec = U.decimals(S.out.corr);
+    var dec = U.correctionDecimals(S.out.corr);
     if (Math.abs(row[1]) < 1e-3) return { letter: '', text: '0', mag: 0 };
     return { letter: row[1] < 0 ? 'U' : 'D', mag: Math.abs(v),
              text: (row[1] < 0 ? 'U' : 'D') + fmt(Math.abs(v), dec) };
   }
   function windCall(row) {
-    var v = U.correction(row, 'drift', S.out.corr, S.units, S.out.click,
+    var v = U.correction(row, 'drift', S.out.corr, S.out.click,
                          S.out.turret);
-    var dec = U.decimals(S.out.corr);
+    var dec = U.correctionDecimals(S.out.corr);
     if (Math.abs(row[4]) < 5e-3) return { letter: '', text: '0', mag: 0 };
     return { letter: row[4] < 0 ? 'R' : 'L', mag: Math.abs(v),
              text: (row[4] < 0 ? 'R' : 'L') + fmt(Math.abs(v), dec) };
   }
 
   function distDisp(m) {
-    return fmt(U.fromSI(S.units, 'distance', m), 0);
+    return fmt(U.fromSI('distance', m), 0);
   }
 
   // ------------------------------------------------------------------
@@ -3999,13 +4477,13 @@ var PBOnline = (function () {
   function rebuildTable() {
     var head = $('dope-head'), body = $('dope-body');
     head.innerHTML = ''; body.innerHTML = '';
-    var cu = U.correctionLabel(S.out.corr, S.units, S.out.click);
-    COLS = ['Distance (' + U.label(S.units, 'distance') + ')',
+    var cu = U.correctionLabel(S.out.corr, S.out.click);
+    COLS = ['Distance (' + U.label('distance') + ')',
             'Elev (' + cu + ')', 'Wind (' + cu + ')',
-            'Vel (' + U.label(S.units, 'velocity') + ')',
+            'Vel (' + U.label('velocity') + ')',
             'Mach', 'TOF (s)',
-            'Drop (' + U.label(S.units, 'drop') + ')',
-            'E (' + U.label(S.units, 'energy') + ')', ''];
+            'Drop (' + U.label('drop') + ')',
+            'E (' + U.label('energy') + ')', ''];
     for (var i = 0; i < COLS.length; i++) {
       var th = document.createElement('th');
       th.textContent = COLS[i];
@@ -4043,7 +4521,7 @@ var PBOnline = (function () {
       var v = parseNum(this.value);
       var i = parseInt(this.closest('tr').dataset.idx, 10);
       S.rows[i] = Number.isFinite(v)
-        ? Math.min(U.toSI(S.units, 'distance', v), MAX_DISTANCE) : null;
+        ? Math.min(U.toSI('distance', v), MAX_DISTANCE) : null;
       save(); scheduleSolve();
     });
     /* Enter moves to the next row, adding one if this is the last: the
@@ -4112,11 +4590,11 @@ var PBOnline = (function () {
       }
       cells[1].textContent = elevCall(row).text;
       cells[2].textContent = windCall(row).text;
-      cells[3].textContent = fmt(U.fromSI(S.units, 'velocity', row[7]), 0);
+      cells[3].textContent = fmt(U.fromSI('velocity', row[7]), 0);
       cells[4].textContent = fmt(row[8], 2);
       cells[5].textContent = fmt(row[9], 2);
-      cells[6].textContent = fmt(U.fromSI(S.units, 'drop', row[1] * 1e-2), 1);
-      cells[7].textContent = fmt(U.fromSI(S.units, 'energy', row[10]), 0);
+      cells[6].textContent = fmt(U.fromSI('drop', row[1] * 1e-2), 1);
+      cells[7].textContent = fmt(U.fromSI('energy', row[10]), 0);
     }
     markSelected();
   }
@@ -4176,9 +4654,9 @@ var PBOnline = (function () {
     var d = S.shotRange, res = displayed();
     var row = (res && Number.isFinite(d)) ? cardAt(res.card, d) : null;
     $('shot-title').textContent = Number.isFinite(d)
-      ? distDisp(d) + ' ' + U.label(S.units, 'distance') : '—';
+      ? distDisp(d) + ' ' + U.label('distance') : '—';
 
-    var cu = U.correctionLabel(S.out.corr, S.units, S.out.click);
+    var cu = U.correctionLabel(S.out.corr, S.out.click);
     if (!row) {
       $('shot-elev').textContent = '—';
       $('shot-wind').textContent = '—';
@@ -4201,25 +4679,67 @@ var PBOnline = (function () {
     $('shot-wind-unit').textContent = cu +
       (w.letter === 'L' ? ' left' : w.letter === 'R' ? ' right' : '');
 
+    /* [label, value, quantity]. A quantity makes the tile tappable:
+     * each tap steps that quantity to its next unit, everywhere. Mach and
+     * time of flight have nothing to step to, so they stay inert rather
+     * than pretending to be buttons. */
     var sec = [
-      ['Velocity', fmt(U.fromSI(S.units, 'velocity', row[7]), 0) + ' ' +
-        U.label(S.units, 'velocity')],
-      ['Mach', fmt(row[8], 2)],
-      ['Time of flight', fmt(row[9], 2) + ' s'],
-      ['Drop', fmt(U.fromSI(S.units, 'drop', row[1] * 1e-2), 1) + ' ' +
-        U.label(S.units, 'drop')],
-      ['Drift', fmt(U.fromSI(S.units, 'drop', row[4] * 1e-2), 1) + ' ' +
-        U.label(S.units, 'drop')],
-      ['Energy', fmt(U.fromSI(S.units, 'energy', row[10]), 0) + ' ' +
-        U.label(S.units, 'energy')]
+      ['Velocity', U.fromSI('velocity', row[7]), 'velocity', undefined, '', true],
+      ['Mach', row[8], null, 2],
+      ['Time of flight', row[9], null, 2, ' s'],
+      ['Drop', U.fromSI('drop', row[1] * 1e-2), 'drop'],
+      ['Drift', U.fromSI('drop', row[4] * 1e-2), 'drop'],
+      ['Energy', U.fromSI('energy', row[10]), 'energy']
     ];
+    var box = $('shot-secondary');
+    box.innerHTML = '';
+    sec.forEach(function (s) {
+      var d = document.createElement('div');
+      var q = s[2];
+      var dec = (s[3] !== undefined) ? s[3] : (q ? U.decimals(q) : 2);
+      var unit = q ? (' ' + U.label(q)) : (s[4] || '');
+      var k = document.createElement('span');
+      k.className = 'k'; k.textContent = s[0];
+      var v = document.createElement('span');
+      v.className = 'v'; v.textContent = fmt(s[1], dec) + unit;
+      d.appendChild(k); d.appendChild(v);
+      if (q) {
+        d.className = 'tappable';
+        d.setAttribute('role', 'button');
+        d.setAttribute('tabindex', '0');
+        d.title = 'Tap to change the unit';
+        var wantsMenu = s[5];
+        d.addEventListener('click', function () {
+          if (!wantsMenu) {
+            U.setOverride(q, U.nextUnit(q));
+            S.unitOverrides = U.getOverrides();
+            applyUnitChange();
+            renderShot();
+            return;
+          }
+          /* Velocity is the one box whose number a shooter also wants to
+           * change, so it gets the full menu rather than a cycle. The
+           * editable value is the MUZZLE velocity -- the figure in the
+           * box is the remaining velocity at this distance, which is
+           * computed, not an input -- and the label says so. */
+          PBUnitMenu.open(this, q, function (unit) {
+            U.setOverride(q, unit);
+            S.unitOverrides = U.getOverrides();
+            applyUnitChange();
+            renderShot();
+          }, { extra: [{ label: 'Edit muzzle velocity…', action: editMV }] });
+        });
+        d.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); this.click(); }
+        });
+      }
+      box.appendChild(d);
+    });
     if (row[8] < 1.2 && row[8] > 0.8) {
-      sec.push(['Note', 'transonic']);
+      var tn = document.createElement('div');
+      tn.innerHTML = '<span class="k">Note</span><span class="v">transonic</span>';
+      box.appendChild(tn);
     }
-    $('shot-secondary').innerHTML = sec.map(function (kv) {
-      return '<div><span class="k">' + kv[0] + '</span>' +
-             '<span class="v">' + kv[1] + '</span></div>';
-    }).join('');
 
     var hold = holdResidual(d);
     PBReticle.draw($('shot-ret'), currentReticle(),
@@ -4240,12 +4760,12 @@ var PBOnline = (function () {
     var parts = [
       '<b>' + escapeHtml(b.name) + '</b>',
       b.dragModel + ' BC ' + b.bc.toFixed(3),
-      'zero ' + distDisp(S.rifle.zeroRange) + ' ' + U.label(S.units, 'distance'),
+      'zero ' + distDisp(S.rifle.zeroRange) + ' ' + U.label('distance'),
       'scope angle ' + moa.toFixed(2) + ' MOA'
     ];
     if (hasWind()) {
-      parts.push('wind ' + fmt(U.fromSI(S.units, 'wind', S.wind.speed), 1) +
-                 ' ' + U.label(S.units, 'wind') + ' @ ' +
+      parts.push('wind ' + fmt(U.fromSI('wind', S.wind.speed), 1) +
+                 ' ' + U.label('wind') + ' @ ' +
                  U.degToClock(S.wind.dir) + " o'clock");
     }
     n.innerHTML = parts.join(' &middot; ');
@@ -4268,7 +4788,7 @@ var PBOnline = (function () {
     el.hidden = false;
     el.textContent = over.length + ' distance' + (over.length > 1 ? 's are' : ' is') +
       ' past where the bullet gets with this setup (it reaches about ' +
-      distDisp(reach) + ' ' + U.label(S.units, 'distance') +
+      distDisp(reach) + ' ' + U.label('distance') +
       '). Those rows read “out of range” rather than a made-up number.';
   }
 
@@ -4300,15 +4820,13 @@ var PBOnline = (function () {
       var d = Math.max.apply(null, dd);
       var a = cardAt(resPhys.card, d), b = cardAt(resNoZwx.card, d);
       if (a && b) {
-        var withC = -U.correction(a, 'drop', S.out.corr, S.units,
-                                  S.out.click, S.out.turret);
-        var without = -U.correction(b, 'drop', S.out.corr, S.units,
-                                    S.out.click, S.out.turret);
+        var withC = -U.correction(a, 'drop', S.out.corr, S.out.click, S.out.turret);
+        var without = -U.correction(b, 'drop', S.out.corr, S.out.click, S.out.turret);
         var delta = withC - without;
-        var cu = U.correctionLabel(S.out.corr, S.units, S.out.click);
+        var cu = U.correctionLabel(S.out.corr, S.out.click);
         txt += ' Worth ' + (delta >= 0 ? '+' : '') +
-          fmt(delta, U.decimals(S.out.corr) + 1) + ' ' + cu + ' at ' +
-          distDisp(d) + ' ' + U.label(S.units, 'distance') +
+          fmt(delta, U.correctionDecimals(S.out.corr) + 1) + ' ' + cu + ' at ' +
+          distDisp(d) + ' ' + U.label('distance') +
           ' against ignoring it.';
       }
     }
@@ -4342,7 +4860,7 @@ var PBOnline = (function () {
     var w = svg.clientWidth;
     if (!w) return;                     /* hidden screen: nothing to size to */
     PBChart.draw(svg, res.card, {
-      sys: S.units, width: w, height: 260, marks: distances()
+      width: w, height: 260, marks: distances()
     });
   }
 
@@ -4413,7 +4931,7 @@ var PBOnline = (function () {
     if (!n) return '';
     return 'The ' + n + ' blue marks are the table: where each distance ' +
       'falls if you dial nothing beyond your ' +
-      distDisp(S.rifle.zeroRange) + ' ' + U.label(S.units, 'distance') +
+      distDisp(S.rifle.zeroRange) + ' ' + U.label('distance') +
       ' zero. The green one is the row you have selected.';
   }
 
@@ -4434,7 +4952,12 @@ var PBOnline = (function () {
   function renderRose() {
     var svg = $('wind-rose');
     var size = svg.clientWidth || 300;
-    PBWindRose.draw(svg, clamp('wind.dir', S.wind.dir), { size: size });
+    var deg = clamp('wind.dir', S.wind.dir);
+    PBWindRose.draw(svg, deg, { size: size });
+    /* Outside the dial: at half the bearings the needle used to run
+     * straight through the figures. */
+    $('rose-deg').textContent = Math.round(deg) + '°';
+    $('rose-clock').textContent = U.degToClock(deg) + " o'clock";
   }
 
   /* Each tile carries its own state, so the setup is readable without
@@ -4448,23 +4971,23 @@ var PBOnline = (function () {
     $('nav-equipment').textContent =
       (b.name.length > 24 ? b.name.slice(0, 23) + '…' : b.name) + '\n' +
       b.dragModel + ' ' + b.bc.toFixed(3) + ' · ' +
-      fmt(U.fromSI(S.units, 'velocity', S.rifle.mv), 0) + ' ' +
-      U.label(S.units, 'velocity') + ' · zero ' +
+      fmt(U.fromSI('velocity', S.rifle.mv), 0) + ' ' +
+      U.label('velocity') + ' · zero ' +
       distDisp(S.rifle.zeroRange) + (sg ? ' · Sg ' + sg.sg.toFixed(2) : '');
     $('nav-environment').textContent =
-      fmt(U.fromSI(S.units, 'temp', S.atmo.temp), 0) + U.label(S.units, 'temp') +
-      ' · ' + fmt(U.fromSI(S.units, 'pressure', S.atmo.pressure), 0) + ' ' +
-      U.label(S.units, 'pressure') + '\n' +
+      fmt(U.fromSI('temp', S.atmo.temp), 0) + U.label('temp') +
+      ' · ' + fmt(U.fromSI('pressure', S.atmo.pressure), 0) + ' ' +
+      U.label('pressure') + '\n' +
       (hasWind()
-        ? fmt(U.fromSI(S.units, 'wind', S.wind.speed), 1) + ' ' +
-          U.label(S.units, 'wind') + ' @ ' + U.degToClock(S.wind.dir) +
+        ? fmt(U.fromSI('wind', S.wind.speed), 1) + ' ' +
+          U.label('wind') + ' @ ' + U.degToClock(S.wind.dir) +
           " o'clock"
         : 'calm') +
       (S.geom.los ? ' · ' + fmt(S.geom.los, 0) + '° angle' : '');
     /* One line, not two: this tile is a wide row at the foot of the
      * screen rather than a square at the top. */
     $('nav-output').textContent =
-      U.correctionLabel(S.out.corr, S.units, S.out.click) + ' · ' +
+      U.correctionLabel(S.out.corr, S.out.click) + ' · ' +
       S.rows.length + ' distance' + (S.rows.length === 1 ? '' : 's');
   }
 
@@ -4473,9 +4996,9 @@ var PBOnline = (function () {
   function renderReadout() {
     var d = S.shotRange, res = displayed();
     var row = (res && Number.isFinite(d)) ? cardAt(res.card, d) : null;
-    var cu = U.correctionLabel(S.out.corr, S.units, S.out.click);
+    var cu = U.correctionLabel(S.out.corr, S.out.click);
     $('ro-range').textContent = Number.isFinite(d)
-      ? distDisp(d) + ' ' + U.label(S.units, 'distance') : '—';
+      ? distDisp(d) + ' ' + U.label('distance') : '—';
     if (!row) {
       $('ro-elev').textContent = '—';
       $('ro-wind').textContent = '—';
@@ -4559,7 +5082,7 @@ var PBOnline = (function () {
     var i, b;
     for (i = 0; i < BINDINGS.length; i++) {
       b = BINDINGS[i];
-      $(b[0]).value = U.fromSI(S.units, b[3], S[b[1]][b[2]]).toFixed(b[4]);
+      $(b[0]).value = U.fromSI(b[3], S[b[1]][b[2]]).toFixed(U.decimals(b[3]));
     }
     for (i = 0; i < PLAIN.length; i++) {
       b = PLAIN[i];
@@ -4584,17 +5107,44 @@ var PBOnline = (function () {
 
     var us = document.querySelectorAll('.sb-app u[data-u]');
     for (i = 0; i < us.length; i++) {
-      us[i].textContent = '(' + U.label(S.units, us[i].dataset.u) + ')';
+      var q = us[i].dataset.u;
+      us[i].textContent = '(' + U.label(q) + ')';
+      us[i].classList.toggle('overridden', U.isOverridden(q));
+      us[i].setAttribute('role', 'button');
+      us[i].setAttribute('tabindex', '0');
+      us[i].title = 'Change the unit for ' + q.replace('_', ' ');
     }
     var seg = document.querySelectorAll('#unit-seg button');
     for (i = 0; i < seg.length; i++) {
       seg[i].classList.toggle('on', seg[i].dataset.units === S.units);
     }
+    /* Neither lights up on clicks or linear drop: the toggle is a
+     * shortcut to the two angular units, not a claim about the rest. */
+    var cseg = document.querySelectorAll('#corr-seg button');
+    for (i = 0; i < cseg.length; i++) {
+      cseg[i].classList.toggle('on', cseg[i].dataset.corr === S.out.corr);
+    }
     $('bullet-current').textContent = S.bullet.name +
       (S.bullet.vendor && S.bullet.vendor !== 'built-in'
         ? ' — ' + S.bullet.vendor : ' — built-in reference');
     renderProvenance();
+    renderBulletPic();
     renderQuickFill();
+  }
+
+  /* The bullet, drawn from the two dimensions that were typed. */
+  function renderBulletPic() {
+    var b = S.bullet;
+    var dq = U.unitOf('calibre'), lq = U.unitOf('length');
+    PBBullet.draw($('bullet-svg'), {
+      d_mm: b.d * 1000, L_mm: b.L * 1000,
+      dText: U.fromSI('calibre', b.d).toFixed(U.decimals('calibre')) + ' ' + dq,
+      LText: U.fromSI('length', b.L).toFixed(U.decimals('length')) + ' ' + lq
+    });
+    var ratio = b.L / b.d;
+    $('bullet-caption').textContent = b.name + ' · ' +
+      ratio.toFixed(2) + ' calibres long · ' +
+      (b.mass / U.K.GRAIN_KG).toFixed(0) + ' gr';
   }
 
   function renderProvenance() {
@@ -4622,6 +5172,39 @@ var PBOnline = (function () {
 
   var GEOMETRY_KEYS = { 'in-mass': 1, 'in-cal': 1, 'in-len': 1 };
 
+  /* A unit change touches every surface that prints a number, but no
+   * physics: state is SI and untouched, so there is nothing to re-solve. */
+  function applyUnitChange() {
+    syncUnits();
+    save();
+    refreshInputs();
+    rebuildTable();
+    render();
+  }
+
+  /* The blue unit chips. Tapping one offers the units PBUnits knows for
+   * that quantity; the choice holds everywhere the quantity appears. */
+  function bindUnitChips() {
+    document.querySelector('.sb-app').addEventListener('click', function (ev) {
+      var chip = ev.target.closest ? ev.target.closest('u[data-u]') : null;
+      if (!chip) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      PBUnitMenu.open(chip, chip.dataset.u, function (unit) {
+        U.setOverride(chip.dataset.u, unit);
+        S.unitOverrides = U.getOverrides();
+        applyUnitChange();
+      });
+    });
+    document.querySelector('.sb-app').addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Enter' && ev.key !== ' ') return;
+      var chip = ev.target.closest ? ev.target.closest('u[data-u]') : null;
+      if (!chip) return;
+      ev.preventDefault();
+      chip.click();
+    });
+  }
+
   function bindInputs() {
     var i;
     for (i = 0; i < BINDINGS.length; i++) {
@@ -4630,7 +5213,7 @@ var PBOnline = (function () {
         el.addEventListener('input', function () {
           var v = parseNum(this.value);
           if (!Number.isFinite(v)) return;
-          S[b[1]][b[2]] = U.toSI(S.units, b[3], v);
+          S[b[1]][b[2]] = U.toSI(b[3], v);
           if (GEOMETRY_KEYS[b[0]]) onBulletGeometryChanged();
           save(); scheduleSolve();
         });
@@ -4641,7 +5224,7 @@ var PBOnline = (function () {
         el.addEventListener('change', function () {
           var typed = parseNum(this.value);
           if (Number.isFinite(typed)) {
-            S[b[1]][b[2]] = U.toSI(S.units, b[3], typed);
+            S[b[1]][b[2]] = U.toSI(b[3], typed);
           }
           S[b[1]][b[2]] = clamp(b[1] + '.' + b[2], S[b[1]][b[2]]);
           if (GEOMETRY_KEYS[b[0]]) onBulletGeometryChanged();
@@ -4717,10 +5300,20 @@ var PBOnline = (function () {
       save(); refreshInputs(); scheduleSolve(0);
     });
 
+    var corrBtns = document.querySelectorAll('#corr-seg button');
+    for (i = 0; i < corrBtns.length; i++) {
+      corrBtns[i].addEventListener('click', function () {
+        S.out.corr = this.dataset.corr;
+        save(); refreshInputs(); rebuildTable(); render();
+      });
+    }
+
     var segBtns = document.querySelectorAll('#unit-seg button');
     for (i = 0; i < segBtns.length; i++) {
       segBtns[i].addEventListener('click', function () {
         S.units = this.dataset.units;
+        S.unitOverrides = {};        /* a system is a clean slate */
+        syncUnits();
         save(); refreshInputs(); rebuildTable(); render();
       });
     }
@@ -4742,7 +5335,7 @@ var PBOnline = (function () {
       var p = this.value.split(',').map(Number);
       var rows = [];
       for (var v = p[0]; v <= p[1] + 1e-9; v += p[2]) {
-        rows.push(U.toSI(S.units, 'distance', v));
+        rows.push(U.toSI('distance', v));
       }
       S.rows = rows;
       this.value = '';
@@ -4804,6 +5397,17 @@ var PBOnline = (function () {
         if ($('screen-shot').classList.contains('on')) renderShot();
       }, 120);
     });
+  }
+
+  function editMV() {
+    var unit = U.label('velocity');
+    var cur = U.fromSI('velocity', S.rifle.mv).toFixed(U.decimals('velocity'));
+    var typed = window.prompt('Muzzle velocity (' + unit + ')', cur);
+    if (typed === null) return;
+    var v = parseNum(typed);
+    if (!Number.isFinite(v)) return;
+    S.rifle.mv = clamp('rifle.mv', U.toSI('velocity', v));
+    save(); refreshInputs(); scheduleSolve(0);
   }
 
   // ------------------------------------------------------------------
@@ -5435,10 +6039,10 @@ var PBOnline = (function () {
    * yards user is not handed a list of metres. */
   function renderQuickFill() {
     var sel = $('quick-fill');
-    var series = (S.units === 'imperial')
+    var series = (U.unitOf('distance') !== 'm')
       ? [[100, 1000, 100], [100, 600, 50], [200, 1400, 200], [25, 300, 25]]
       : [[100, 1000, 100], [100, 600, 50], [200, 2000, 200], [25, 300, 25]];
-    var lab = U.label(S.units, 'distance');
+    var lab = U.label('distance');
     sel.innerHTML = '<option value="">Fill series…</option>';
     series.forEach(function (p) {
       var o = document.createElement('option');
@@ -5451,7 +6055,7 @@ var PBOnline = (function () {
   function exportCsv() {
     var res = displayed();
     if (!res || !resPhys) return;
-    var cu = U.correctionLabel(S.out.corr, S.units, S.out.click);
+    var cu = U.correctionLabel(S.out.corr, S.out.click);
     var b = S.bullet;
     var lines = [
       '# Superior Ballistics — Field',
@@ -5478,27 +6082,27 @@ var PBOnline = (function () {
       '# solved scope angle: ' + (resPhys.scope_angle * 60).toFixed(4) + ' MOA',
       '# each row interpolated linearly from a ' +
         buildConfig(true).diag.card_step_m + ' m card grid',
-      ['distance_' + U.label(S.units, 'distance'), 'elev_' + cu,
-       'wind_' + cu, 'drop_' + U.label(S.units, 'drop'),
-       'drift_' + U.label(S.units, 'drop'),
-       'vel_' + U.label(S.units, 'velocity'),
-       'mach', 'tof_s', 'energy_' + U.label(S.units, 'energy')].join(',')
+      ['distance_' + U.label('distance'), 'elev_' + cu,
+       'wind_' + cu, 'drop_' + U.label('drop'),
+       'drift_' + U.label('drop'),
+       'vel_' + U.label('velocity'),
+       'mach', 'tof_s', 'energy_' + U.label('energy')].join(',')
     ];
     distances().forEach(function (d) {
       var row = cardAt(res.card, d);
       if (!row) {
-        lines.push(U.fromSI(S.units, 'distance', d).toFixed(1) +
+        lines.push(U.fromSI('distance', d).toFixed(1) +
                    ',out of range,,,,,,,');
         return;
       }
       lines.push([
-        U.fromSI(S.units, 'distance', d).toFixed(1),
+        U.fromSI('distance', d).toFixed(1),
         elevCall(row).text, windCall(row).text,
-        U.fromSI(S.units, 'drop', row[1] * 1e-2).toFixed(2),
-        U.fromSI(S.units, 'drop', row[4] * 1e-2).toFixed(2),
-        U.fromSI(S.units, 'velocity', row[7]).toFixed(1),
+        U.fromSI('drop', row[1] * 1e-2).toFixed(2),
+        U.fromSI('drop', row[4] * 1e-2).toFixed(2),
+        U.fromSI('velocity', row[7]).toFixed(1),
         row[8].toFixed(3), row[9].toFixed(4),
-        U.fromSI(S.units, 'energy', row[10]).toFixed(1)
+        U.fromSI('energy', row[10]).toFixed(1)
       ].join(','));
     });
     var blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
@@ -5515,6 +6119,7 @@ var PBOnline = (function () {
   function init() {
     R.setAssets(PB_DRAG_STD, PB_COEF_M852);
     load();
+    syncUnits();
     if (!S.reticleId) S.reticleId = defaultReticleId();
     /* Older saved sessions may carry McCoy or Tabulated; those paths are
      * still in the engine but no longer offered, so fold them onto G7. */
@@ -5525,6 +6130,7 @@ var PBOnline = (function () {
     bindInputs();
     bindSearch();
     bindRifleSearch();
+    bindUnitChips();
     refreshInputs();
     renderRifleLibrary();
     rebuildTable();
