@@ -643,6 +643,34 @@
 .sb-app .sb-unitmenu button.extra:hover,
 .sb-app .sb-unitmenu button.extra:focus { color: #fff; }
 
+/* The readout distance and the shot title are inputs now: the distance
+   is changed from wherever you are looking, not only from the table. */
+.sb-app .readout-range input.v {
+  font: 700 26px var(--sb-mono); color: var(--sb-fg);
+  font-variant-numeric: tabular-nums;
+  width: 6ch; padding: 2px 6px; text-align: left;
+  background: transparent; border: 1px solid transparent; border-radius: 6px;
+}
+.sb-app .readout-range input.v:hover { border-color: var(--sb-line); }
+.sb-app .readout-range input.v:focus {
+  background: var(--sb-bg-3); border-color: var(--sb-accent);
+}
+.sb-app h2.shot-title-wrap {
+  display: flex; align-items: baseline; justify-content: center; gap: 6px;
+}
+.sb-app h2.shot-title-wrap input {
+  font: 600 20px var(--sb-mono); color: var(--sb-fg);
+  width: 6ch; padding: 2px 6px; text-align: right;
+  background: transparent; border: 1px solid transparent; border-radius: 6px;
+}
+.sb-app h2.shot-title-wrap input:hover { border-color: var(--sb-line); }
+.sb-app h2.shot-title-wrap input:focus {
+  background: var(--sb-bg-3); border-color: var(--sb-accent);
+}
+.sb-app h2.shot-title-wrap .unit {
+  font: 13px var(--sb-mono); color: var(--sb-fg-dim);
+}
+
 </style>
 <style>
 /* STANDALONE PAGE ONLY. style.css is scoped entirely under .sb-app so it
@@ -698,17 +726,18 @@ body { background: #101317; }
        so it sits above the table rather than inside a cell. -->
   <div class="readout" id="readout" aria-live="polite">
     <div class="readout-range">
-      <span class="k">Distance</span>
-      <span class="v" id="ro-range">&mdash;</span>
+      <label class="k" for="ro-range">Distance <u data-u="distance"></u></label>
+      <input type="text" inputmode="decimal" id="ro-range"
+             class="v" aria-label="Distance for the solution shown">
     </div>
     <div class="readout-dials">
       <div class="dial">
-        <span class="dial-label">Elevation</span>
+        <span class="dial-label">Drop</span>
         <span class="dial-value" id="ro-elev">&mdash;</span>
         <span class="dial-unit" id="ro-elev-unit">&nbsp;</span>
       </div>
       <div class="dial">
-        <span class="dial-label">Windage</span>
+        <span class="dial-label">Drift</span>
         <span class="dial-value" id="ro-wind">&mdash;</span>
         <span class="dial-unit" id="ro-wind-unit">&nbsp;</span>
       </div>
@@ -784,19 +813,23 @@ body { background: #101317; }
 <section class="screen" id="screen-shot" aria-label="Shot detail">
   <div class="page-head">
     <button type="button" class="back" data-goto="screen-main">&larr; Back</button>
-    <h2 id="shot-title">&nbsp;</h2>
+    <h2 class="shot-title-wrap">
+      <input type="text" inputmode="decimal" id="shot-title"
+             aria-label="Distance for this solution">
+      <span class="unit" id="shot-title-unit"></span>
+    </h2>
     <span class="head-spacer"></span>
   </div>
   <div class="shot-wrap">
     <div class="shot-left">
       <div class="shot-dials">
         <div class="dial">
-          <span class="dial-label">Elevation</span>
+          <span class="dial-label">Drop</span>
           <span class="dial-value" id="shot-elev">&mdash;</span>
           <span class="dial-unit" id="shot-elev-unit">&nbsp;</span>
         </div>
         <div class="dial">
-          <span class="dial-label">Windage</span>
+          <span class="dial-label">Drift</span>
           <span class="dial-value" id="shot-wind">&mdash;</span>
           <span class="dial-unit" id="shot-wind-unit">&nbsp;</span>
         </div>
@@ -1039,7 +1072,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.1.0 · 2026-08-14 02:22 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.1.0 · 2026-08-14 20:09 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -3421,8 +3454,18 @@ var PBReticle = (function () {
 
     svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size);
 
-    function X(v) { return cx + v * u; }
-    function Y(v) { return cy + v * u; }
+    /* Panning. opts.centerMil moves the view so that point sits in the
+     * middle of the ocular -- selecting 900 m in the table should show
+     * you the 900 m mark, and at long range that mark is well outside an
+     * un-panned view, which is why selecting a far row used to change
+     * nothing you could see. Everything moves together, crosshair
+     * included, so the picture stays truthful: when the pan is large the
+     * crosshair genuinely leaves the field. */
+    var uScale = (spec.unit === 'MOA') ? 3.438 : 1;
+    var offX = opts.centerMil ? opts.centerMil.x * uScale : 0;
+    var offY = opts.centerMil ? opts.centerMil.y * uScale : 0;
+    function X(v) { return cx + (v - offX) * u; }
+    function Y(v) { return cy + (v - offY) * u; }
 
     /* Clip to the ocular circle: posts and stadia run to the edge of the
      * pattern by definition, and without this they spill outside the
@@ -3458,22 +3501,25 @@ var PBReticle = (function () {
         var gap = e.gap || 0.0, span = e.span || 0.0;
         var x0 = span ? X(-span) : 0, x1 = span ? X(span) : size;
         var y0 = span ? Y(-span) : 0, y1 = span ? Y(span) : size;
+        var ax0 = X(0), ay0 = Y(0);
         if (gap <= 0) {
-          line(x0, cy, x1, cy, wpx); line(cx, y0, cx, y1, wpx);
+          line(x0, ay0, x1, ay0, wpx); line(ax0, y0, ax0, y1, wpx);
         } else {
-          line(x0, cy, X(-gap), cy, wpx); line(X(gap), cy, x1, cy, wpx);
-          line(cx, y0, cx, Y(-gap), wpx); line(cx, Y(gap), cx, y1, wpx);
+          line(x0, ay0, X(-gap), ay0, wpx); line(X(gap), ay0, x1, ay0, wpx);
+          line(ax0, y0, ax0, Y(-gap), wpx); line(ax0, Y(gap), ax0, y1, wpx);
         }
 
       } else if (kind === 'post') {
         var from = (e.from !== undefined) ? e.from : 4.0;
         var ax = e.axis || 'both';
+        var px0 = X(0), py0 = Y(0);
         if (ax === 'x' || ax === 'both') {
-          line(0, cy, X(-from), cy, wpx); line(X(from), cy, size, cy, wpx);
+          line(0, py0, X(-from), py0, wpx);
+          line(X(from), py0, size, py0, wpx);
         }
         if (ax === 'y' || ax === 'both') {
-          line(cx, Y(from), cx, size, wpx);
-          if (e.top !== false) line(cx, 0, cx, Y(-from), wpx);
+          line(px0, Y(from), px0, size, wpx);
+          if (e.top !== false) line(px0, 0, px0, Y(-from), wpx);
         }
 
       } else if (kind === 'hashes') {
@@ -3491,13 +3537,13 @@ var PBReticle = (function () {
           for (var si = 0; si < signs.length; si++) {
             var vv = v * signs[si];
             if (e.axis === 'x' || !e.axis || e.axis === 'both') {
-              var hy0 = (side === 'down') ? cy : Y(-ln);
-              var hy1 = (side === 'up') ? cy : Y(ln);
+              var hy0 = (side === 'down') ? Y(0) : Y(-ln);
+              var hy1 = (side === 'up') ? Y(0) : Y(ln);
               line(X(vv), hy0, X(vv), hy1, wpx);
             }
             if (e.axis === 'y' || !e.axis || e.axis === 'both') {
-              var hx0 = (side === 'right') ? cx : X(-ln);
-              var hx1 = (side === 'left') ? cx : X(ln);
+              var hx0 = (side === 'right') ? X(0) : X(-ln);
+              var hx1 = (side === 'left') ? X(0) : X(ln);
               line(hx0, Y(vv), hx1, Y(vv), wpx);
             }
           }
@@ -4209,6 +4255,7 @@ var PBOnline = (function () {
       }
       S = base;
     } catch (e) { S = defaults(); }
+    sortRows();
     syncUnits();
   }
 
@@ -4265,6 +4312,20 @@ var PBOnline = (function () {
       if (Number.isFinite(d) && d > 0) out.push(Math.min(d, MAX_DISTANCE));
     }
     return out;
+  }
+
+  /* The worksheet reads as a card, so it is kept in range order: type
+   * 550 under 500 and 600 and it lands between them. Sorting happens on
+   * COMMIT, never on keystroke -- reordering under a half-typed "5" on
+   * its way to "550" would move the field out from under the cursor. */
+  function sortRows() {
+    S.rows.sort(function (a, b) {
+      var av = Number.isFinite(a) && a > 0, bv = Number.isFinite(b) && b > 0;
+      if (!av && !bv) return 0;
+      if (!av) return 1;              /* blank rows sink to the bottom */
+      if (!bv) return -1;
+      return a - b;
+    });
   }
 
   function maxDistance() {
@@ -4478,11 +4539,15 @@ var PBOnline = (function () {
     var head = $('dope-head'), body = $('dope-body');
     head.innerHTML = ''; body.innerHTML = '';
     var cu = U.correctionLabel(S.out.corr, S.out.click);
+    /* Drop and drift, not elevation and windage: the two names now match
+     * the shot detail and the CSV. The old separate linear-drop column
+     * is gone -- it was the same quantity as Drop in another unit, and
+     * two columns headed "Drop" would have been worse than losing one.
+     * The linear values are still in the shot detail and the export. */
     COLS = ['Distance (' + U.label('distance') + ')',
-            'Elev (' + cu + ')', 'Wind (' + cu + ')',
+            'Drop (' + cu + ')', 'Drift (' + cu + ')',
             'Vel (' + U.label('velocity') + ')',
             'Mach', 'TOF (s)',
-            'Drop (' + U.label('drop') + ')',
             'E (' + U.label('energy') + ')', ''];
     for (var i = 0; i < COLS.length; i++) {
       var th = document.createElement('th');
@@ -4524,21 +4589,34 @@ var PBOnline = (function () {
         ? Math.min(U.toSI('distance', v), MAX_DISTANCE) : null;
       save(); scheduleSolve();
     });
-    /* Enter moves to the next row, adding one if this is the last: the
-     * whole point of the worksheet is typing a column of distances. */
+    /* Commit: sort, then rebuild. The row this input belonged to may now
+     * be somewhere else in the table, so focus is restored by VALUE. */
+    inp.addEventListener('change', function () {
+      var i = parseInt(this.closest('tr').dataset.idx, 10);
+      var mine = S.rows[i];
+      sortRows(); save(); rebuildTable(); fillResults();
+      focusRowFor(mine);
+    });
+    /* Enter moves to the next row in range order, adding one at the end
+     * if there is nothing after: the whole point of the worksheet is
+     * typing a column of distances. */
     inp.addEventListener('keydown', function (ev) {
       if (ev.key !== 'Enter') return;
       ev.preventDefault();
       var i = parseInt(this.closest('tr').dataset.idx, 10);
-      if (i === S.rows.length - 1) { addRow(); }
-      var next = $('dope-body').rows[i + 1];
+      var mine = S.rows[i];
+      sortRows(); save(); rebuildTable(); fillResults();
+      var at = S.rows.indexOf(mine);
+      if (at === S.rows.length - 1) { addRow(); }
+      var next = $('dope-body').rows[at + 1];
       var box = next && next.querySelector('input.dist');
       if (box) { box.focus(); box.select(); }
+      scheduleSolve(0);
     });
     tdD.appendChild(inp);
     tr.appendChild(tdD);
 
-    for (var c = 1; c <= 7; c++) {
+    for (var c = 1; c <= 6; c++) {
       var td = document.createElement('td');
       td.className = (c <= 2) ? 'solution' : 'sub';
       td.textContent = '—';
@@ -4585,7 +4663,7 @@ var PBOnline = (function () {
 
       if (!row) {
         var msg = (!Number.isFinite(d) || d <= 0) ? '—' : 'out of range';
-        for (var c = 1; c <= 7; c++) cells[c].textContent = c === 1 ? msg : '—';
+        for (var c = 1; c <= 6; c++) cells[c].textContent = c === 1 ? msg : '—';
         continue;
       }
       cells[1].textContent = elevCall(row).text;
@@ -4593,10 +4671,17 @@ var PBOnline = (function () {
       cells[3].textContent = fmt(U.fromSI('velocity', row[7]), 0);
       cells[4].textContent = fmt(row[8], 2);
       cells[5].textContent = fmt(row[9], 2);
-      cells[6].textContent = fmt(U.fromSI('drop', row[1] * 1e-2), 1);
-      cells[7].textContent = fmt(U.fromSI('energy', row[10]), 0);
+      cells[6].textContent = fmt(U.fromSI('energy', row[10]), 0);
     }
     markSelected();
+  }
+
+  function focusRowFor(value) {
+    var at = S.rows.indexOf(value);
+    if (at < 0) return;
+    var row = $('dope-body').rows[at];
+    var box = row && row.querySelector('input.dist');
+    if (box) { box.focus(); box.select(); }
   }
 
   function addRow(metres) {
@@ -4612,6 +4697,7 @@ var PBOnline = (function () {
       d = Math.min(d, MAX_DISTANCE);
     }
     S.rows.push(d);
+    sortRows();
     save(); rebuildTable(); fillResults(); scheduleSolve(0);
   }
 
@@ -4653,8 +4739,12 @@ var PBOnline = (function () {
   function renderShot() {
     var d = S.shotRange, res = displayed();
     var row = (res && Number.isFinite(d)) ? cardAt(res.card, d) : null;
-    $('shot-title').textContent = Number.isFinite(d)
-      ? distDisp(d) + ' ' + U.label('distance') : '—';
+    /* Do not fight the keyboard: while this field has focus the shooter
+     * is mid-edit and the value is theirs, not ours to rewrite. */
+    if (document.activeElement !== $('shot-title')) {
+      $('shot-title').value = Number.isFinite(d) ? distDisp(d) : '';
+    }
+    $('shot-title-unit').textContent = U.label('distance');
 
     var cu = U.correctionLabel(S.out.corr, S.out.click);
     if (!row) {
@@ -4687,8 +4777,8 @@ var PBOnline = (function () {
       ['Velocity', U.fromSI('velocity', row[7]), 'velocity', undefined, '', true],
       ['Mach', row[8], null, 2],
       ['Time of flight', row[9], null, 2, ' s'],
-      ['Drop', U.fromSI('drop', row[1] * 1e-2), 'drop'],
-      ['Drift', U.fromSI('drop', row[4] * 1e-2), 'drop'],
+      ['Drop (linear)', U.fromSI('drop', row[1] * 1e-2), 'drop'],
+      ['Drift (linear)', U.fromSI('drop', row[4] * 1e-2), 'drop'],
       ['Energy', U.fromSI('energy', row[10]), 'energy']
     ];
     var box = $('shot-secondary');
@@ -4744,9 +4834,10 @@ var PBOnline = (function () {
     var hold = holdResidual(d);
     PBReticle.draw($('shot-ret'), currentReticle(),
                    { size: $('shot-ret').clientWidth || 320,
-                     zoomMil: S.zoom, hold: hold, ladder: holdLadder() });
+                     zoomMil: S.zoom, hold: hold, ladder: holdLadder(),
+                     centerMil: viewCenter(d) });
     $('shot-hold-note').textContent = holdNoteFor(hold);
-    $('shot-ladder-note').textContent = ladderNote();
+    $('shot-ladder-note').textContent = ladderNote() + panNote(d);
   }
 
   // ------------------------------------------------------------------
@@ -4935,6 +5026,28 @@ var PBOnline = (function () {
       ' zero. The green one is the row you have selected.';
   }
 
+  /* Centre the sight picture on the selected distance's hold, so that
+   * choosing a row actually shows you something: at 900 m the mark is
+   * far outside an un-panned view and used to be culled at the edge. */
+  function viewCenter(d) {
+    if (!resPhys || !Number.isFinite(d)) return null;
+    var row = cardAt(resPhys.card, d);
+    if (!row) return null;
+    return { x: -row[5], y: -row[2] };
+  }
+
+  /* A panned view puts something other than the crosshair in the
+   * middle, and a shooter glancing at it could read the centre AS the
+   * crosshair. Say how far it moved. */
+  function panNote(d) {
+    var c = viewCenter(d);
+    if (!c) return '';
+    if (Math.hypot(c.x, c.y) < 0.05) return '';
+    return ' View centred on the ' + distDisp(d) + ' ' +
+      U.label('distance') + ' hold, ' + Math.abs(c.y).toFixed(2) +
+      ' MIL ' + (c.y > 0 ? 'below' : 'above') + ' the crosshair.';
+  }
+
   function renderReticle() {
     var svg = $('reticle');
     var size = svg.clientWidth;
@@ -4943,10 +5056,11 @@ var PBOnline = (function () {
                                          : (distances().slice(-1)[0]);
     var hold = holdResidual(d);
     PBReticle.draw(svg, currentReticle(), {
-      size: size, zoomMil: S.zoom, hold: hold, ladder: holdLadder()
+      size: size, zoomMil: S.zoom, hold: hold, ladder: holdLadder(),
+      centerMil: viewCenter(d)
     });
     $('hold-note').textContent = holdNoteFor(hold);
-    $('ladder-note').textContent = ladderNote();
+    $('ladder-note').textContent = ladderNote() + panNote(d);
   }
 
   function renderRose() {
@@ -4997,8 +5111,9 @@ var PBOnline = (function () {
     var d = S.shotRange, res = displayed();
     var row = (res && Number.isFinite(d)) ? cardAt(res.card, d) : null;
     var cu = U.correctionLabel(S.out.corr, S.out.click);
-    $('ro-range').textContent = Number.isFinite(d)
-      ? distDisp(d) + ' ' + U.label('distance') : '—';
+    if (document.activeElement !== $('ro-range')) {
+      $('ro-range').value = Number.isFinite(d) ? distDisp(d) : '';
+    }
     if (!row) {
       $('ro-elev').textContent = '—';
       $('ro-wind').textContent = '—';
@@ -5323,6 +5438,37 @@ var PBOnline = (function () {
       save(); render();
     });
 
+    /* Change the distance from the readout or from the shot detail, not
+     * only from the table. A distance typed here that is not on the
+     * worksheet gets ADDED to it, so the two can never disagree about
+     * what is being shot -- showing a solution for a range that is not
+     * on the card would be the worst of both. */
+    function bindDistanceField(id) {
+      var el = $(id);
+      el.addEventListener('input', function () {
+        var v = parseNum(this.value);
+        if (!Number.isFinite(v) || v <= 0) return;
+        S.shotRange = Math.min(U.toSI('distance', v), MAX_DISTANCE);
+        save();
+        renderReadout(); renderReticle();
+        if ($('screen-shot').classList.contains('on')) renderShot();
+      });
+      el.addEventListener('change', function () {
+        var v = parseNum(this.value);
+        if (!Number.isFinite(v) || v <= 0) { render(); return; }
+        var d = Math.min(U.toSI('distance', v), MAX_DISTANCE);
+        S.shotRange = d;
+        if (!S.rows.some(function (r) { return r === d; })) {
+          S.rows.push(d);
+          sortRows();
+          rebuildTable();
+        }
+        save(); scheduleSolve(0);
+      });
+    }
+    bindDistanceField('ro-range');
+    bindDistanceField('shot-title');
+
     $('btn-add-row').addEventListener('click', function () { addRow(); });
     $('btn-clear-rows').addEventListener('click', function () {
       if (!S.rows.length) return;
@@ -5338,6 +5484,7 @@ var PBOnline = (function () {
         rows.push(U.toSI('distance', v));
       }
       S.rows = rows;
+      sortRows();
       this.value = '';
       save(); rebuildTable(); fillResults(); scheduleSolve(0);
     });

@@ -11,14 +11,15 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  362331f0871a5a52912b90d83e39995967805fca6444cf0e14ec08585a74abbe
-bytes   1115181
-stamp   1.1.0 · 2026-08-14 02:22 UTC   (shown in the page footer)
+sha256  8d81e80dbabac90c5dead3f068aa8efd59d5a69297f54f25a799710559cae7d2
+bytes   1121757
+stamp   1.1.0 · 2026-08-14 20:09 UTC   (shown in the page footer)
 ```
 
-Note the version number did not move: this build and the one before it are both
-`1.1.0`, and only the timestamp tells them apart. Match on the whole stamp, not
-on the version.
+**Match on the whole stamp, never on the version number.** Three separate
+builds have now shipped as `1.1.0` — 2026-08-13 17:49, 2026-08-14 02:22 and
+2026-08-14 20:09 — and only the timestamp separates them. A bug report citing
+"1.1.0" identifies three different programs.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
