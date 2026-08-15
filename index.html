@@ -671,6 +671,47 @@
   font: 13px var(--sb-mono); color: var(--sb-fg-dim);
 }
 
+/* ---------------- shot log ---------------- */
+.sb-app .dope button.logbtn {
+  padding: 3px 7px; font-size: 13px; line-height: 1;
+  color: var(--sb-fg-dim); border-color: transparent; background: transparent;
+  font-family: var(--sb-mono);
+}
+.sb-app .dope button.logbtn:hover {
+  color: var(--sb-accent-2); border-color: var(--sb-accent-2);
+}
+.sb-app .dope button.logbtn.has {
+  color: var(--sb-accent-2); border-color: var(--sb-accent-2);
+}
+
+.sb-app .sb-modal {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0, 0, 0, .55);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  overflow: auto;
+}
+.sb-app .sb-modal[hidden] { display: none; }
+.sb-app .sb-modal-card {
+  background: var(--sb-bg-2); border: 1px solid var(--sb-line);
+  border-radius: var(--sb-radius); padding: 18px;
+  width: min(520px, 100%); max-height: 92vh; overflow: auto;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.sb-app .sb-modal-card h3 {
+  margin: 0; font: 600 15px var(--sb-sans); color: var(--sb-fg);
+}
+.sb-app .sb-modal-card label.sub {
+  text-transform: none; letter-spacing: 0; color: var(--sb-fg-dim);
+}
+.sb-app .seg.wide { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+.sb-app .seg.wide button { padding: 10px 0; font-weight: 600; }
+.sb-app #log-result button[data-result="hit"].on {
+  background: var(--sb-accent-2); color: #06130d;
+}
+.sb-app #log-result button[data-result="miss"].on {
+  background: var(--sb-hold); color: #fff;
+}
+
 </style>
 <style>
 /* STANDALONE PAGE ONLY. style.css is scoped entirely under .sb-app so it
@@ -835,6 +876,9 @@ body { background: #101317; }
         </div>
       </div>
       <div class="shot-secondary" id="shot-secondary"></div>
+      <div class="actions">
+        <button type="button" id="btn-log-shot">◎ Log this shot</button>
+      </div>
     </div>
     <div class="shot-reticle">
       <svg id="shot-ret" class="reticle" role="img"
@@ -1059,6 +1103,22 @@ body { background: #101317; }
     scales the clicks you dial. Set it only if you have <em>measured</em>
     your scope's tracking on a tall target: a scope that moves 9.7 MIL
     when you dial 10.0 has a factor of 10.0 / 9.7 = 1.031.</p>
+    <h3 class="section">Shot log</h3>
+    <p class="hint" id="log-summary"></p>
+    <p class="hint">Every logged shot stores the prediction, what you
+    actually dialled, where it landed, and the complete setup that
+    produced it &mdash; bullet, rifle, zero, atmosphere and wind. It is
+    recorded to check whether the model is realistic; it never feeds back
+    into the solver, because a prediction corrected by the last
+    observation is no longer an independent test of anything.</p>
+    <p class="hint warn" id="log-privacy"></p>
+    <div class="actions">
+      <button type="button" id="btn-log-json">Export JSON</button>
+      <button type="button" id="btn-log-csv">Export CSV</button>
+      <button type="button" id="btn-log-clear" class="ghost">Clear log</button>
+    </div>
+
+    <h3 class="section">Reset</h3>
     <div class="actions">
       <button type="button" id="btn-reset" class="ghost">Reset everything</button>
     </div>
@@ -1072,9 +1132,70 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.1.0 · 2026-08-14 20:09 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.1.0 · 2026-08-15 23:27 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
+
+<!-- Shot log entry. One dialog, reused: the point is to record a shot
+     in a few taps while still on the firing line. -->
+<div class="sb-modal" id="log-modal" hidden role="dialog" aria-modal="true"
+     aria-labelledby="log-title">
+  <div class="sb-modal-card">
+    <h3 id="log-title">Log this shot</h3>
+    <p class="hint" id="log-sub"></p>
+
+    <div class="field">
+      <label>Did it hit?</label>
+      <div class="seg wide" id="log-result" role="group">
+        <button type="button" data-result="hit">HIT</button>
+        <button type="button" data-result="miss">MISS</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>What you dialled <u data-log-unit></u></label>
+      <div class="grid2">
+        <div class="field">
+          <label for="log-elev" class="sub">Drop</label>
+          <input type="text" inputmode="decimal" id="log-elev">
+        </div>
+        <div class="field">
+          <label for="log-wind" class="sub">Drift</label>
+          <input type="text" inputmode="decimal" id="log-wind">
+        </div>
+      </div>
+      <p class="hint">Pre-filled with what the app told you. Change it only
+      if you dialled something else.</p>
+    </div>
+
+    <div class="field" id="log-impact-wrap">
+      <label>Where did it land, from your point of aim? <u data-log-unit></u></label>
+      <div class="grid2">
+        <div class="field">
+          <label for="log-iv" class="sub">Up + / down &minus;</label>
+          <input type="text" inputmode="decimal" id="log-iv" placeholder="optional">
+        </div>
+        <div class="field">
+          <label for="log-ih" class="sub">Right + / left &minus;</label>
+          <input type="text" inputmode="decimal" id="log-ih" placeholder="optional">
+        </div>
+      </div>
+      <p class="hint">This is the single most useful number for checking
+      the model. Leave it blank if you did not measure it.</p>
+    </div>
+
+    <div class="field">
+      <label for="log-note">Note</label>
+      <input type="text" id="log-note" placeholder="optional — mirage, position, anything odd">
+    </div>
+
+    <p class="hint" id="log-saved-note"></p>
+    <div class="actions">
+      <button type="button" id="log-save">Save shot</button>
+      <button type="button" id="log-cancel" class="ghost">Cancel</button>
+    </div>
+  </div>
+</div>
 
 </div><!-- /.sb-app -->
 
@@ -3399,6 +3520,240 @@ var PBBullet = (function () {
 
 </script>
 <script>
+/* Shot log — ground truth for checking whether the model is realistic.
+ *
+ * A record is what the app PREDICTED, what the shooter actually DIALLED,
+ * and where the bullet actually WENT, plus every input that produced the
+ * prediction. With enough of them you can ask "is this solver right in
+ * the field", which no amount of self-consistency testing can answer.
+ *
+ * The one rule that matters: **nothing here ever feeds back into the
+ * solver.** This is not BC truing and must not become it by accident. A
+ * log that quietly corrects the model would destroy the very thing it
+ * exists to measure, because the next prediction would no longer be
+ * independent of the last observation.
+ *
+ * Storage is localStorage plus a file export. If a host page sets
+ * window.SB_LOG_ENDPOINT, each record is also POSTed there — opt-in,
+ * never blocking, and the local copy is kept either way so a failed
+ * upload cannot lose a shot.
+ */
+'use strict';
+
+var PBShotLog = (function () {
+  var KEY = 'superior-ballistics-shotlog-v1';
+  var FORMAT = 'superior-ballistics-shotlog-1';
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      var d = raw ? JSON.parse(raw) : null;
+      return (d && Array.isArray(d.shots)) ? d.shots : [];
+    } catch (e) { return []; }
+  }
+
+  function persist(shots) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ format: FORMAT,
+                                                 shots: shots }));
+      return true;
+    } catch (e) {
+      /* Quota, or private browsing. The caller must be told: a log that
+       * silently fails to save is worse than no log. */
+      return false;
+    }
+  }
+
+  function newId() {
+    return 's' + Date.now().toString(36) +
+           Math.floor(Math.random() * 1e6).toString(36);
+  }
+
+  function all() { return load(); }
+  function count() { return load().length; }
+
+  /* When the shot was taken, three ways, because each answers a
+   * different question. `ts` is UTC and is what you sort and join on.
+   * `ts_local` is the wall clock the shooter saw -- mirage, thermal
+   * drift and light all track time of day, and a UTC stamp alone cannot
+   * tell you a 14:00 shot from an 02:00 one. `tz_offset_min` and `tz`
+   * let you reconstruct either from the other. */
+  function stamp(record) {
+    var d = new Date();
+    var off = -d.getTimezoneOffset();          /* minutes east of UTC */
+    var sign = off < 0 ? '-' : '+';
+    var a = Math.abs(off);
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    record.ts = d.toISOString();
+    record.ts_local = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' +
+      pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) +
+      ':' + pad(d.getSeconds()) + sign + pad(Math.floor(a / 60)) + ':' +
+      pad(a % 60);
+    record.tz_offset_min = off;
+    try {
+      record.tz = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+    } catch (e) { record.tz = null; }
+  }
+
+  function add(record) {
+    var shots = load();
+    record.id = newId();
+    stamp(record);
+    record.sent = false;
+    shots.push(record);
+    var ok = persist(shots);
+    send(record);
+    return { ok: ok, record: record, count: shots.length };
+  }
+
+  function remove(id) {
+    var shots = load().filter(function (s) { return s.id !== id; });
+    persist(shots);
+    return shots.length;
+  }
+
+  function clear() { persist([]); }
+
+  /* Optional upload. The host page opts in by setting
+   * window.SB_LOG_ENDPOINT to a URL that accepts a JSON POST. Failures
+   * are recorded, not thrown: the shot is already on disk. */
+  function send(record) {
+    var url = window.SB_LOG_ENDPOINT;
+    if (!url || typeof fetch !== 'function') return;
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ format: FORMAT, shot: record })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var shots = load();
+      for (var i = 0; i < shots.length; i++) {
+        if (shots[i].id === record.id) shots[i].sent = true;
+      }
+      persist(shots);
+    }).catch(function (e) {
+      /* Left with sent:false so a later sweep can retry. */
+      console.warn('[superior-ballistics] shot log upload failed:', e.message);
+    });
+  }
+
+  function unsent() {
+    return load().filter(function (s) { return !s.sent; });
+  }
+
+  function retryUnsent() {
+    var pending = unsent();
+    pending.forEach(send);
+    return pending.length;
+  }
+
+  // ------------------------------------------------------------------
+  function toJSON() {
+    return JSON.stringify({
+      format: FORMAT,
+      exported: new Date().toISOString(),
+      shots: load()
+    }, null, 1);
+  }
+
+  /* A flat CSV for anyone who would rather open it in a spreadsheet than
+   * parse JSON. Nested groups are flattened with dotted names; the JSON
+   * export stays the complete record. */
+  var CSV_COLS = [
+    ['ts', function (s) { return s.ts; }],
+    ['ts_local', function (s) { return s.ts_local; }],
+    ['tz_offset_min', function (s) { return s.tz_offset_min; }],
+    ['tz', function (s) { return s.tz; }],
+    ['build', function (s) { return s.build; }],
+    ['result', function (s) { return s.result; }],
+    ['distance_m', function (s) { return s.distance_m; }],
+    ['pred_drop_mil', function (s) { return s.predicted.drop_mil; }],
+    ['pred_drop_moa', function (s) { return s.predicted.drop_moa; }],
+    ['pred_drop_cm', function (s) { return s.predicted.drop_cm; }],
+    ['pred_drift_mil', function (s) { return s.predicted.drift_mil; }],
+    ['pred_drift_moa', function (s) { return s.predicted.drift_moa; }],
+    ['pred_drift_cm', function (s) { return s.predicted.drift_cm; }],
+    ['pred_vel_mps', function (s) { return s.predicted.vel_mps; }],
+    ['pred_mach', function (s) { return s.predicted.mach; }],
+    ['pred_tof_s', function (s) { return s.predicted.tof_s; }],
+    ['scope_angle_moa', function (s) { return s.predicted.scope_angle_moa; }],
+    ['dialled_elev', function (s) { return s.dialled.elev; }],
+    ['dialled_wind', function (s) { return s.dialled.wind; }],
+    ['dialled_unit', function (s) { return s.dialled.unit; }],
+    ['dialled_click', function (s) { return s.dialled.click; }],
+    ['turret_factor', function (s) { return s.dialled.turret; }],
+    ['impact_vert', function (s) { return s.impact ? s.impact.vert : ''; }],
+    ['impact_horz', function (s) { return s.impact ? s.impact.horz : ''; }],
+    ['impact_unit', function (s) { return s.impact ? s.impact.unit : ''; }],
+    ['wind_in_dope', function (s) { return s.windInDope; }],
+    ['bullet', function (s) { return s.bullet.name; }],
+    ['bullet_vendor', function (s) { return s.bullet.vendor; }],
+    ['mass_kg', function (s) { return s.bullet.mass; }],
+    ['calibre_m', function (s) { return s.bullet.d; }],
+    ['length_m', function (s) { return s.bullet.L; }],
+    ['bc', function (s) { return s.bullet.bc; }],
+    ['drag_model', function (s) { return s.bullet.dragModel; }],
+    ['IP', function (s) { return s.bullet.IP; }],
+    ['IT', function (s) { return s.bullet.IT; }],
+    ['inertia_estimated', function (s) { return s.bullet.inertiaEstimated; }],
+    ['length_estimated', function (s) { return s.bullet.lengthEstimated; }],
+    ['mv_mps', function (s) { return s.rifle.mv; }],
+    ['twist_in', function (s) { return s.rifle.twist; }],
+    ['twist_lh', function (s) { return s.rifle.twistLH; }],
+    ['sight_height_m', function (s) { return s.rifle.sightH; }],
+    ['zero_m', function (s) { return s.rifle.zeroRange; }],
+    ['zerowx_on', function (s) { return s.zeroWx.enabled; }],
+    ['zerowx_temp_C', function (s) { return s.zeroWx.temp; }],
+    ['zerowx_press_Pa', function (s) { return s.zeroWx.pressure; }],
+    ['zerowx_hum_pct', function (s) { return s.zeroWx.humidity; }],
+    ['temp_C', function (s) { return s.atmo.temp; }],
+    ['press_Pa', function (s) { return s.atmo.pressure; }],
+    ['hum_pct', function (s) { return s.atmo.humidity; }],
+    ['altitude_m', function (s) { return s.atmo.altitude; }],
+    ['wind_mps', function (s) { return s.wind.speed; }],
+    ['wind_dir_rel_deg', function (s) { return s.wind.dir; }],
+    ['shot_angle_deg', function (s) { return s.geom.los; }],
+    ['latitude_deg', function (s) { return s.geom.lat; }],
+    ['longitude_deg', function (s) { return s.geom.lon; }],
+    ['azimuth_deg', function (s) { return s.geom.az; }],
+    ['atmo_source', function (s) { return s.provenance.atmo; }],
+    ['atmo_fetched_ts', function (s) { return s.provenance.atmoTs; }],
+    ['wind_source', function (s) { return s.provenance.wind; }],
+    ['wind_fetched_ts', function (s) { return s.provenance.windTs; }],
+    ['location_source', function (s) { return s.provenance.location; }],
+    ['location_accuracy_m', function (s) { return s.provenance.locationAccuracy; }],
+    ['note', function (s) { return s.note; }],
+    ['sent', function (s) { return s.sent; }],
+    ['id', function (s) { return s.id; }]
+  ];
+
+  function csvCell(v) {
+    if (v === null || v === undefined) return '';
+    var s = String(v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function toCSV() {
+    var shots = load();
+    var lines = [CSV_COLS.map(function (c) { return c[0]; }).join(',')];
+    shots.forEach(function (s) {
+      lines.push(CSV_COLS.map(function (c) {
+        try { return csvCell(c[1](s)); } catch (e) { return ''; }
+      }).join(','));
+    });
+    return lines.join('\r\n');
+  }
+
+  return {
+    FORMAT: FORMAT, KEY: KEY,
+    all: all, count: count, add: add, remove: remove, clear: clear,
+    unsent: unsent, retryUnsent: retryUnsent,
+    toJSON: toJSON, toCSV: toCSV
+  };
+})();
+
+</script>
+<script>
 /* Reticle view, as SVG.
  *
  * Geometry and conventions follow app.py::_draw_vector so a pattern file
@@ -4155,6 +4510,15 @@ var PBOnline = (function () {
        * is the worksheet: the table is an input, not a fixed grid. */
       rows: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
       windInDope: true,
+      /* Where each input came from. A logged shot is only as good as its
+       * worst input, and "typed" against "measured five minutes ago" is
+       * the difference between a record worth analysing and one worth
+       * discarding. Tracked automatically -- nothing to remember. */
+      provenance: {
+        atmo: 'typed', atmoTs: null,
+        wind: 'typed', windTs: null,
+        location: 'typed', locationTs: null, locationAccuracy: null
+      },
       reticleId: null,
       shotRange: null,
       zoom: 26,
@@ -4629,6 +4993,22 @@ var PBOnline = (function () {
 
     var tdX = document.createElement('td');
     tdX.className = 'rowdel';
+
+    /* Log the shot from the row it belongs to: on a firing line the
+     * distance is the thing you are looking at. */
+    var logb = document.createElement('button');
+    logb.type = 'button';
+    logb.className = 'logbtn';
+    logb.textContent = '◎';
+    logb.title = 'Record whether this one hit';
+    logb.setAttribute('aria-label', 'Log a shot at this distance');
+    logb.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      var i = parseInt(this.closest('tr').dataset.idx, 10);
+      openLog(S.rows[i]);
+    });
+    tdX.appendChild(logb);
+
     var del = document.createElement('button');
     del.type = 'button';
     del.className = 'del';
@@ -4673,6 +5053,7 @@ var PBOnline = (function () {
       cells[5].textContent = fmt(row[9], 2);
       cells[6].textContent = fmt(U.fromSI('energy', row[10]), 0);
     }
+    markLogged();
     markSelected();
   }
 
@@ -4682,6 +5063,29 @@ var PBOnline = (function () {
     var row = $('dope-body').rows[at];
     var box = row && row.querySelector('input.dist');
     if (box) { box.focus(); box.select(); }
+  }
+
+  /* A row that already has shots against it says so, so a session's
+   * worth of logging is visible without opening anything. */
+  function markLogged() {
+    var counts = {};
+    PBShotLog.all().forEach(function (s) {
+      var k = Math.round(s.distance_m * 100);
+      counts[k] = (counts[k] || 0) + 1;
+    });
+    var body = $('dope-body');
+    for (var r = 0; r < body.rows.length; r++) {
+      var tr = body.rows[r];
+      if (tr.classList.contains('empty')) continue;
+      var d = S.rows[parseInt(tr.dataset.idx, 10)];
+      var n = Number.isFinite(d) ? counts[Math.round(d * 100)] : 0;
+      var b = tr.querySelector('button.logbtn');
+      if (!b) continue;
+      b.textContent = n ? '◉' + n : '◎';
+      b.classList.toggle('has', !!n);
+      b.title = n ? n + ' shot' + (n > 1 ? 's' : '') + ' logged here — add another'
+                  : 'Record whether this one hit';
+    }
   }
 
   function addRow(metres) {
@@ -5183,6 +5587,18 @@ var PBOnline = (function () {
    * properties of THIS bullet, and leaving the previous ones in place
    * would fly the new dimensions with the old bullet's spin dynamics --
    * wrong spin drift, silently. */
+  /* A hand edit demotes that group back to 'typed': a fetched value the
+   * shooter has since overwritten is no longer a fetched value. */
+  function markTyped(group, id) {
+    if (group === 'atmo') { S.provenance.atmo = 'typed'; S.provenance.atmoTs = null; }
+    else if (group === 'wind') { S.provenance.wind = 'typed'; S.provenance.windTs = null; }
+    else if (group === 'geom' && (id === 'in-lat' || id === 'in-lon')) {
+      S.provenance.location = 'typed';
+      S.provenance.locationTs = null;
+      S.provenance.locationAccuracy = null;
+    }
+  }
+
   function onBulletGeometryChanged() {
     var b = S.bullet;
     var inert = PBInertia.estimate(clamp('bullet.d', b.d),
@@ -5330,6 +5746,7 @@ var PBOnline = (function () {
           if (!Number.isFinite(v)) return;
           S[b[1]][b[2]] = U.toSI(b[3], v);
           if (GEOMETRY_KEYS[b[0]]) onBulletGeometryChanged();
+          markTyped(b[1]);
           save(); scheduleSolve();
         });
         /* Clamp on commit, not on keystroke: snapping mid-typing makes a
@@ -5355,6 +5772,7 @@ var PBOnline = (function () {
           if (!Number.isFinite(v)) return;
           S[b[1]][b[2]] = v;
           if (b[0] === 'in-wdir') renderRose();
+          markTyped(b[1], b[0]);
           save(); scheduleSolve();
         });
         el.addEventListener('change', function () {
@@ -5500,6 +5918,42 @@ var PBOnline = (function () {
     });
     $('btn-print').addEventListener('click', function () { window.print(); });
     $('btn-csv').addEventListener('click', exportCsv);
+    document.querySelectorAll('#log-result button').forEach(function (b) {
+      b.addEventListener('click', function () { setLogResult(this.dataset.result); });
+    });
+    $('log-save').addEventListener('click', saveLog);
+    $('log-cancel').addEventListener('click', closeLog);
+    $('log-modal').addEventListener('mousedown', function (ev) {
+      if (ev.target === this) closeLog();      /* click the backdrop */
+    });
+    document.addEventListener('keydown', function (ev) {
+      if ($('log-modal').hidden) return;
+      if (ev.key === 'Escape') { ev.preventDefault(); closeLog(); }
+      else if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') {
+        ev.preventDefault(); saveLog();
+      }
+    });
+    $('btn-log-json').addEventListener('click', function () {
+      downloadText(PBShotLog.toJSON(), 'shot-log.json', 'application/json');
+    });
+    $('btn-log-csv').addEventListener('click', function () {
+      downloadText(PBShotLog.toCSV(), 'shot-log.csv', 'text/csv;charset=utf-8');
+    });
+    $('btn-log-clear').addEventListener('click', function () {
+      var n = PBShotLog.count();
+      if (!n) return;
+      if (!window.confirm('Delete all ' + n + ' logged shots? Export them ' +
+                          'first if you have not.')) return;
+      PBShotLog.clear();
+      fillResults(); renderLogPanel();
+    });
+
+    /* Same action from the shot detail, where a shooter may already be
+     * looking at the distance they just fired. */
+    $('btn-log-shot').addEventListener('click', function () {
+      openLog(S.shotRange);
+    });
+
     $('btn-locate').addEventListener('click', doLocate);
     $('btn-weather').addEventListener('click', doWeather);
 
@@ -5532,6 +5986,7 @@ var PBOnline = (function () {
       function (deg) {
         S.wind.dir = deg;
         $('in-wdir').value = deg.toFixed(0);
+        markTyped('wind');
         renderRose();
       },
       function () { save(); scheduleSolve(0); });
@@ -5555,6 +6010,146 @@ var PBOnline = (function () {
     if (!Number.isFinite(v)) return;
     S.rifle.mv = clamp('rifle.mv', U.toSI('velocity', v));
     save(); refreshInputs(); scheduleSolve(0);
+  }
+
+  // ------------------------------------------------------------------
+  // shot log
+  // ------------------------------------------------------------------
+  var logFor = null;                 /* distance the dialog is open on */
+
+  /* Everything that produced the prediction, so a record can be judged
+   * later without the session that made it. Deep-copied: the state keeps
+   * changing after the shot is logged. */
+  function logSnapshot(d, row) {
+    var cu = S.out.corr;
+    return {
+      build: ($('build-stamp') || {}).textContent || '',
+      distance_m: d,
+      predicted: {
+        drop_cm: row[1], drop_mil: row[2], drop_moa: row[3],
+        drift_cm: row[4], drift_mil: row[5], drift_moa: row[6],
+        vel_mps: row[7], mach: row[8], tof_s: row[9], energy_j: row[10],
+        scope_angle_moa: resPhys ? resPhys.scope_angle * 60 : null
+      },
+      windInDope: S.windInDope,
+      units: { system: S.units, overrides: U.getOverrides(), correction: cu },
+      bullet: JSON.parse(JSON.stringify(S.bullet)),
+      rifle: JSON.parse(JSON.stringify(S.rifle)),
+      zeroWx: JSON.parse(JSON.stringify(S.zeroWx)),
+      atmo: JSON.parse(JSON.stringify(S.atmo)),
+      wind: JSON.parse(JSON.stringify(S.wind)),
+      geom: JSON.parse(JSON.stringify(S.geom)),
+      provenance: JSON.parse(JSON.stringify(S.provenance))
+    };
+  }
+
+  function openLog(d) {
+    if (!Number.isFinite(d) || d <= 0) return;
+    var res = displayed();
+    var row = res ? cardAt(res.card, d) : null;
+    if (!row) {
+      window.alert('No solution at that distance yet — nothing to check ' +
+                   'a shot against.');
+      return;
+    }
+    logFor = d;
+    var cu = U.correctionLabel(S.out.corr, S.out.click);
+    var dec = U.correctionDecimals(S.out.corr);
+    $('log-sub').textContent = distDisp(d) + ' ' + U.label('distance') +
+      ' — the app said ' + elevCall(row).text + ' and ' + windCall(row).text +
+      ' ' + cu + '.';
+    /* Pre-filled with the recommendation: if the shooter used it as-is,
+     * logging is two taps. Signed, up and right positive. */
+    $('log-elev').value = (-U.correction(row, 'drop', S.out.corr, S.out.click,
+                                         S.out.turret)).toFixed(dec);
+    $('log-wind').value = (-U.correction(row, 'drift', S.out.corr, S.out.click,
+                                         S.out.turret)).toFixed(dec);
+    $('log-iv').value = '';
+    $('log-ih').value = '';
+    $('log-note').value = '';
+    $('log-saved-note').textContent = '';
+    setLogResult('hit');
+    document.querySelectorAll('.sb-app u[data-log-unit]').forEach(function (u) {
+      u.textContent = '(' + cu + ')';
+    });
+    $('log-modal').hidden = false;
+    setTimeout(function () { $('log-elev').focus(); $('log-elev').select(); }, 30);
+  }
+
+  function setLogResult(v) {
+    var btns = document.querySelectorAll('#log-result button');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('on', btns[i].dataset.result === v);
+    }
+    $('log-modal').dataset.result = v;
+    /* A hit still deserves the offset if it was measured, so the field
+     * stays available -- it is just less likely to be filled. */
+  }
+
+  function closeLog() { $('log-modal').hidden = true; logFor = null; }
+
+  function saveLog() {
+    var d = logFor;
+    var res = displayed();
+    var row = (res && Number.isFinite(d)) ? cardAt(res.card, d) : null;
+    if (!row) { closeLog(); return; }
+
+    var rec = logSnapshot(d, row);
+    rec.result = $('log-modal').dataset.result || 'hit';
+    rec.dialled = {
+      elev: parseNum($('log-elev').value),
+      wind: parseNum($('log-wind').value),
+      unit: U.correctionLabel(S.out.corr, S.out.click),
+      click: S.out.click, turret: S.out.turret
+    };
+    var iv = parseNum($('log-iv').value), ih = parseNum($('log-ih').value);
+    rec.impact = (Number.isFinite(iv) || Number.isFinite(ih))
+      ? { vert: Number.isFinite(iv) ? iv : null,
+          horz: Number.isFinite(ih) ? ih : null,
+          unit: rec.dialled.unit }
+      : null;
+    rec.note = $('log-note').value.trim();
+
+    var out = PBShotLog.add(rec);
+    closeLog();
+    fillResults();
+    renderLogPanel();
+    setStatus(out.ok ? 'shot ' + out.count + ' logged' : 'log NOT saved', false);
+    if (!out.ok) {
+      window.alert('The shot could not be saved — browser storage is full ' +
+                   'or blocked. Export what you have before logging more.');
+    }
+  }
+
+  function renderLogPanel() {
+    var n = PBShotLog.count(), unsent = PBShotLog.unsent().length;
+    var el = $('log-summary');
+    if (!el) return;
+    el.textContent = n
+      ? n + ' shot' + (n === 1 ? '' : 's') + ' logged' +
+        (window.SB_LOG_ENDPOINT
+          ? ' · ' + (n - unsent) + ' uploaded, ' + unsent + ' pending'
+          : ' · stored in this browser only')
+      : 'No shots logged yet. Use the ◎ button on a table row after you ' +
+        'shoot it.';
+    var pv = $('log-privacy');
+    if (pv) {
+      pv.textContent = (S.geom.lat || S.geom.lon)
+        ? 'The export includes your latitude and longitude. Latitude is ' +
+          'physics (it drives Coriolis); longitude is not used by the ' +
+          'solver at all, so strip it before sharing if the shooting ' +
+          'location is sensitive.'
+        : '';
+    }
+  }
+
+  function downloadText(text, name, mime) {
+    var blob = new Blob([text], { type: mime });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   }
 
   // ------------------------------------------------------------------
@@ -5899,6 +6494,9 @@ var PBOnline = (function () {
         S.atmo.altitude = p.alt;
         altNote = ', altitude ' + p.alt.toFixed(0) + ' m (from GPS — check it)';
       }
+      S.provenance.location = 'device';
+      S.provenance.locationTs = new Date().toISOString();
+      S.provenance.locationAccuracy = p.accuracy;
       save(); refreshInputs(); scheduleSolve(0);
       onlineNote('Position set: ' + p.lat.toFixed(4) + '°, ' +
                  p.lon.toFixed(4) + '° (±' + Math.round(p.accuracy) + ' m)' +
@@ -5945,6 +6543,16 @@ var PBOnline = (function () {
                       360) % 360;
         got.push('from ' + w.windFromTrue.toFixed(0) + '° true (' +
                  U.degToClock(S.wind.dir) + " o'clock for your azimuth)");
+      }
+      var now = new Date().toISOString();
+      if (w.temp !== undefined || w.pressure !== undefined ||
+          w.humidity !== undefined) {
+        S.provenance.atmo = 'open-meteo';
+        S.provenance.atmoTs = w.time || now;
+      }
+      if (w.windSpeed !== undefined || w.windFromTrue !== undefined) {
+        S.provenance.wind = 'open-meteo';
+        S.provenance.windTs = w.time || now;
       }
       save(); refreshInputs(); renderRose(); scheduleSolve(0);
       onlineNote('Applied: ' + got.join(', ') +
@@ -6282,6 +6890,7 @@ var PBOnline = (function () {
     renderRifleLibrary();
     rebuildTable();
     renderRose();
+    renderLogPanel();
     runSolve();
 
     /* A minimal, deliberate surface for anything embedding this page --
@@ -6308,7 +6917,21 @@ var PBOnline = (function () {
         return r ? cardAt(r.card, metres) : null;
       },
       showScreen: showScreen,
-      columns: R.CARD_COLUMNS
+      columns: R.CARD_COLUMNS,
+      /* The shot log, for whatever ships it onward. Set
+       * window.SB_LOG_ENDPOINT before load and each shot is POSTed there
+       * as it is saved; the local copy is kept regardless. */
+      log: {
+        all: function () { return PBShotLog.all(); },
+        count: function () { return PBShotLog.count(); },
+        unsent: function () { return PBShotLog.unsent(); },
+        retryUnsent: function () { return PBShotLog.retryUnsent(); },
+        toJSON: function () { return PBShotLog.toJSON(); },
+        toCSV: function () { return PBShotLog.toCSV(); },
+        clear: function () { PBShotLog.clear(); renderLogPanel(); fillResults(); },
+        format: PBShotLog.FORMAT,
+        storageKey: PBShotLog.KEY
+      }
     };
   }
 

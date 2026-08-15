@@ -11,15 +11,15 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  8d81e80dbabac90c5dead3f068aa8efd59d5a69297f54f25a799710559cae7d2
-bytes   1121757
-stamp   1.1.0 · 2026-08-14 20:09 UTC   (shown in the page footer)
+sha256  696b05292535edcea8309ab8d44d2222cc3028bbef4eb996300f3a89caf9c3f1
+bytes   1147908
+stamp   1.1.0 · 2026-08-15 23:27 UTC   (shown in the page footer)
 ```
 
-**Match on the whole stamp, never on the version number.** Three separate
-builds have now shipped as `1.1.0` — 2026-08-13 17:49, 2026-08-14 02:22 and
-2026-08-14 20:09 — and only the timestamp separates them. A bug report citing
-"1.1.0" identifies three different programs.
+**Match on the whole stamp, never on the version number.** Four separate builds
+have now shipped as `1.1.0` — 2026-08-13 17:49, 2026-08-14 02:22, 2026-08-14
+20:09 and 2026-08-15 23:27 — and only the timestamp separates them. A bug report
+citing "1.1.0" identifies four different programs.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
@@ -44,6 +44,19 @@ Both require the page to be served over **HTTPS**: geolocation is blocked on
 insecure origins, and an `https` call from an `http` page is blocked as mixed
 content. This deployment enforces HTTPS, so both work. Everything else keeps
 working regardless.
+
+From the 2026-08-15 build the app can also upload its shot log, but **that is
+switched off in this deployment and sends nothing.** The upload only happens if
+`window.SB_LOG_ENDPOINT` is defined before the app loads, and nothing here
+defines it — shots stay in the browser's own `localStorage`
+(`superior-ballistics-shotlog-v1`) and are exported by hand from the Output
+screen as JSON or CSV.
+
+Turning it on is not a deployment change. The bundle has no configuration hook:
+`src/index.html` loads its scripts directly, so the global has to be set in the
+source and the bundle rebuilt. Editing the shipped file to inject it would work
+and would also invalidate the sha256 above, which is the one thing this
+repository exists to keep honest.
 
 ## Validation
 
