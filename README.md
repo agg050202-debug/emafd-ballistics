@@ -11,15 +11,17 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  acada6d4082ac53f0ca6744069431c0c71416a84b07bb4499fc0f778d26cd8eb
-bytes   1149551
-stamp   1.2.1 · 2026-08-19 02:28 UTC   (shown in the page footer)
+sha256  5df47633bdce668bcf191d67ac23fe6c1f1d72ca093aeb47e2c372e30d90cf80
+bytes   1164907
+stamp   1.4.1 · 2026-08-19 03:39 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
-have now shipped as `1.1.0` — 2026-08-13 17:49, 2026-08-14 02:22, 2026-08-14
-20:09 and 2026-08-15 23:27 — and only the timestamp separates them. A bug report
-citing "1.1.0" identifies four different programs.
+shipped as `1.1.0` — 2026-08-13 17:49, 2026-08-14 02:22, 2026-08-14 20:09 and
+2026-08-15 23:27 — and only the timestamp separates them, so a bug report
+citing "1.1.0" identifies four different programs. From 1.2.0 the number moves
+with the content, and `SuperiorBallistics.version` agrees with it; before that
+it reported 1.1.0 from inside 1.2.x builds.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
@@ -39,6 +41,13 @@ pressed:
 - **Use my location** — the browser's geolocation API.
 - **Fetch live weather** — a request to `api.open-meteo.com` carrying the
   coordinates.
+
+Since 1.4.1 the wind toggle starts on **HOLD YOURSELF** rather than WIND IN
+DOPE. Saved sessions keep whatever the shooter chose; only a fresh visitor sees
+the new default. It changes nothing in the solver and everything in the data:
+`wind_in_dope = false` becomes the common case, and those records read as
+enormous windage errors unless they are filtered, because the correction was
+meant to be held on the reticle rather than dialled.
 
 Both require the page to be served over **HTTPS**: geolocation is blocked on
 insecure origins, and an `https` call from an `http` page is blocked as mixed

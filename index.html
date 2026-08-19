@@ -50,6 +50,11 @@
   --sb-reticle-fg: #e8edf5;
   --sb-reticle-bg: #0b0e12;
   --sb-radius: 10px;
+  /* Height of the sticky top bar, republished by app.js. It cannot be a
+     constant: .topbar wraps to a second row once the brand and the unit
+     switches stop fitting side by side, and no media query controls
+     that. The page heads park directly underneath it. */
+  --sb-topbar-h: 66px;
   --sb-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --sb-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
@@ -147,9 +152,23 @@
 .sb-app .screen.on { display: flex; }
 @media (max-width: 900px) { .sb-app .screen { padding: 12px; gap: 12px; } }
 
+/* The page head stays put while the body scrolls, so going back never
+   means scrolling to the top first -- these pages are long and the back
+   button is the one control a shooter reaches for in a hurry.
+   z-index sits under the top bar (20) and far under the unit menu (999).
+   The box-shadow is not decoration: the measured bar height is
+   fractional, and it plugs the sub-pixel seam that would otherwise let
+   scrolled text flicker through above the head. */
 .sb-app .page-head {
   display: flex; align-items: center; gap: 12px;
   padding-bottom: 10px; border-bottom: 1px solid var(--sb-line);
+  position: sticky; top: var(--sb-topbar-h); z-index: 10;
+  background: var(--sb-bg); box-shadow: 0 -2px 0 var(--sb-bg);
+}
+/* Landscape on a phone: the bar plus the head would eat close to half
+   the screen. Nothing is worth that, so the head scrolls away again. */
+@media (max-height: 480px) {
+  .sb-app .page-head { position: static; box-shadow: none; }
 }
 .sb-app .page-head h2 {
   margin: 0; flex: 1; text-align: center;
@@ -224,6 +243,52 @@
   width: 100%; white-space: pre-line; line-height: 1.4;
 }
 
+/* The two top tiles carry an icon on the right so the page reads at a
+   glance. Scoped away from .bottom: the Output row is already a
+   horizontal layout with a right-aligned value and has no icon. */
+.sb-app .navgrid:not(.bottom) button {
+  flex-direction: row; align-items: stretch; gap: 12px;
+}
+.sb-app .nav-text {
+  flex: 1 1 auto;
+  /* Load-bearing. Without it the flex item refuses to shrink below its
+     content and a long .v -- the equipment tile prints a 24-character
+     bullet name plus drag model, BC, muzzle velocity and zero -- pushes
+     the icon off the tile instead of wrapping. */
+  min-width: 0;
+  display: flex; flex-direction: column;
+  align-items: flex-start; justify-content: space-between; gap: 6px;
+}
+.sb-app .nav-ico {
+  width: 40px; height: 40px; flex: none; align-self: center;
+  color: var(--sb-fg-dim); opacity: .75;
+}
+.sb-app .navgrid button:hover .nav-ico,
+.sb-app .bigbtn:hover .nav-ico { color: var(--sb-accent); opacity: 1; }
+@media (max-width: 560px) {
+  .sb-app .navgrid .nav-ico { width: 34px; height: 34px; }
+}
+
+/* The one big button on the equipment page. The bullet is what changes
+   most often between outings, so it gets a target you cannot miss
+   rather than a heading buried down the page. */
+.sb-app .bigbtn {
+  width: 100%; min-height: 66px;
+  display: flex; flex-direction: row; align-items: center; gap: 12px;
+  padding: 14px 16px; text-align: left;
+  background: var(--sb-bg-2); border: 1px solid var(--sb-accent);
+  border-radius: var(--sb-radius);
+}
+.sb-app .bigbtn:hover { background: var(--sb-bg-3); }
+.sb-app .bigbtn .t {
+  font: 600 14px var(--sb-sans); color: var(--sb-fg);
+}
+.sb-app .bigbtn .v {
+  font: 12.5px var(--sb-mono); color: var(--sb-accent);
+  white-space: pre-line; line-height: 1.4;
+}
+.sb-app .bigbtn .nav-ico { width: 32px; height: 32px; }
+
 /* ---------------- the selected-row readout ---------------- */
 .sb-app .readout {
   display: grid;
@@ -234,8 +299,20 @@
 }
 @media (max-width: 700px) {
   .sb-app .readout { grid-template-columns: 1fr; gap: 10px; }
-  .sb-app .readout-more { justify-self: stretch; }
+  /* Qualified with .readout so this wins on specificity rather than on
+     source order: at equal specificity the base rule below came later
+     and won, and this phone layout never actually rendered. */
+  .sb-app .readout .readout-side { justify-self: stretch; flex-direction: row; }
+  .sb-app .readout .readout-side > * { flex: 1 1 0; }
 }
+/* The wind switch and the way into the full solution, stacked in the
+   right-hand cell. The column takes the width of its widest child, which
+   is the "Full detail" button in both states, so changing the badge
+   label cannot resize the track. min-width is only a floor. */
+.sb-app .readout-side {
+  display: flex; flex-direction: column; gap: 8px; min-width: 15ch;
+}
+.sb-app .readout-side .badge { text-align: center; }
 .sb-app .readout-range { display: flex; flex-direction: column; gap: 2px; }
 .sb-app .readout-range .k {
   font: 600 10.5px var(--sb-sans); letter-spacing: .07em;
@@ -569,11 +646,14 @@
 
 @media print {
   .sb-app .topbar, .sb-app .navgrid, .sb-app .viz, .sb-app .sb-footer,
-  .sb-app .table-actions, .sb-app .result-head .badge { display: none !important; }
+  .sb-app .table-actions, .sb-app .badge { display: none !important; }
   .sb-app .screen { display: none !important; }
   .sb-app #screen-main { display: block !important; padding: 0; }
   .sb-app { background: #fff; color: #000; }
   .sb-app .card-wrap { max-height: none; border: 0; overflow: visible; }
+  /* --sb-topbar-h keeps its last measured value even though the bar is
+     hidden here, so the head must be unstuck explicitly. */
+  .sb-app .page-head { position: static; box-shadow: none; }
   .sb-app .dope th { color: #000; background: #eee; }
   .sb-app .dope input.dist { border: 0; background: transparent; color: #000; }
   .sb-app .dope td.rowdel { display: none; }
@@ -750,16 +830,37 @@ body { background: #101317; }
 <!-- ==================== MAIN: the firing solution ==================== -->
 <section class="screen on" id="screen-main" aria-label="Firing solution">
 
+  <!-- The icons are aria-hidden: the label beside them already says
+       what the tile opens, so announcing them again would only make a
+       screen reader repeat itself. They must stay OUTSIDE the .v span --
+       renderNav() writes that span with textContent, which would wipe
+       any child element on the next solve. -->
   <nav class="navgrid" aria-label="Setup">
     <button type="button" data-goto="screen-equipment">
-      <span class="t">Equipment</span><span class="v" id="nav-equipment">&nbsp;</span></button>
+      <span class="nav-text"><span class="t">Equipment</span><span
+        class="v" id="nav-equipment">&nbsp;</span></span>
+      <svg class="nav-ico" viewBox="0 0 48 48" aria-hidden="true"
+           fill="none" stroke="currentColor" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M44 9 26 20"/>
+        <path d="m26 20-3-1.8L6 28l3 5 16.5-9.5"/>
+        <path d="m39.5 15.5-9.5 5.5"/>
+        <path d="m25.5 23.5 1 1.7a3.5 3.5 0 0 0 4.8 1.3l.9-.5"/>
+        <path d="m28 13.5 5.5 3.2"/>
+      </svg></button>
     <button type="button" data-goto="screen-environment">
-      <span class="t">Environment</span><span class="v" id="nav-environment">&nbsp;</span></button>
+      <span class="nav-text"><span class="t">Environment</span><span
+        class="v" id="nav-environment">&nbsp;</span></span>
+      <svg class="nav-ico" viewBox="0 0 48 48" aria-hidden="true"
+           fill="none" stroke="currentColor" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M31 7v3.5M39.6 10.4l-2.5 2.5M43 19h-3.5M22.4 10.4l2.5 2.5"/>
+        <circle cx="31" cy="19" r="5.5"/>
+        <path d="M14 39a7.5 7.5 0 0 1 1.3-14.9 10.5 10.5 0 0 1 20.2 2.7A6.2 6.2 0 0 1 34 39z"/>
+      </svg></button>
   </nav>
 
   <div class="result-head">
-    <button type="button" id="wind-badge" class="badge"
-            aria-label="Toggle whether wind is included in the corrections">WIND IN DOPE</button>
     <div class="summary" id="solution-summary"></div>
   </div>
 
@@ -783,8 +884,16 @@ body { background: #101317; }
         <span class="dial-unit" id="ro-wind-unit">&nbsp;</span>
       </div>
     </div>
-    <button type="button" class="readout-more" data-goto="screen-shot">
-      Full detail &rarr;</button>
+    <!-- The wind switch sits with the numbers it changes. It used to
+         live in a strip of its own above, where it read as a status
+         label rather than the control it is. -->
+    <div class="readout-side">
+      <button type="button" id="wind-badge" class="badge"
+              aria-label="Wind in dope" aria-pressed="false">
+        HOLD YOURSELF</button>
+      <button type="button" class="readout-more" data-goto="screen-shot">
+        Full detail &rarr;</button>
+    </div>
   </div>
 
   <p class="hint warn" id="range-warning" hidden></p>
@@ -897,42 +1006,52 @@ body { background: #101317; }
   </div>
   <div class="page-body">
 
-    <h3 class="section">Projectile</h3>
-    <div class="bullet-pic">
-      <svg id="bullet-svg" role="img"
-           aria-label="Projectile silhouette drawn from its dimensions"></svg>
-      <p class="hint" id="bullet-caption"></p>
-    </div>
-    <div class="field wide">
-      <label for="bullet-search">Search the catalogue</label>
-      <input type="search" id="bullet-search" autocomplete="off"
-             role="combobox" aria-expanded="false" aria-autocomplete="list"
-             aria-controls="bullet-results"
-             placeholder="e.g. 6.5 140 berger, 308 175, eld-m">
-      <div id="bullet-results" class="results-list" role="listbox"
-           aria-label="Catalogue matches" hidden></div>
-      <p class="hint" id="bullet-current">&nbsp;</p>
-    </div>
-    <div class="grid2">
-      <div class="field"><label for="in-mass">Mass <u data-u="mass"></u></label>
-        <input type="text" inputmode="decimal" id="in-mass"></div>
-      <div class="field"><label for="in-cal">Calibre <u data-u="calibre"></u></label>
-        <input type="text" inputmode="decimal" id="in-cal"></div>
-      <div class="field"><label for="in-len">Length <u data-u="length"></u></label>
-        <input type="text" inputmode="decimal" id="in-len"></div>
-      <div class="field"><label for="in-bc">Ballistic coefficient</label>
-        <input type="text" inputmode="decimal" id="in-bc"></div>
-      <div class="field"><label for="in-dragmodel">Drag standard</label>
-        <select id="in-dragmodel">
-          <option value="G7">G7 &mdash; boat-tail match</option>
-          <option value="G1">G1 &mdash; flat-base / legacy</option>
-        </select></div>
-      <div class="field"><label for="in-profile">Aero coefficients</label>
-        <select id="in-profile"></select></div>
-    </div>
-    <p class="hint">The BC must match the standard: a G1 number entered
-    against G7 will be wrong by roughly a factor of two.</p>
-    <p class="hint" id="coef-provenance"></p>
+    <!-- Three doors, in the order a setup is built: the rifle you
+         brought, the load in it, then how you are looking through
+         it. Each carries its current setting so the page answers
+         "what am I set up with" without opening anything. -->
+    <button type="button" class="bigbtn" data-goto="screen-rifle">
+      <span class="nav-text"><span class="t">Rifle</span><span
+        class="v" id="nav-rifle">&nbsp;</span></span>
+      <svg class="nav-ico" viewBox="0 0 48 48" aria-hidden="true"
+           fill="none" stroke="currentColor" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M44 9 26 20"/>
+        <path d="m26 20-3-1.8L6 28l3 5 16.5-9.5"/>
+        <path d="m39.5 15.5-9.5 5.5"/>
+        <path d="m25.5 23.5 1 1.7a3.5 3.5 0 0 0 4.8 1.3l.9-.5"/>
+        <path d="m28 13.5 5.5 3.2"/>
+      </svg></button>
+    <button type="button" class="bigbtn" data-goto="screen-projectile">
+      <span class="nav-text"><span class="t">Bullet</span><span
+        class="v" id="nav-projectile">&nbsp;</span></span>
+      <svg class="nav-ico" viewBox="0 0 48 48" aria-hidden="true"
+           fill="none" stroke="currentColor" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M24 5c4 5 7 11 7 17v19H17V22c0-6 3-12 7-17z"/>
+        <path d="M17 30h14"/>
+      </svg></button>
+    <button type="button" class="bigbtn" data-goto="screen-sight">
+      <span class="nav-text"><span class="t">Sight</span><span
+        class="v" id="nav-sight">&nbsp;</span></span>
+      <svg class="nav-ico" viewBox="0 0 48 48" aria-hidden="true"
+           fill="none" stroke="currentColor" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="24" cy="24" r="14"/>
+        <path d="M24 6v12M24 30v12M6 24h12M30 24h12"/>
+        <circle cx="24" cy="24" r="2.2" fill="currentColor"
+                stroke="none"/>
+      </svg></button>
+  </div>
+</section>
+
+<!-- ====== RIFLE: the gun, its zero, and the day it was set ====== -->
+<section class="screen" id="screen-rifle" aria-label="Rifle">
+  <div class="page-head">
+    <button type="button" class="back" data-goto="screen-equipment">&larr; Back</button>
+    <h2>Rifle</h2><span class="head-spacer"></span>
+  </div>
+  <div class="page-body">
 
     <h3 class="section">Rifle</h3>
     <div class="library">
@@ -959,11 +1078,10 @@ body { background: #101317; }
       <div id="rifle-results" class="results-list" role="listbox"
            aria-label="Factory rifles" hidden></div>
       <p class="hint" id="twist-note">Sets the twist rate only &mdash; not
-      the muzzle velocity, which depends on your barrel and your load.</p>
+      the muzzle velocity, which depends on your barrel and your load and
+      is set under <em>Bullet</em>.</p>
     </div>
     <div class="grid2">
-      <div class="field"><label for="in-mv">Muzzle velocity <u data-u="velocity"></u></label>
-        <input type="text" inputmode="decimal" id="in-mv"></div>
       <div class="field"><label for="in-twist">Twist (in/rev)</label>
         <input type="text" inputmode="decimal" id="in-twist"></div>
       <div class="field"><label for="in-twistdir">Twist direction</label>
@@ -998,6 +1116,16 @@ body { background: #101317; }
       </div>
     </div>
     <p class="hint" id="zwx-note"></p>
+  </div>
+</section>
+
+<!-- ============ SIGHT: how you are looking through it ============ -->
+<section class="screen" id="screen-sight" aria-label="Sight">
+  <div class="page-head">
+    <button type="button" class="back" data-goto="screen-equipment">&larr; Back</button>
+    <h2>Sight</h2><span class="head-spacer"></span>
+  </div>
+  <div class="page-body">
 
     <h3 class="section">Sight</h3>
     <div class="grid2">
@@ -1006,6 +1134,55 @@ body { background: #101317; }
       <div class="field"><label for="in-reticle">Reticle</label>
         <select id="in-reticle"></select></div>
     </div>
+  </div>
+</section>
+
+<!-- ========== PROJECTILE: the bullet, and the load driving it ========== -->
+<section class="screen" id="screen-projectile" aria-label="Projectile">
+  <div class="page-head">
+    <button type="button" class="back" data-goto="screen-equipment">&larr; Back</button>
+    <h2>Projectile</h2><span class="head-spacer"></span>
+  </div>
+  <div class="page-body">
+
+    <h3 class="section">Projectile</h3>
+    <div class="bullet-pic">
+      <svg id="bullet-svg" role="img"
+           aria-label="Projectile silhouette drawn from its dimensions"></svg>
+      <p class="hint" id="bullet-caption"></p>
+    </div>
+    <div class="field wide">
+      <label for="bullet-search">Search the catalogue</label>
+      <input type="search" id="bullet-search" autocomplete="off"
+             role="combobox" aria-expanded="false" aria-autocomplete="list"
+             aria-controls="bullet-results"
+             placeholder="e.g. 6.5 140 berger, 308 175, eld-m">
+      <div id="bullet-results" class="results-list" role="listbox"
+           aria-label="Catalogue matches" hidden></div>
+      <p class="hint" id="bullet-current">&nbsp;</p>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="in-mv">Muzzle velocity <u data-u="velocity"></u></label>
+        <input type="text" inputmode="decimal" id="in-mv"></div>
+      <div class="field"><label for="in-mass">Mass <u data-u="mass"></u></label>
+        <input type="text" inputmode="decimal" id="in-mass"></div>
+      <div class="field"><label for="in-cal">Calibre <u data-u="calibre"></u></label>
+        <input type="text" inputmode="decimal" id="in-cal"></div>
+      <div class="field"><label for="in-len">Length <u data-u="length"></u></label>
+        <input type="text" inputmode="decimal" id="in-len"></div>
+      <div class="field"><label for="in-bc">Ballistic coefficient</label>
+        <input type="text" inputmode="decimal" id="in-bc"></div>
+      <div class="field"><label for="in-dragmodel">Drag standard</label>
+        <select id="in-dragmodel">
+          <option value="G7">G7 &mdash; boat-tail match</option>
+          <option value="G1">G1 &mdash; flat-base / legacy</option>
+        </select></div>
+      <div class="field"><label for="in-profile">Aero coefficients</label>
+        <select id="in-profile"></select></div>
+    </div>
+    <p class="hint">The BC must match the standard: a G1 number entered
+    against G7 will be wrong by roughly a factor of two.</p>
+    <p class="hint" id="coef-provenance"></p>
   </div>
 </section>
 
@@ -1132,7 +1309,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.2.1 · 2026-08-19 02:28 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.4.1 · 2026-08-19 03:39 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -3789,11 +3966,15 @@ var PBShotLog = (function () {
  * downward), and a MOA-quoted reticle is laid out in MOA, so its scale is
  * the MIL zoom divided by 3.438.
  *
- * The red dot is the RESIDUAL hold: physical minus displayed, i.e. what
- * you must still hold after dialling what the table shows. Wind in dope
- * puts it at the centre; hold-yourself makes it the wind hold. It is
- * never the raw dope -- drawing that would tell the shooter to hold and
- * dial the same correction twice.
+ * The picture is the one you get AFTER dialling: the pattern never
+ * moves, and the markers are re-referenced to whatever is on the
+ * turrets (opts.dialled).
+ *
+ * The red dot is the RESIDUAL hold: physical truth minus what was
+ * actually dialled, i.e. what you must still hold once the turrets are
+ * set. Wind in dope leaves only the sub-click remainder; hold-yourself
+ * adds the wind hold. It is never the raw dope -- drawing that would
+ * tell the shooter to hold and dial the same correction twice.
  */
 'use strict';
 
@@ -3837,18 +4018,33 @@ var PBReticle = (function () {
 
     svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size);
 
-    /* Panning. opts.centerMil moves the view so that point sits in the
-     * middle of the ocular -- selecting 900 m in the table should show
-     * you the 900 m mark, and at long range that mark is well outside an
-     * un-panned view, which is why selecting a far row used to change
-     * nothing you could see. Everything moves together, crosshair
-     * included, so the picture stays truthful: when the pan is large the
-     * crosshair genuinely leaves the field. */
+    /* The pattern is drawn centred, always.
+     *
+     * Dialling a turret does not move the crosshair inside the ocular.
+     * The shooter looks at a centred crosshair and it is the strike of
+     * the bullet that moves relative to it. An earlier version panned
+     * the whole picture, crosshair included, so entering a distance
+     * appeared to shove the sight upwards -- a picture no shooter has
+     * ever seen through a scope. The desktop build never did this: its
+     * _draw_vector is anchored at (cx, cy) and only the hold markers
+     * move. */
     var uScale = (spec.unit === 'MOA') ? 3.438 : 1;
-    var offX = opts.centerMil ? opts.centerMil.x * uScale : 0;
-    var offY = opts.centerMil ? opts.centerMil.y * uScale : 0;
-    function X(v) { return cx + (v - offX) * u; }
-    function Y(v) { return cy + (v - offY) * u; }
+    function X(v) { return cx + v * u; }
+    function Y(v) { return cy + v * u; }
+
+    /* opts.dialled is the correction now ON the turrets, in MIL, in the
+     * same hold sense as the markers. Subtracting it re-references every
+     * marker to that dial: the distance you dialled for lands at the
+     * centre -- bar the sub-click remainder, and bar the wind when you
+     * chose to hold it yourself -- while nearer distances ride above the
+     * crosshair and farther ones below. That is the sight picture the
+     * shooter is actually looking at once the turrets are set. */
+    var dialX = (opts.dialled && Number.isFinite(opts.dialled.x))
+      ? opts.dialled.x : 0;
+    var dialY = (opts.dialled && Number.isFinite(opts.dialled.y))
+      ? opts.dialled.y : 0;
+    function MX(milx) { return cx + (milx - dialX) * uScale * u; }
+    function MY(mily) { return cy + (mily - dialY) * uScale * u; }
 
     /* Clip to the ocular circle: posts and stadia run to the edge of the
      * pattern by definition, and without this they spill outside the
@@ -4021,17 +4217,18 @@ var PBReticle = (function () {
       }
     }
 
-    /* Holdover ladder: where each distance in the table falls if you dial
-     * nothing beyond the zero. Drawn under the residual dot because the
-     * two answer different questions -- the ladder is "where is 700 m on
-     * my reticle", the dot is "what must I still hold after dialling". */
+    /* The table, drawn where each distance lands with opts.dialled on
+     * the turrets. Markers arrive as full holds from the zero and MX/MY
+     * re-reference them to the dial, so the row you dialled for sits at
+     * the aim point and the rest fan out around it. Drawn under the
+     * residual dot: the ladder answers "where does 700 m land now", the
+     * dot answers "where do I put the crosshair". */
     if (opts.ladder && opts.ladder.length) {
       var lg = el('g', { class: 'sb-ladder' });
       svg.appendChild(lg);
-      var scale = (spec.unit === 'MOA') ? 3.438 : 1;
       for (var mi = 0; mi < opts.ladder.length; mi++) {
         var m = opts.ladder[mi];
-        var mx = X(m.mil_x * scale), my = Y(m.mil_y * scale);
+        var mx = MX(m.mil_x), my = MY(m.mil_y);
         if (mx < -20 || mx > size + 20 || my < -20 || my > size + 20) continue;
         var sel = !!m.selected;
         lg.appendChild(el('line', {
@@ -4047,8 +4244,12 @@ var PBReticle = (function () {
                                         'stroke-width': 2 }));
         }
         if (m.label && (sel || opts.labelAll !== false)) {
+          /* The selected label rides ABOVE its mark, not beside it. Now
+           * that the dialled row lands on the crosshair, a label on the
+           * same baseline is printed straight over the horizontal arm
+           * and cannot be read. */
           var lt = el('text', {
-            x: mx + (sel ? 13 : 9), y: my + 3.5,
+            x: mx + (sel ? 11 : 9), y: my + (sel ? -9 : 3.5),
             'font-size': sel ? 12 : 10,
             'font-weight': sel ? 700 : 400,
             fill: sel ? 'var(--sb-accent-2)' : 'var(--sb-accent)',
@@ -4062,7 +4263,15 @@ var PBReticle = (function () {
       }
     }
 
-    /* The residual hold dot, drawn last so nothing occludes it. */
+    /* The residual hold dot -- the aim point -- drawn last so nothing
+     * occludes it.
+     *
+     * Plotted with X()/Y(), NOT MX()/MY(): opts.hold is already physical
+     * minus dialled, so it is expressed in the dialled frame and
+     * subtracting the dial again would double-count it. It therefore
+     * lands on the selected ladder marker, which is the same quantity
+     * arrived at from the other side, and the two agreeing is the check
+     * that this is right. */
     if (opts.hold) {
       var hx = X(opts.hold.mil_x * (spec.unit === 'MOA' ? 3.438 : 1));
       var hy = Y(opts.hold.mil_y * (spec.unit === 'MOA' ? 3.438 : 1));
@@ -4537,7 +4746,11 @@ var PBOnline = (function () {
       /* The distances the shooter is actually shooting, in metres. This
        * is the worksheet: the table is an input, not a fixed grid. */
       rows: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
-      windInDope: true,
+      /* Hold-yourself is the default: it is the honest starting
+       * point, because a shooter who has not told the app about the
+       * wind should not be handed a windage number to dial. Tapping
+       * the badge puts the wind back in the dope. */
+      windInDope: false,
       /* Where each input came from. A logged shot is only as good as its
        * worst input, and "typed" against "measured five minutes ago" is
        * the difference between a record worth analysing and one worth
@@ -5267,9 +5480,9 @@ var PBOnline = (function () {
     PBReticle.draw($('shot-ret'), currentReticle(),
                    { size: $('shot-ret').clientWidth || 320,
                      zoomMil: S.zoom, hold: hold, ladder: holdLadder(),
-                     centerMil: viewCenter(d) });
+                     dialled: dialledFor(d) });
     $('shot-hold-note').textContent = holdNoteFor(hold);
-    $('shot-ladder-note').textContent = ladderNote() + panNote(d);
+    $('shot-ladder-note').textContent = ladderNote(d) + dialNote(d);
   }
 
   // ------------------------------------------------------------------
@@ -5396,26 +5609,73 @@ var PBOnline = (function () {
 
   /* Residual hold = physical minus displayed. Wind in dope -> centre;
    * hold-yourself -> the dot IS the wind hold. Never the raw dope. */
+  /* One click, as the true angle it really moves, in MIL.
+   *
+   * The turret factor is defined by this app's own hint text: a scope
+   * that moves 9.7 MIL when you dial 10.0 has factor 10.0/9.7. So the
+   * shooter dials value*f nominal to get value of real movement, which
+   * means one nominal click is worth step/f of truth. */
+  function clickStepMil() {
+    var c = U.CLICK_VALUES[S.out.click] || U.CLICK_VALUES['0.1 MIL'];
+    var step = (c.unit === 'MIL') ? c.v : c.v / 3.438;
+    var f = S.out.turret;
+    if (!Number.isFinite(f) || f <= 0) f = 1.0;
+    return step / f;
+  }
+
+  /* What is actually ON the turrets for this distance, in MIL, in the
+   * same hold sense as the reticle markers.
+   *
+   * Built from the DISPLAYED solution, not the physical one: HOLD
+   * YOURSELF deliberately leaves the wind off the turrets, and dialling
+   * it here would erase the very hold the shooter is being told to make.
+   *
+   * Rounded to whole clicks, because that is all a turret can do. The
+   * remainder is real -- up to half a click on each axis -- and carrying
+   * it is the difference between a picture of the solution and a picture
+   * of the shot. The desktop does the same in _rf_center_scope. */
+  function dialledFor(d) {
+    var res = displayed();
+    if (!res || !Number.isFinite(d)) return null;
+    var row = cardAt(res.card, d);
+    if (!row) return null;
+    var step = clickStepMil();
+    function snap(v) { return Math.round(v / step) * step; }
+    return { x: snap(-row[5]), y: snap(-row[2]) };
+  }
+
   function holdResidual(d) {
     if (!resPhys || !Number.isFinite(d)) return null;
     var a = cardAt(resPhys.card, d);
-    var b = cardAt(displayed().card, d);
-    if (!a || !b) return null;
-    /* Card MIL columns: [2] drop, [5] drift. A residual drop below the
-     * sight line is held DOWN-reticle (+y); a residual drift to the right
-     * is held left (-x). */
-    return { mil_y: -(a[2] - b[2]), mil_x: -(a[5] - b[5]) };
+    var dial = dialledFor(d);
+    if (!a || !dial) return null;
+    /* Physical truth minus what was dialled. Card MIL columns: [2] drop,
+     * [5] drift. A residual drop below the sight line is held
+     * DOWN-reticle (+y); a residual drift to the right is held left
+     * (-x). */
+    return { mil_y: -a[2] - dial.y, mil_x: -a[5] - dial.x };
   }
 
   function holdNoteFor(hold) {
-    if (!hold) return 'Pick a distance to place the hold dot.';
+    if (!hold) return 'Pick a distance to place the aim dot.';
+    var rem = Math.hypot(hold.mil_x, hold.mil_y);
+    /* A turret moves in whole clicks, so part of the correction cannot
+     * be dialled at all. Naming it is the honest thing: it is the
+     * difference between the number the solver produced and the number
+     * the shooter can actually put on the rifle. */
+    var subClick = ' A turret only moves in whole ' + S.out.click +
+      ' clicks, so the last ' + rem.toFixed(2) + ' MIL cannot be dialled.';
     if (S.windInDope) {
-      return 'Wind is in the dope: dial both numbers and aim dead centre. ' +
-        'The dot sits at the crosshair.';
+      if (rem < 0.005) {
+        return 'Wind is in the dope: dial both numbers and aim dead ' +
+          'centre — this row falls on whole clicks exactly.';
+      }
+      return 'Wind is in the dope: dial both numbers, then aim at the ' +
+        'dot.' + subClick;
     }
     if (!hasWind()) {
       return 'No wind entered, so there is nothing to hold for. Enter a ' +
-        'wind speed to see the hold.';
+        'wind speed to see the hold.' + (rem < 0.005 ? '' : subClick);
     }
     return 'Hold yourself: dial elevation only, then aim AT the dot — ' +
       Math.abs(hold.mil_x).toFixed(2) + ' MIL ' +
@@ -5424,15 +5684,14 @@ var PBOnline = (function () {
 
   /* The table, drawn on the reticle.
    *
-   * A mark per listed distance at its FULL hold from the zero -- what you
-   * would aim with if you dialled nothing. That is the picture a shooter
-   * means by "where is 700 m on my reticle", and it is why the residual
-   * dot alone was not enough: with the wind dialled in, that dot sits on
-   * the crosshair for every distance, so selecting rows changed nothing
-   * you could see.
+   * A mark per listed distance at its FULL hold from the zero. The
+   * reticle re-references them to whatever is on the turrets, so what
+   * the shooter sees is where every distance lands once the selected row
+   * is dialled: nearer above the crosshair, farther below.
    *
-   * Built from the PHYSICAL trajectory, not the displayed one: dialling
-   * nothing means holding for everything, wind included. */
+   * Built from the PHYSICAL trajectory, not the displayed one: the mark
+   * is where the bullet really goes, and the dial that is subtracted
+   * from it carries the choice of what was corrected for. */
   function holdLadder() {
     if (!S.ladder || !resPhys) return [];
     var out = [];
@@ -5448,36 +5707,39 @@ var PBOnline = (function () {
     return out;
   }
 
-  function ladderNote() {
+  function ladderNote(d) {
     if (!S.ladder) return '';
     var n = holdLadder().length;
     if (!n) return '';
-    return 'The ' + n + ' blue marks are the table: where each distance ' +
-      'falls if you dial nothing beyond your ' +
-      distDisp(S.rifle.zeroRange) + ' ' + U.label('distance') +
-      ' zero. The green one is the row you have selected.';
+    /* With no dial the reticle falls back to a zero offset, so the marks
+     * really are plain holds from the zero and the post-dial sentence
+     * would be describing a picture that is not on screen. It happens
+     * whenever the selected distance is past where the bullet reaches. */
+    if (!dialledFor(d)) {
+      return 'The ' + n + ' blue marks are the table: where each distance ' +
+        'falls if you dial nothing beyond your ' +
+        distDisp(S.rifle.zeroRange) + ' ' + U.label('distance') + ' zero. ' +
+        'Nothing is dialled here — the selected distance is past where ' +
+        'this load reaches.';
+    }
+    return 'The ' + n + ' blue marks are the table, drawn where each ' +
+      'distance lands once the selected row is dialled — nearer ones ' +
+      'above the crosshair, farther ones below. The green one is the row ' +
+      'you selected.';
   }
 
-  /* Centre the sight picture on the selected distance's hold, so that
-   * choosing a row actually shows you something: at 900 m the mark is
-   * far outside an un-panned view and used to be culled at the edge. */
-  function viewCenter(d) {
-    if (!resPhys || !Number.isFinite(d)) return null;
-    var row = cardAt(resPhys.card, d);
-    if (!row) return null;
-    return { x: -row[5], y: -row[2] };
-  }
-
-  /* A panned view puts something other than the crosshair in the
-   * middle, and a shooter glancing at it could read the centre AS the
-   * crosshair. Say how far it moved. */
-  function panNote(d) {
-    var c = viewCenter(d);
-    if (!c) return '';
-    if (Math.hypot(c.x, c.y) < 0.05) return '';
-    return ' View centred on the ' + distDisp(d) + ' ' +
-      U.label('distance') + ' hold, ' + Math.abs(c.y).toFixed(2) +
-      ' MIL ' + (c.y > 0 ? 'below' : 'above') + ' the crosshair.';
+  /* The picture assumes the turrets are already set, so it has to say
+   * what was put on them. Reuses the table's own call rather than
+   * re-deriving it, which is the only way this sentence cannot end up
+   * contradicting the row it describes. */
+  function dialNote(d) {
+    var res = displayed();
+    var row = (res && Number.isFinite(d)) ? cardAt(res.card, d) : null;
+    if (!row) return '';
+    var e = elevCall(row), w = windCall(row);
+    return ' Drawn with the ' + distDisp(d) + ' ' + U.label('distance') +
+      ' solution on the turrets: ' + e.text + ' ' + w.text + ' ' +
+      U.correctionLabel(S.out.corr, S.out.click) + '.';
   }
 
   function renderReticle() {
@@ -5489,10 +5751,10 @@ var PBOnline = (function () {
     var hold = holdResidual(d);
     PBReticle.draw(svg, currentReticle(), {
       size: size, zoomMil: S.zoom, hold: hold, ladder: holdLadder(),
-      centerMil: viewCenter(d)
+      dialled: dialledFor(d)
     });
     $('hold-note').textContent = holdNoteFor(hold);
-    $('ladder-note').textContent = ladderNote() + panNote(d);
+    $('ladder-note').textContent = ladderNote(d) + dialNote(d);
   }
 
   function renderRose() {
@@ -5519,7 +5781,25 @@ var PBOnline = (function () {
       b.dragModel + ' ' + b.bc.toFixed(3) + ' · ' +
       fmt(U.fromSI('velocity', S.rifle.mv), 0) + ' ' +
       U.label('velocity') + ' · zero ' +
-      distDisp(S.rifle.zeroRange) + (sg ? ' · Sg ' + sg.sg.toFixed(2) : '');
+      distDisp(S.rifle.zeroRange) + ' ' + U.label('distance') +
+      (sg ? ' · Sg ' + sg.sg.toFixed(2) : '');
+    /* The three doors on the equipment screen each carry their own
+     * setting, so the hub answers "what am I set up with" without
+     * opening anything. A button labelled only "Bullet" would make you
+     * go in just to find out what is loaded. */
+    $('nav-rifle').textContent =
+      '1:' + fmt(S.rifle.twist, 2).replace(/\.?0+$/, '') + '″ ' +
+      (S.rifle.twistLH ? 'LH' : 'RH') + ' · zero ' +
+      distDisp(S.rifle.zeroRange) + ' ' + U.label('distance') +
+      (sg ? ' · Sg ' + sg.sg.toFixed(2) : '');
+    $('nav-projectile').textContent =
+      (b.name.length > 30 ? b.name.slice(0, 29) + '…' : b.name) + '\n' +
+      b.dragModel + ' ' + b.bc.toFixed(3) + ' · ' +
+      fmt(U.fromSI('velocity', S.rifle.mv), 0) + ' ' + U.label('velocity');
+    $('nav-sight').textContent =
+      currentReticle().name + '\n' +
+      fmt(U.fromSI('sight_h', S.rifle.sightH), U.decimals('sight_h')) + ' ' +
+      U.label('sight_h') + ' above bore';
     $('nav-environment').textContent =
       fmt(U.fromSI('temp', S.atmo.temp), 0) + U.label('temp') +
       ' · ' + fmt(U.fromSI('pressure', S.atmo.pressure), 0) + ' ' +
@@ -5578,7 +5858,7 @@ var PBOnline = (function () {
     var badge = $('wind-badge');
     badge.textContent = S.windInDope ? 'WIND IN DOPE' : 'HOLD YOURSELF';
     badge.classList.toggle('hold', !S.windInDope);
-    badge.setAttribute('aria-pressed', String(!S.windInDope));
+    badge.setAttribute('aria-pressed', String(S.windInDope));
   }
 
   // ------------------------------------------------------------------
@@ -6019,8 +6299,34 @@ var PBOnline = (function () {
       },
       function () { save(); scheduleSolve(0); });
 
+    /* Where the sticky page heads park.
+     *
+     * The top bar's height is not a constant: it wraps to a second row
+     * once the brand and the unit switches stop fitting side by side,
+     * and no media query controls that, so guessing a number would leave
+     * a gap on one layout and an overlap on the other. Measure it and
+     * republish it for the stylesheet. Ceil, because the derived height
+     * is fractional and rounding down would show a hairline of scrolling
+     * text above the head. */
+    var sbRoot = document.querySelector('.sb-app');
+    var sbBar = document.querySelector('.sb-app .topbar');
+    function syncHeadOffset() {
+      if (!sbRoot || !sbBar) return;
+      sbRoot.style.setProperty(
+        '--sb-topbar-h',
+        Math.ceil(sbBar.getBoundingClientRect().height) + 'px');
+    }
+    syncHeadOffset();
+    if (window.ResizeObserver && sbBar) {
+      new ResizeObserver(syncHeadOffset).observe(sbBar);
+    }
+
     var rt = null;
     window.addEventListener('resize', function () {
+      /* Not debounced: the offset must track the wrap as it happens, and
+       * it is one measurement. The redraws below are the expensive part
+       * and they stay debounced. */
+      syncHeadOffset();
       if (rt) clearTimeout(rt);
       rt = setTimeout(function () {
         renderChart(); renderReticle(); renderRose();
@@ -6262,7 +6568,7 @@ var PBOnline = (function () {
   function renderRifleNote(mod, r) {
     var note = $('rifle-note');
     if (!S.rifles.length) {
-      note.textContent = 'Set the bullet, barrel and sight below, then ' +
+      note.textContent = 'Set the bullet, barrel and sight, then ' +
         '“Save as new” to keep them together. A rifle stores the bullet, ' +
         'muzzle velocity, twist, sight height, zero, reticle and turret — ' +
         'not the weather or the distances, which change every outing.';
@@ -6928,7 +7234,7 @@ var PBOnline = (function () {
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.1.0',
+      version: '1.4.1',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(true), k, sub;
         for (k in (cfgOverrides || {})) {
