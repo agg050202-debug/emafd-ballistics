@@ -1132,7 +1132,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.2.0 · 2026-08-19 01:32 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.2.1 · 2026-08-19 02:28 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -3647,10 +3647,22 @@ var PBShotLog = (function () {
         if (shots[i].id === record.id) shots[i].sent = true;
       }
       persist(shots);
+      changed();
     }).catch(function (e) {
       /* Left with sent:false so a later sweep can retry. */
       console.warn('[superior-ballistics] shot log upload failed:', e.message);
+      changed();
     });
+  }
+
+  /* The upload resolves after the interface has already drawn itself, so
+   * whatever is showing the tally is out of date the moment it lands: a
+   * shot that uploaded fine still reads "pending" until something else
+   * redraws. An event keeps this module unaware of who is listening. */
+  function changed() {
+    try {
+      window.dispatchEvent(new CustomEvent('sb-shotlog-change'));
+    } catch (e) { /* no CustomEvent: the tally is stale, nothing worse */ }
   }
 
   function unsent() {
@@ -6136,6 +6148,10 @@ var PBOnline = (function () {
                    'or blocked. Export what you have before logging more.');
     }
   }
+
+  /* Redraw when an upload finishes, so the panel stops claiming a shot is
+   * pending after it has already been accepted. */
+  window.addEventListener('sb-shotlog-change', function () { renderLogPanel(); });
 
   function renderLogPanel() {
     var n = PBShotLog.count(), unsent = PBShotLog.unsent().length;
