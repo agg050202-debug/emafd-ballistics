@@ -1132,7 +1132,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.1.0 · 2026-08-15 23:27 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.2.0 · 2026-08-19 01:32 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -1198,6 +1198,22 @@ body { background: #101317; }
 </div>
 
 </div><!-- /.sb-app -->
+
+<!-- Shot log upload target.
+     shotlog.js reads window.SB_LOG_ENDPOINT at the moment it sends, so this
+     has to be defined before the app scripts run. Remove it, or set it to an
+     empty string, and the log stays in the browser and nothing is uploaded.
+
+     A failed upload is not a lost shot: the record is already in localStorage
+     and stays marked unsent, and SuperiorBallistics.log.retryUnsent() sweeps
+     the backlog. That is why this being wrong degrades quietly instead of
+     breaking the app.
+
+     The endpoint is an edge function, not the database API: the app sends
+     only Content-Type, and the table API demands apikey and Authorization
+     headers it cannot add. The function also answers the CORS preflight and
+     discards longitude before storing. -->
+<script>window.SB_LOG_ENDPOINT = 'https://znsppnckqvjnoxyonfyf.supabase.co/functions/v1/shot';</script>
 
 <script>
 /* PyBallistics Simplified -- numeric primitives.

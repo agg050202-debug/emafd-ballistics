@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  696b05292535edcea8309ab8d44d2222cc3028bbef4eb996300f3a89caf9c3f1
-bytes   1147908
-stamp   1.1.0 · 2026-08-15 23:27 UTC   (shown in the page footer)
+sha256  efc26f983938bab514ff93973fd3a6a674a55fae81290923a1a7d5c6eb894136
+bytes   1148818
+stamp   1.2.0 · 2026-08-19 01:32 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -45,18 +45,30 @@ insecure origins, and an `https` call from an `http` page is blocked as mixed
 content. This deployment enforces HTTPS, so both work. Everything else keeps
 working regardless.
 
-From the 2026-08-15 build the app can also upload its shot log, but **that is
-switched off in this deployment and sends nothing.** The upload only happens if
-`window.SB_LOG_ENDPOINT` is defined before the app loads, and nothing here
-defines it — shots stay in the browser's own `localStorage`
-(`superior-ballistics-shotlog-v1`) and are exported by hand from the Output
-screen as JSON or CSV.
+From the 1.2.0 build the app **uploads each logged shot as it is saved**, to a
+Supabase edge function. It is the third and last thing that leaves the device:
 
-Turning it on is not a deployment change. The bundle has no configuration hook:
-`src/index.html` loads its scripts directly, so the global has to be set in the
-source and the bundle rebuilt. Editing the shipped file to inject it would work
-and would also invalidate the sha256 above, which is the one thing this
-repository exists to keep honest.
+- **Upload the shot log** — a POST to the project's `shot` function.
+
+A failed upload is not a lost shot. The record is already in `localStorage`
+(`superior-ballistics-shotlog-v1`), stays marked unsent, and
+`SuperiorBallistics.log.retryUnsent()` sweeps the backlog. Nothing about it
+blocks the interface, and manual JSON/CSV export from the Output screen still
+works exactly as before.
+
+The endpoint is set by `window.SB_LOG_ENDPOINT` in `src/index.html`, before the
+app scripts run, so switching it off means rebuilding from source rather than
+editing what is served. It targets an edge function rather than the database
+API because the app sends only `Content-Type` and cannot add the `apikey` and
+`Authorization` headers the table API requires; the function also answers the
+CORS preflight and discards longitude before storing.
+
+**The endpoint is open by construction.** A static page cannot hold a secret,
+so anyone with the URL can insert rows. The table is append-only from outside —
+row-level security is on with no policies, so the anon key can neither read nor
+write, and only the function's service role reaches it. Treat the contents as
+untrusted input rather than as a guarantee that every row came from a real
+shot.
 
 ## Validation
 
