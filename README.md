@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  5df47633bdce668bcf191d67ac23fe6c1f1d72ca093aeb47e2c372e30d90cf80
-bytes   1164907
-stamp   1.4.1 · 2026-08-19 03:39 UTC   (shown in the page footer)
+sha256  236cd742baeed32bac2e18c7558688633b255bbf39ecbb2ce11d1e709d4e9b3a
+bytes   1169736
+stamp   1.4.1 · 2026-08-19 04:12 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -22,6 +22,10 @@ shipped as `1.1.0` — 2026-08-13 17:49, 2026-08-14 02:22, 2026-08-14 20:09 and
 citing "1.1.0" identifies four different programs. From 1.2.0 the number moves
 with the content, and `SuperiorBallistics.version` agrees with it; before that
 it reported 1.1.0 from inside 1.2.x builds.
+
+**`1.4.1` is itself ambiguous.** Two distinct programs carry it: `03:39 UTC`
+(sha `5df47633`) and this one, `04:12 UTC` (sha `236cd742`). The number was
+kept deliberately. Until it is bumped, never accept "1.4.1" alone in a report.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has

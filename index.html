@@ -327,7 +327,11 @@
 }
 .sb-app .readout .dial { padding: 4px 8px; border: 0; background: transparent; }
 .sb-app .readout .dial-value { font-size: clamp(32px, 7vw, 52px); }
-.sb-app .readout-more { white-space: nowrap; }
+.sb-app .readout-more {
+  white-space: nowrap; font-weight: 700;
+  border-color: var(--sb-accent); color: var(--sb-accent);
+}
+.sb-app .readout-more:hover { background: var(--sb-bg-3); }
 
 /* ---------------- fields ---------------- */
 .sb-app .grid2 {
@@ -455,6 +459,27 @@
   padding: 7px 12px;
 }
 .sb-app .badge.hold { background: var(--sb-warn); color: #1c1403; }
+.sb-app .zero-k {
+  font: 600 12px var(--sb-sans); letter-spacing: .07em;
+  text-transform: uppercase; color: var(--sb-fg-dim); flex: none;
+}
+.sb-app input.zero-v {
+  font: 700 30px var(--sb-mono); color: var(--sb-fg);
+  font-variant-numeric: tabular-nums;
+  width: 6ch; flex: none; padding: 2px 8px;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 7px;
+}
+.sb-app input.zero-v:hover { border-color: var(--sb-line); }
+.sb-app input.zero-v:focus {
+  outline: none; border-color: var(--sb-accent);
+  background: var(--sb-bg-3); color: var(--sb-fg);
+}
+.sb-app .zero-u {
+  font: 600 15px var(--sb-mono); color: var(--sb-fg-dim); flex: none;
+}
+/* The shot screen's copy of the wind switch spans its column. */
+.sb-app .badge-wide { width: 100%; text-align: center; }
 .sb-app .summary {
   font: 12px var(--sb-mono); color: var(--sb-fg-dim); flex: 1; min-width: 0;
 }
@@ -860,8 +885,15 @@ body { background: #101317; }
       </svg></button>
   </nav>
 
+  <!-- The zero, large and editable. It was buried in a summary line
+       nobody read, and it is the one number every other number on this
+       screen is measured from. Changing it here changes it everywhere:
+       there is only one S.rifle.zeroRange. -->
   <div class="result-head">
-    <div class="summary" id="solution-summary"></div>
+    <label class="zero-k" for="ro-zero">Zero:</label>
+    <input type="text" inputmode="decimal" id="ro-zero" class="zero-v"
+           aria-label="Zero range">
+    <span class="zero-u" id="ro-zero-unit"></span>
   </div>
 
   <!-- The selected row, full size. This is the number you actually dial,
@@ -879,7 +911,7 @@ body { background: #101317; }
         <span class="dial-unit" id="ro-elev-unit">&nbsp;</span>
       </div>
       <div class="dial">
-        <span class="dial-label">Drift</span>
+        <span class="dial-label" id="ro-wind-label">Drift</span>
         <span class="dial-value" id="ro-wind">&mdash;</span>
         <span class="dial-unit" id="ro-wind-unit">&nbsp;</span>
       </div>
@@ -979,12 +1011,19 @@ body { background: #101317; }
           <span class="dial-unit" id="shot-elev-unit">&nbsp;</span>
         </div>
         <div class="dial">
-          <span class="dial-label">Drift</span>
+          <span class="dial-label" id="shot-wind-label">Drift</span>
           <span class="dial-value" id="shot-wind">&mdash;</span>
           <span class="dial-unit" id="shot-wind-unit">&nbsp;</span>
         </div>
       </div>
       <div class="shot-secondary" id="shot-secondary"></div>
+      <!-- The same switch as the main screen. Full detail is where a
+           shooter decides how to take the shot, so the choice of dialling
+           the wind or holding it belongs here too. Both buttons are the
+           same state; render() writes them together. -->
+      <button type="button" id="shot-wind-badge" class="badge badge-wide"
+              aria-label="Wind in dope" aria-pressed="false">
+        HOLD YOURSELF</button>
       <div class="actions">
         <button type="button" id="btn-log-shot">◎ Log this shot</button>
       </div>
@@ -1309,7 +1348,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.4.1 · 2026-08-19 03:39 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.4.1 · 2026-08-19 04:12 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -5122,6 +5161,48 @@ var PBOnline = (function () {
     return { letter: row[1] < 0 ? 'U' : 'D', mag: Math.abs(v),
              text: (row[1] < 0 ? 'U' : 'D') + fmt(Math.abs(v), dec) };
   }
+  /* The windage figure to SHOW for a distance.
+   *
+   * With the wind in the dope it is what you dial, straight off the
+   * displayed card. Holding it yourself, the dialled windage is the
+   * wind-free one -- spin drift and nothing else -- so it does not move
+   * when the wind changes, and showing it was telling the shooter that
+   * a 12 m/s crosswind needs 0.14 MIL. What matters in that mode is the
+   * HOLD, so that is what the box reads, and it agrees with the dot on
+   * the reticle because both are physical minus dialled.
+   *
+   * The synthetic row keeps the card's own layout, so the conversion to
+   * MIL / MOA / clicks / linear stays U.correction's job. */
+  function windFigure(d, row) {
+    if (S.windInDope || !resPhys || !row || !Number.isFinite(d)) {
+      return windCall(row);
+    }
+    var a = cardAt(resPhys.card, d);
+    var h = holdResidual(d);
+    if (!a || !h) return windCall(row);
+    /* Taken from holdResidual, which is what the reticle dot is drawn
+     * from, so the number and the dot are the same quantity and cannot
+     * drift apart -- it subtracts the dial as whole clicks, which the
+     * shooter can actually set, rather than the exact figure they
+     * cannot. Sign returns to the card's convention: a hold to the
+     * right is a drift to the left.
+     *
+     * The other two columns are the same angle in other units, so they
+     * are scaled by the same factor rather than recomputed; at these
+     * angles that is exact well past the displayed precision, and the
+     * guard covers a row with no drift to scale from. */
+    var mil = -h.mil_x;
+    var k = (Math.abs(a[5]) > 1e-9) ? (mil / a[5]) : 0;
+    var r = row.slice();
+    r[4] = a[4] * k;
+    r[5] = mil;
+    r[6] = a[6] * k;
+    return windCall(r);
+  }
+
+  /* What the windage box is called right now. */
+  function windLabel() { return S.windInDope ? 'Drift' : 'Hold'; }
+
   function windCall(row) {
     var v = U.correction(row, 'drift', S.out.corr, S.out.click,
                          S.out.turret);
@@ -5150,7 +5231,7 @@ var PBOnline = (function () {
      * two columns headed "Drop" would have been worse than losing one.
      * The linear values are still in the shot detail and the export. */
     COLS = ['Distance (' + U.label('distance') + ')',
-            'Drop (' + cu + ')', 'Drift (' + cu + ')',
+            'Drop (' + cu + ')', windLabel() + ' (' + cu + ')',
             'Vel (' + U.label('velocity') + ')',
             'Mach', 'TOF (s)',
             'E (' + U.label('energy') + ')', ''];
@@ -5288,7 +5369,7 @@ var PBOnline = (function () {
         continue;
       }
       cells[1].textContent = elevCall(row).text;
-      cells[2].textContent = windCall(row).text;
+      cells[2].textContent = windFigure(d, row).text;
       cells[3].textContent = fmt(U.fromSI('velocity', row[7]), 0);
       cells[4].textContent = fmt(row[8], 2);
       cells[5].textContent = fmt(row[9], 2);
@@ -5406,7 +5487,8 @@ var PBOnline = (function () {
       return;
     }
 
-    var e = elevCall(row), w = windCall(row);
+    var e = elevCall(row), w = windFigure(d, row);
+    $('shot-wind-label').textContent = windLabel();
     $('shot-elev').textContent = e.text;
     $('shot-wind').textContent = w.text;
     $('shot-elev-unit').textContent = cu +
@@ -5488,23 +5570,15 @@ var PBOnline = (function () {
   // ------------------------------------------------------------------
   // rendering
   // ------------------------------------------------------------------
+  /* The zero, kept in step with the field on the rifle screen. There is
+   * one S.rifle.zeroRange, so editing either moves both -- and every
+   * number on the card, because the scope angle is solved from it. */
   function renderSummary() {
-    var n = $('solution-summary');
-    if (!resPhys) { n.textContent = 'no solution'; return; }
-    var moa = resPhys.scope_angle * 60.0;
-    var b = S.bullet;
-    var parts = [
-      '<b>' + escapeHtml(b.name) + '</b>',
-      b.dragModel + ' BC ' + b.bc.toFixed(3),
-      'zero ' + distDisp(S.rifle.zeroRange) + ' ' + U.label('distance'),
-      'scope angle ' + moa.toFixed(2) + ' MOA'
-    ];
-    if (hasWind()) {
-      parts.push('wind ' + fmt(U.fromSI('wind', S.wind.speed), 1) +
-                 ' ' + U.label('wind') + ' @ ' +
-                 U.degToClock(S.wind.dir) + " o'clock");
+    var f = $('ro-zero');
+    if (document.activeElement !== f) {
+      f.value = distDisp(S.rifle.zeroRange);
     }
-    n.innerHTML = parts.join(' &middot; ');
+    $('ro-zero-unit').textContent = U.label('distance');
   }
 
   function escapeHtml(s) {
@@ -5833,9 +5907,10 @@ var PBOnline = (function () {
       $('ro-wind-unit').textContent = '';
       return;
     }
-    var e = elevCall(row), w = windCall(row);
+    var e = elevCall(row), w = windFigure(d, row);
     $('ro-elev').textContent = e.text;
     $('ro-wind').textContent = w.text;
+    $('ro-wind-label').textContent = windLabel();
     $('ro-elev-unit').textContent = cu +
       (e.letter === 'U' ? ' up' : e.letter === 'D' ? ' down' : '');
     $('ro-wind-unit').textContent = cu +
@@ -5855,10 +5930,12 @@ var PBOnline = (function () {
     renderChart();
     renderReticle();
     if ($('screen-shot').classList.contains('on')) renderShot();
-    var badge = $('wind-badge');
-    badge.textContent = S.windInDope ? 'WIND IN DOPE' : 'HOLD YOURSELF';
-    badge.classList.toggle('hold', !S.windInDope);
-    badge.setAttribute('aria-pressed', String(S.windInDope));
+    var label = S.windInDope ? 'WIND IN DOPE' : 'HOLD YOURSELF';
+    [$('wind-badge'), $('shot-wind-badge')].forEach(function (badge) {
+      badge.textContent = label;
+      badge.classList.toggle('hold', !S.windInDope);
+      badge.setAttribute('aria-pressed', String(S.windInDope));
+    });
   }
 
   // ------------------------------------------------------------------
@@ -6159,9 +6236,14 @@ var PBOnline = (function () {
       });
     }
 
-    $('wind-badge').addEventListener('click', function () {
-      S.windInDope = !S.windInDope;
-      save(); render();
+    /* The table header changes with the mode -- Drift when it is
+     * dialled, Hold when it is not -- so the table is rebuilt, not just
+     * refilled. */
+    [$('wind-badge'), $('shot-wind-badge')].forEach(function (b) {
+      b.addEventListener('click', function () {
+        S.windInDope = !S.windInDope;
+        save(); rebuildTable(); render();
+      });
     });
 
     /* Change the distance from the readout or from the shot detail, not
@@ -6192,6 +6274,23 @@ var PBOnline = (function () {
         save(); scheduleSolve(0);
       });
     }
+    /* The zero is edited in two places and stored in one. Committing
+     * re-solves: the scope angle is derived from it, so every row of the
+     * card moves. */
+    (function () {
+      var f = $('ro-zero');
+      f.addEventListener('change', function () {
+        var v = parseNum(this.value);
+        if (!Number.isFinite(v) || v <= 0) { render(); return; }
+        S.rifle.zeroRange = clamp('rifle.zeroRange', U.toSI('distance', v));
+        $('in-zr').value = fmt(U.fromSI('distance', S.rifle.zeroRange),
+                               U.decimals('distance'));
+        save(); scheduleSolve(0); render();
+      });
+      f.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+      });
+    })();
     bindDistanceField('ro-range');
     bindDistanceField('shot-title');
 
@@ -6390,7 +6489,8 @@ var PBOnline = (function () {
     var cu = U.correctionLabel(S.out.corr, S.out.click);
     var dec = U.correctionDecimals(S.out.corr);
     $('log-sub').textContent = distDisp(d) + ' ' + U.label('distance') +
-      ' — the app said ' + elevCall(row).text + ' and ' + windCall(row).text +
+      ' — the app said ' + elevCall(row).text + ' and ' +
+      windFigure(d, row).text +
       ' ' + cu + '.';
     /* Pre-filled with the recommendation: if the shooter used it as-is,
      * logging is two taps. Signed, up and right positive. */
@@ -7176,7 +7276,8 @@ var PBOnline = (function () {
       '# each row interpolated linearly from a ' +
         buildConfig(true).diag.card_step_m + ' m card grid',
       ['distance_' + U.label('distance'), 'elev_' + cu,
-       'wind_' + cu, 'drop_' + U.label('drop'),
+       (S.windInDope ? 'wind_' : 'hold_') + cu,
+       'drop_' + U.label('drop'),
        'drift_' + U.label('drop'),
        'vel_' + U.label('velocity'),
        'mach', 'tof_s', 'energy_' + U.label('energy')].join(',')
@@ -7190,7 +7291,7 @@ var PBOnline = (function () {
       }
       lines.push([
         U.fromSI('distance', d).toFixed(1),
-        elevCall(row).text, windCall(row).text,
+        elevCall(row).text, windFigure(d, row).text,
         U.fromSI('drop', row[1] * 1e-2).toFixed(2),
         U.fromSI('drop', row[4] * 1e-2).toFixed(2),
         U.fromSI('velocity', row[7]).toFixed(1),
