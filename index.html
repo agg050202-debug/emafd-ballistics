@@ -293,10 +293,26 @@
 }
 .sb-app .bigbtn .nav-ico { width: 32px; height: 32px; }
 
+/* ---------------- presets ---------------- */
+.sb-app .preset-actions {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
+}
+@media (max-width: 560px) {
+  .sb-app .preset-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.sb-app .preset-actions button { white-space: nowrap; }
+.sb-app .preset-actions button:disabled {
+  opacity: .45; cursor: default; border-color: var(--sb-line);
+}
+.sb-app .preset-picker {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sb-app .preset-picker .results-list { margin-top: 0; }
+
 /* ---------------- the selected-row readout ---------------- */
 .sb-app .readout {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 14px; align-items: center;
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
   border-radius: var(--sb-radius); padding: 12px 16px;
@@ -317,7 +333,21 @@
   display: flex; flex-direction: column; gap: 8px; min-width: 15ch;
 }
 .sb-app .readout-side .badge { text-align: center; }
+/* Distance and muzzle velocity, always side by side -- flex, not grid
+   tracks, so they stay a pair when the readout collapses to one column
+   on a phone instead of stacking into a tower. */
+.sb-app .readout-inputs { display: flex; gap: 20px; flex: none; }
 .sb-app .readout-range { display: flex; flex-direction: column; gap: 2px; }
+/* The unit sits beside the number, on its baseline: the field reads
+   "500 m". The chip stays tappable -- it is the same u[data-u] the unit
+   menu is delegated from. */
+.sb-app .readout-range .vrow {
+  display: flex; align-items: baseline; gap: 6px;
+}
+.sb-app .readout-range .vu {
+  font: 600 15px var(--sb-mono); color: var(--sb-accent);
+  font-style: normal; cursor: pointer; white-space: nowrap;
+}
 .sb-app .readout-range .k {
   font: 600 10.5px var(--sb-sans); letter-spacing: .07em;
   text-transform: uppercase; color: var(--sb-fg-dim);
@@ -723,6 +753,28 @@
 .sb-app .sb-unitmenu hr {
   border: 0; border-top: 1px solid var(--sb-line); margin: 4px 2px;
 }
+.sb-app .sb-unitmenu .menu-field {
+  display: flex; flex-direction: column; gap: 4px; padding: 8px 10px 4px;
+}
+.sb-app .sb-unitmenu .menu-field label {
+  font: 600 10.5px var(--sb-sans); letter-spacing: .06em;
+  text-transform: uppercase; color: var(--sb-fg-dim);
+}
+.sb-app .sb-unitmenu .menu-field-line {
+  display: flex; align-items: baseline; gap: 6px;
+}
+.sb-app .sb-unitmenu .menu-field input {
+  font: 700 16px var(--sb-mono); color: var(--sb-fg);
+  font-variant-numeric: tabular-nums; width: 7ch;
+  padding: 4px 6px; border-radius: 6px;
+  border: 1px solid var(--sb-line); background: var(--sb-bg);
+}
+.sb-app .sb-unitmenu .menu-field input:focus {
+  outline: none; border-color: var(--sb-accent);
+}
+.sb-app .sb-unitmenu .menu-field span {
+  font: 12px var(--sb-mono); color: var(--sb-fg-dim);
+}
 .sb-app .sb-unitmenu button.extra {
   font-family: var(--sb-sans); font-size: 12.5px; color: var(--sb-fg-dim);
 }
@@ -866,19 +918,26 @@ body { background: #101317; }
   <!-- The selected row, full size. This is the number you actually dial,
        so it sits above the table rather than inside a cell. -->
   <div class="readout" id="readout" aria-live="polite">
-    <div class="readout-range">
-      <label class="k" for="ro-range">Distance <u data-u="distance"></u></label>
-      <input type="text" inputmode="decimal" id="ro-range"
-             class="v" aria-label="Distance for the solution shown">
-    </div>
-    <!-- Muzzle velocity sits beside the distance because those two are
-         the pair a shooter re-checks between strings; everything else on
-         this screen is derived from them. It is the same
-         S.rifle.mv as the field on the Bullet screen. -->
-    <div class="readout-range">
-      <label class="k" for="ro-mv">Muzzle velocity <u data-u="velocity"></u></label>
-      <input type="text" inputmode="decimal" id="ro-mv"
-             class="v" aria-label="Muzzle velocity">
+    <!-- Distance and muzzle velocity are the pair a shooter re-checks
+         between strings, so they sit side by side rather than stacked,
+         and each carries its unit beside the number: the field reads
+         "500 m", not "500" under a heading. The chip is still the
+         tappable one -- u[data-u] is what opens the unit menu. -->
+    <div class="readout-inputs">
+      <div class="readout-range">
+        <label class="k" for="ro-range">Distance</label>
+        <span class="vrow"><input type="text" inputmode="decimal"
+              id="ro-range" class="v"
+              aria-label="Distance for the solution shown"><u
+              class="vu" data-u="distance"></u></span>
+      </div>
+      <div class="readout-range">
+        <label class="k" for="ro-mv">Muzzle velocity</label>
+        <span class="vrow"><input type="text" inputmode="decimal"
+              id="ro-mv" class="v"
+              aria-label="Muzzle velocity"><u
+              class="vu" data-u="velocity"></u></span>
+      </div>
     </div>
     <div class="readout-dials">
       <div class="dial">
@@ -1057,57 +1116,38 @@ body { background: #101317; }
         <circle cx="24" cy="24" r="2.2" fill="currentColor"
                 stroke="none"/>
       </svg></button>
-    <!-- The fourth door: one saved setup that carries a rifle, a bullet
-         and a sight together, so a shooter who has all three saved gets
-         back exactly what they left with in one tap. -->
-    <button type="button" class="bigbtn" data-goto="screen-setup">
-      <span class="nav-text"><span class="t">Full setup</span><span
-        class="v" id="nav-setup">&nbsp;</span></span>
-      <svg class="nav-ico" viewBox="0 0 48 48" aria-hidden="true"
-           fill="none" stroke="currentColor" stroke-width="2.4"
-           stroke-linecap="round" stroke-linejoin="round">
-        <path d="M7 12h34M7 24h34M7 36h34"/>
-        <circle cx="17" cy="12" r="3.4"/>
-        <circle cx="31" cy="24" r="3.4"/>
-        <circle cx="21" cy="36" r="3.4"/>
-      </svg></button>
-  </div>
-</section>
 
-<!-- ========== FULL SETUP: rifle, bullet and sight in one preset ========== -->
-<section class="screen" id="screen-setup" aria-label="Full setup">
-  <div class="page-head">
-    <button type="button" class="back" data-goto="screen-equipment">&larr; Back</button>
-    <h2>Full setup</h2><span class="head-spacer"></span>
-  </div>
-  <div class="page-body">
-
+    <!-- The full setup is not a fourth door: it is the same four
+         controls applied to all three at once, sitting under the three
+         they combine. -->
     <h3 class="section">Full setup preset</h3>
-    <div class="library">
-      <select id="preset-setup" aria-label="Full setup preset"></select>
-      <div class="lib-actions">
-        <button type="button" id="preset-setup-load">Load</button>
-        <button type="button" id="preset-setup-save">Save as new&hellip;</button>
-        <button type="button" id="preset-setup-del" class="ghost">Delete</button>
-      </div>
+    <p class="hint" id="preset-setup-current"></p>
+    <div class="preset-actions">
+      <button type="button" id="preset-setup-choose">Choose preset</button>
+      <button type="button" id="preset-setup-create">Create preset</button>
+      <button type="button" id="preset-setup-edit">Edit preset</button>
+      <button type="button" id="preset-setup-delete" class="ghost">Delete preset</button>
+    </div>
+    <div class="preset-picker" id="preset-setup-picker" hidden>
+      <input type="search" id="preset-setup-search" autocomplete="off"
+             placeholder="Search presets&hellip;" aria-label="Search setup presets">
+      <div class="results-list" id="preset-setup-list" role="listbox"
+           aria-label="Full setup presets"></div>
     </div>
     <p class="hint" id="preset-setup-note"></p>
-    <p class="hint">Saving here captures the rifle, the bullet and the
-    sight as they stand right now, in one entry. Loading one replaces all
-    three at once.</p>
+    <p class="hint">A full setup saves the rifle, the bullet and the
+    sight as they stand right now, in one entry, and loading it replaces
+    all three.</p>
 
-    <h3 class="section">Shared presets</h3>
     <div class="lib-actions">
       <button type="button" id="preset-refresh">Refresh shared list</button>
       <button type="button" id="preset-author" class="ghost">Set my name&hellip;</button>
     </div>
     <p class="hint" id="preset-status"></p>
     <p class="hint warn">Presets you save are sent to a list everyone
-    using this page can see and load, and anyone can add to it. Do not put
-    anything in a preset name you would not publish. You can delete the
-    ones this browser saved; you cannot delete other people's.</p>
-  </div>
-</section>
+    using this page can see and load, and anyone can add to it. Do not
+    put anything in a preset name you would not publish. You can delete
+    the ones this browser saved; you cannot delete other people's.</p>
 
 <!-- ====== RIFLE: the gun, its zero, and the day it was set ====== -->
 <section class="screen" id="screen-rifle" aria-label="Rifle">
@@ -1118,13 +1158,18 @@ body { background: #101317; }
   <div class="page-body">
 
     <h3 class="section">Rifle preset</h3>
-    <div class="library">
-      <select id="preset-rifle" aria-label="Rifle preset"></select>
-      <div class="lib-actions">
-        <button type="button" id="preset-rifle-load">Load</button>
-        <button type="button" id="preset-rifle-save">Save as new&hellip;</button>
-        <button type="button" id="preset-rifle-del" class="ghost">Delete</button>
-      </div>
+    <p class="hint" id="preset-rifle-current"></p>
+    <div class="preset-actions">
+      <button type="button" id="preset-rifle-choose">Choose preset</button>
+      <button type="button" id="preset-rifle-create">Create preset</button>
+      <button type="button" id="preset-rifle-edit">Edit preset</button>
+      <button type="button" id="preset-rifle-delete" class="ghost">Delete preset</button>
+    </div>
+    <div class="preset-picker" id="preset-rifle-picker" hidden>
+      <input type="search" id="preset-rifle-search" autocomplete="off"
+             placeholder="Search presets&hellip;" aria-label="Search rifle presets">
+      <div class="results-list" id="preset-rifle-list" role="listbox"
+           aria-label="Rifle presets"></div>
     </div>
     <p class="hint" id="preset-rifle-note"></p>
 
@@ -1191,13 +1236,18 @@ body { background: #101317; }
   <div class="page-body">
 
     <h3 class="section">Sight preset</h3>
-    <div class="library">
-      <select id="preset-sight" aria-label="Sight preset"></select>
-      <div class="lib-actions">
-        <button type="button" id="preset-sight-load">Load</button>
-        <button type="button" id="preset-sight-save">Save as new&hellip;</button>
-        <button type="button" id="preset-sight-del" class="ghost">Delete</button>
-      </div>
+    <p class="hint" id="preset-sight-current"></p>
+    <div class="preset-actions">
+      <button type="button" id="preset-sight-choose">Choose preset</button>
+      <button type="button" id="preset-sight-create">Create preset</button>
+      <button type="button" id="preset-sight-edit">Edit preset</button>
+      <button type="button" id="preset-sight-delete" class="ghost">Delete preset</button>
+    </div>
+    <div class="preset-picker" id="preset-sight-picker" hidden>
+      <input type="search" id="preset-sight-search" autocomplete="off"
+             placeholder="Search presets&hellip;" aria-label="Search sight presets">
+      <div class="results-list" id="preset-sight-list" role="listbox"
+           aria-label="Sight presets"></div>
     </div>
     <p class="hint" id="preset-sight-note"></p>
 
@@ -1220,13 +1270,18 @@ body { background: #101317; }
   <div class="page-body">
 
     <h3 class="section">Bullet preset</h3>
-    <div class="library">
-      <select id="preset-bullet" aria-label="Bullet preset"></select>
-      <div class="lib-actions">
-        <button type="button" id="preset-bullet-load">Load</button>
-        <button type="button" id="preset-bullet-save">Save as new&hellip;</button>
-        <button type="button" id="preset-bullet-del" class="ghost">Delete</button>
-      </div>
+    <p class="hint" id="preset-bullet-current"></p>
+    <div class="preset-actions">
+      <button type="button" id="preset-bullet-choose">Choose preset</button>
+      <button type="button" id="preset-bullet-create">Create preset</button>
+      <button type="button" id="preset-bullet-edit">Edit preset</button>
+      <button type="button" id="preset-bullet-delete" class="ghost">Delete preset</button>
+    </div>
+    <div class="preset-picker" id="preset-bullet-picker" hidden>
+      <input type="search" id="preset-bullet-search" autocomplete="off"
+             placeholder="Search presets&hellip;" aria-label="Search bullet presets">
+      <div class="results-list" id="preset-bullet-list" role="listbox"
+           aria-label="Bullet presets"></div>
     </div>
     <p class="hint" id="preset-bullet-note"></p>
 
@@ -1394,7 +1449,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.5.0 · 2026-08-20 02:15 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.5.0 · 2026-08-20 02:55 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -3652,6 +3707,57 @@ var PBUnitMenu = (function () {
       el.appendChild(b);
     });
 
+    /* An editable value, for the box whose number a shooter also wants
+     * to change. It lives in the menu rather than behind a dialog or a
+     * jump to another screen: the point of tapping the box is to fix the
+     * number without losing sight of the solution it feeds. */
+    var fieldInput = null;
+    if (opts.field) {
+      el.appendChild(document.createElement('hr'));
+      var row = document.createElement('div');
+      row.className = 'menu-field';
+      var lab = document.createElement('label');
+      lab.textContent = opts.field.label;
+      var line = document.createElement('div');
+      line.className = 'menu-field-line';
+      fieldInput = document.createElement('input');
+      fieldInput.type = 'text';
+      fieldInput.setAttribute('inputmode', 'decimal');
+      fieldInput.value = opts.field.value;
+      var suffix = document.createElement('span');
+      suffix.textContent = opts.field.unit || '';
+      line.appendChild(fieldInput);
+      line.appendChild(suffix);
+      row.appendChild(lab);
+      row.appendChild(line);
+      el.appendChild(row);
+
+      var commit = function () {
+        var fn = opts.field.commit;
+        var typed = fieldInput.value;
+        close();
+        if (fn) fn(typed);
+      };
+      fieldInput.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter') { ev.preventDefault(); commit(); return; }
+        if (ev.key === 'Escape') return;      /* let the menu close */
+        /* Everything else is typing. The menu's own key handler runs on
+         * the document with capture and would otherwise steal the arrow
+         * keys out of the field. */
+        ev.stopPropagation();
+      });
+      fieldInput.addEventListener('blur', function () {
+        /* Committing on blur as well as on Enter is what makes this work
+         * on a phone, where there is no Enter to press. */
+        if (el && opts.field.commit) {
+          var typed = fieldInput.value;
+          var fn = opts.field.commit;
+          close();
+          fn(typed);
+        }
+      });
+    }
+
     /* Inside .sb-app, not on the body: the colours are custom properties
      * defined there, and a menu parented to the document would render in
      * the dark palette on a light page. Absolute positioning still
@@ -3675,8 +3781,15 @@ var PBUnitMenu = (function () {
     el.style.left = left + 'px';
     el.style.top = top + 'px';
 
-    var first = el.querySelector('button.on') || el.querySelector('button');
-    if (first) first.focus();
+    if (fieldInput) {
+      /* The value is what you came for, so it is focused and selected:
+       * type the new number straight over the old one. */
+      fieldInput.focus();
+      try { fieldInput.select(); } catch (e) { /* older browsers */ }
+    } else {
+      var first = el.querySelector('button.on') || el.querySelector('button');
+      if (first) first.focus();
+    }
 
     document.addEventListener('mousedown', outside, true);
     document.addEventListener('keydown', onKey, true);
@@ -4196,6 +4309,32 @@ var PBPresets = (function () {
     return { ok: ok, record: record, count: list.length };
   }
 
+  /* Overwrite one you already own with what the setup looks like now.
+   * The id survives, so a preset you have been refining stays one entry
+   * rather than becoming five near-duplicates in a list everybody sees.
+   * It is re-sent, because the shared copy is now stale. */
+  function update(id, name, payload, build) {
+    var list = load();
+    var hit = null;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) hit = list[i];
+    }
+    if (!hit) return { ok: false, error: 'that preset is not one of yours' };
+    var body = JSON.stringify(payload);
+    if (body.length > PAYLOAD_MAX) {
+      return { ok: false, error: 'preset is too large to store' };
+    }
+    hit.name = clean(name, NAME_MAX) || hit.name;
+    hit.payload = JSON.parse(body);
+    hit.author = author();
+    hit.build = build || hit.build;
+    hit.sent = false;
+    stamp(hit);
+    var ok = persist(list);
+    send(hit);
+    return { ok: ok, record: hit };
+  }
+
   function remove(id) {
     var list = load().filter(function (p) { return p.id !== id; });
     persist(list);
@@ -4322,7 +4461,7 @@ var PBPresets = (function () {
 
   return {
     KINDS: KINDS, format: FORMAT, storageKey: KEY,
-    save: save, remove: remove, clear: clear,
+    save: save, update: update, remove: remove, clear: clear,
     mine: mine, isMine: isMine, all: all, byId: byId,
     shared: shared, refresh: refresh, status: status,
     unsent: unsent, retryUnsent: retryUnsent,
@@ -5874,12 +6013,23 @@ var PBOnline = (function () {
            * editable value is the MUZZLE velocity -- the figure in the
            * box is the remaining velocity at this distance, which is
            * computed, not an input -- and the label says so. */
+          /* The number in this box is the velocity REMAINING at this
+           * distance, which is computed. The one a shooter wants to
+           * change is the MUZZLE velocity, so the menu carries it as a
+           * field of its own, named, rather than quietly prefilling a
+           * different number than the one that was tapped. */
           PBUnitMenu.open(this, q, function (unit) {
             U.setOverride(q, unit);
             S.unitOverrides = U.getOverrides();
             applyUnitChange();
             renderShot();
-          }, { extra: [{ label: 'Edit muzzle velocity…', action: editMV }] });
+          }, { field: {
+            label: 'Muzzle velocity',
+            unit: U.label('velocity'),
+            value: fmt(U.fromSI('velocity', S.rifle.mv),
+                       U.decimals('velocity')),
+            commit: setMVFromDisplay
+          } });
         });
         d.addEventListener('keydown', function (ev) {
           if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); this.click(); }
@@ -6355,7 +6505,17 @@ var PBOnline = (function () {
     var us = document.querySelectorAll('.sb-app u[data-u]');
     for (i = 0; i < us.length; i++) {
       var q = us[i].dataset.u;
-      us[i].textContent = '(' + U.label(q) + ')';
+      /* Parentheses belong beside a heading -- "Mass (gr)" -- but not
+
+       * beside the value itself, where the pair has to read as one
+
+       * quantity: "500 m", not "500 (m)". */
+
+      us[i].textContent = us[i].classList.contains('vu')
+
+        ? U.label(q)
+
+        : '(' + U.label(q) + ')';
       us[i].classList.toggle('overridden', U.isOverridden(q));
       us[i].setAttribute('role', 'button');
       us[i].setAttribute('tabindex', '0');
@@ -6781,17 +6941,17 @@ var PBOnline = (function () {
     });
   }
 
-  /* Muzzle velocity is edited in a real field, not a window.prompt.
-   * The native dialog rendered the number badly on a phone and offered
-   * no units chip, and the value it prefilled was the MUZZLE velocity
-   * while the box you tapped shows the REMAINING velocity at that
-   * distance -- two different numbers, one dialog. This opens the field
-   * that owns the value, already selected by the focusin handler. */
-  function editMV() {
-    showScreen('screen-projectile');
-    var f = $('in-mv');
-    f.focus();
-    try { f.select(); } catch (e) {}
+  /* One place that turns a typed display value into the stored SI
+   * muzzle velocity, so the readout field, the projectile field and
+   * the shot-detail menu cannot drift apart. */
+  function setMVFromDisplay(typed) {
+    var v = parseNum(typed);
+    if (!Number.isFinite(v)) { render(); return; }
+    S.rifle.mv = clamp('rifle.mv', U.toSI('velocity', v));
+    save();
+    refreshInputs();
+    scheduleSolve(0);
+    render();
   }
 
 
@@ -6892,35 +7052,81 @@ var PBOnline = (function () {
     return false;
   }
 
-  /* Built with textContent only. Names come from a list anyone can post
-   * to, so they are data, never markup. */
-  function renderPresetList(kind) {
-    var sel = $('preset-' + kind);
-    if (!sel) return;
-    var keep = sel.value;
-    sel.innerHTML = '';
-    var none = document.createElement('option');
-    none.value = '';
-    none.textContent = '\u2014 pick a preset \u2014';
-    sel.appendChild(none);
-    PBPresets.all(kind).forEach(function (p) {
-      var o = document.createElement('option');
-      o.value = p.id;
-      o.textContent = p.name + (p.author ? ' \u00b7 ' + p.author : '') +
-        (PBPresets.isMine(p.id) ? ' \u00b7 mine' : '');
-      sel.appendChild(o);
+  /* Which preset each kind is currently showing. Deliberately NOT
+   * persisted: it is a pointer into a list that can change under you --
+   * somebody else's preset can vanish from the shared list between
+   * sessions -- and a stale pointer claiming "you are using My 6.5"
+   * would be worse than no claim at all. */
+  var presetSel = {};
+
+  function presetMatches(p, q) {
+    if (!q) return true;
+    var hay = (p.name + ' ' + (p.author || '')).toLowerCase();
+    return q.toLowerCase().split(/\s+/).every(function (t) {
+      return !t || hay.indexOf(t) >= 0;
     });
-    sel.value = keep;
-    if (sel.value !== keep) sel.value = '';
-    var del = $('preset-' + kind + '-del');
-    if (del) del.disabled = !sel.value || !PBPresets.isMine(sel.value);
   }
 
-  function renderPresetLists() {
-    PBPresets.KINDS.forEach(renderPresetList);
+  /* Built with textContent only. Names come from a list anyone can post
+   * to, so they are data, never markup. */
+  function renderPresetPicker(kind) {
+    var list = $('preset-' + kind + '-list');
+    if (!list) return;
+    var q = ($('preset-' + kind + '-search') || {}).value || '';
+    var hits = PBPresets.all(kind).filter(function (p) {
+      return presetMatches(p, q);
+    });
+    list.innerHTML = '';
+    if (!hits.length) {
+      var none = document.createElement('div');
+      none.className = 'none';
+      none.textContent = PBPresets.all(kind).length
+        ? 'Nothing matches that.'
+        : 'No ' + kind + ' presets yet. "Create preset" makes one from ' +
+          'your current setup.';
+      list.appendChild(none);
+      return;
+    }
+    hits.forEach(function (p) {
+      var row = document.createElement('div');
+      row.setAttribute('role', 'option');
+      row.textContent = p.name +
+        (p.author ? '  \u00b7  ' + p.author : '') +
+        (PBPresets.isMine(p.id) ? '  \u00b7  yours' : '  \u00b7  shared');
+      row.addEventListener('click', function () {
+        loadPreset(kind, p.id);
+      });
+      list.appendChild(row);
+    });
+  }
+
+  function renderPresetPanel(kind) {
+    var cur = presetSel[kind] ? PBPresets.byId(presetSel[kind]) : null;
+    if (presetSel[kind] && !cur) presetSel[kind] = null;   /* it went away */
+    var label = $('preset-' + kind + '-current');
+    if (label) {
+      label.textContent = cur
+        ? 'Using "' + cur.name + '"' +
+          (cur.author ? ' by ' + cur.author : '') +
+          (PBPresets.isMine(cur.id) ? '' : ' (shared \u2014 not yours to edit)')
+        : 'No preset chosen. The setup below is whatever you have typed.';
+    }
+    var mine = !!(cur && PBPresets.isMine(cur.id));
+    var edit = $('preset-' + kind + '-edit');
+    var del = $('preset-' + kind + '-delete');
+    if (edit) edit.disabled = !mine;
+    if (del) del.disabled = !mine;
+  }
+
+  function renderPresets() {
+    PBPresets.KINDS.forEach(function (k) {
+      renderPresetPanel(k);
+      var picker = $('preset-' + k + '-picker');
+      if (picker && !picker.hidden) renderPresetPicker(k);
+    });
     var st = PBPresets.status();
-    var n = PBPresets.shared().length;
     var own = PBPresets.mine().length;
+    var n = PBPresets.shared().length;
     var msg;
     if (!st.endpoint) {
       msg = 'No shared list is configured for this build, so presets stay ' +
@@ -6938,78 +7144,100 @@ var PBOnline = (function () {
     }
     var box = $('preset-status');
     if (box) box.textContent = msg;
-    var tile = $('nav-setup');
-    if (tile) {
-      var setups = PBPresets.all('setup').length;
-      tile.textContent = setups
-        ? setups + ' saved setup' + (setups === 1 ? '' : 's')
-        : 'rifle + bullet + sight in one';
+  }
+
+  /* Applying a preset rebuilds rather than refreshes: a sight preset
+   * carries the click value, and a bullet preset can change the drag
+   * model behind a select, so half-updating would leave a control
+   * showing something the state no longer says. */
+  function loadPreset(kind, id) {
+    var p = PBPresets.byId(id);
+    var note = $('preset-' + kind + '-note');
+    if (!p || !applyPreset(kind, p.payload)) {
+      if (note) note.textContent = 'That preset could not be read.';
+      return;
     }
+    presetSel[kind] = id;
+    syncUnits();
+    save();
+    populateSelects();
+    refreshInputs();
+    rebuildTable();
+    scheduleSolve(0);
+    render();
+    var picker = $('preset-' + kind + '-picker');
+    if (picker) picker.hidden = true;
+    if (note) note.textContent = 'Loaded "' + p.name + '".';
+    renderPresets();
   }
 
   function bindPresetUi(kind) {
-    var sel = $('preset-' + kind);
-    if (!sel) return;
+    var choose = $('preset-' + kind + '-choose');
+    if (!choose) return;
     var note = $('preset-' + kind + '-note');
+    var picker = $('preset-' + kind + '-picker');
+    var search = $('preset-' + kind + '-search');
     function say(t) { if (note) note.textContent = t; }
 
-    sel.addEventListener('change', function () {
-      var del = $('preset-' + kind + '-del');
-      if (del) del.disabled = !this.value || !PBPresets.isMine(this.value);
-    });
-
-    $('preset-' + kind + '-load').addEventListener('click', function () {
-      var p = sel.value ? PBPresets.byId(sel.value) : null;
-      if (!p) { say('Pick a preset first.'); return; }
-      if (!applyPreset(kind, p.payload)) {
-        say('That preset could not be read.');
-        return;
+    choose.addEventListener('click', function () {
+      picker.hidden = !picker.hidden;
+      if (!picker.hidden) {
+        renderPresetPicker(kind);
+        if (search) search.focus();
       }
-      /* A sight preset carries the output units, and a bullet preset can
-       * change the drag model behind a select, so the whole interface is
-       * rebuilt rather than just refreshed. */
-      syncUnits();
-      save();
-      populateSelects();
-      refreshInputs();
-      rebuildTable();
-      scheduleSolve(0);
-      render();
-      say('Loaded "' + p.name + '".');
     });
+    if (search) {
+      search.addEventListener('input', function () {
+        renderPresetPicker(kind);
+      });
+    }
 
-    $('preset-' + kind + '-save').addEventListener('click', function () {
+    $('preset-' + kind + '-create').addEventListener('click', function () {
       var suggested = kind === 'bullet' ? S.bullet.name : '';
       var name = window.prompt('Name this ' + kind + ' preset', suggested);
       if (name === null) return;
       var r = PBPresets.save(kind, name, presetPayload(kind), buildStamp());
       if (r.error) { say(r.error); return; }
-      if (!r.ok) {
-        say('Kept for this session, but this browser refused to store it: ' +
-            'private browsing, or the storage is full.');
-      } else {
-        say('Saved "' + r.record.name + '"' +
-            (PBPresets.status().endpoint
-              ? ' and queued for the shared list.'
-              : '. No shared list is configured, so it stays here.'));
-      }
-      renderPresetLists();
-      sel.value = r.record.id;
-      var del = $('preset-' + kind + '-del');
-      if (del) del.disabled = !PBPresets.isMine(sel.value);
+      presetSel[kind] = r.record.id;
+      say(r.ok
+        ? 'Created "' + r.record.name + '"' +
+          (PBPresets.status().endpoint
+            ? ' and queued for the shared list.'
+            : '. No shared list is configured, so it stays here.')
+        : 'Kept for this session, but this browser refused to store it: ' +
+          'private browsing, or the storage is full.');
+      renderPresets();
     });
 
-    $('preset-' + kind + '-del').addEventListener('click', function () {
-      if (!sel.value) return;
-      if (!PBPresets.isMine(sel.value)) {
-        say('That one was shared by somebody else, so it is not yours to ' +
-            'delete.');
+    $('preset-' + kind + '-edit').addEventListener('click', function () {
+      var cur = presetSel[kind] ? PBPresets.byId(presetSel[kind]) : null;
+      if (!cur || !PBPresets.isMine(cur.id)) {
+        say('Choose one of your own presets first.');
         return;
       }
-      PBPresets.remove(sel.value);
-      renderPresetLists();
+      var name = window.prompt('Rename it, or keep the name and just ' +
+                               'overwrite it with the current setup',
+                               cur.name);
+      if (name === null) return;
+      var r = PBPresets.update(cur.id, name, presetPayload(kind),
+                               buildStamp());
+      if (r.error) { say(r.error); return; }
+      say('Updated "' + r.record.name + '" to the current ' + kind + '.');
+      renderPresets();
+    });
+
+    $('preset-' + kind + '-delete').addEventListener('click', function () {
+      var cur = presetSel[kind] ? PBPresets.byId(presetSel[kind]) : null;
+      if (!cur || !PBPresets.isMine(cur.id)) {
+        say('Choose one of your own presets first. A preset somebody ' +
+            'else shared is not yours to delete.');
+        return;
+      }
+      PBPresets.remove(cur.id);
+      presetSel[kind] = null;
       say('Deleted from this browser. A copy already sent to the shared ' +
           'list stays there.');
+      renderPresets();
     });
   }
 
@@ -7026,8 +7254,8 @@ var PBOnline = (function () {
     var refresh = $('preset-refresh');
     if (refresh) {
       refresh.addEventListener('click', function () {
-        renderPresetLists();
-        PBPresets.refresh().then(renderPresetLists);
+        renderPresets();
+        PBPresets.refresh().then(renderPresets);
       });
     }
     var who = $('preset-author');
@@ -7037,13 +7265,13 @@ var PBOnline = (function () {
                               PBPresets.author());
         if (n === null) return;
         PBPresets.setAuthor(n);
-        renderPresetLists();
+        renderPresets();
       });
     }
     /* Fetched once at startup and never waited on: the shared list is a
      * convenience, and the app is completely usable without it. */
-    renderPresetLists();
-    PBPresets.refresh().then(renderPresetLists);
+    renderPresets();
+    PBPresets.refresh().then(renderPresets);
   }
 
   // ------------------------------------------------------------------
