@@ -175,10 +175,14 @@
   font: 600 15px var(--sb-sans); color: var(--sb-fg);
 }
 .sb-app .page-head .head-spacer { width: 92px; flex: none; }
+/* Back is red rather than accent blue: it is the one control that
+   leaves the screen, and it should not read as another blue action
+   among the blue ones. --sb-hold is the palette's existing red. */
 .sb-app button.back {
   width: 92px; flex: none; font-weight: 600;
-  border-color: var(--sb-accent); color: var(--sb-accent);
+  border-color: var(--sb-hold); color: var(--sb-hold);
 }
+.sb-app button.back:hover { border-color: var(--sb-hold); }
 .sb-app .page-body {
   display: flex; flex-direction: column; gap: 14px;
   max-width: 720px; width: 100%; margin: 0 auto;
@@ -292,7 +296,7 @@
 /* ---------------- the selected-row readout ---------------- */
 .sb-app .readout {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   gap: 14px; align-items: center;
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
   border-radius: var(--sb-radius); padding: 12px 16px;
@@ -322,6 +326,12 @@
   font: 700 26px var(--sb-mono); color: var(--sb-fg);
   font-variant-numeric: tabular-nums;
 }
+/* Distance and muzzle velocity read at the size of the sight adjustment
+   beside them: they are inputs to the same answer, and a 26 px number
+   next to a 52 px one reads as a caption. SIZE ONLY -- family, weight,
+   colour and position are untouched. */
+.sb-app .readout-range .v,
+.sb-app .readout-range input.v { font-size: clamp(32px, 7vw, 52px); }
 .sb-app .readout-dials {
   display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
 }
@@ -447,44 +457,15 @@
 .sb-app .results-list div.active .meta { color: #e8f0fb; }
 .sb-app .results-list .none { color: var(--sb-fg-dim); cursor: default; }
 
-/* ---------------- result header ---------------- */
-.sb-app .result-head {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  background: var(--sb-bg-2); border: 1px solid var(--sb-line);
-  border-radius: var(--sb-radius); padding: 10px 14px;
-}
+/* ---------------- the wind switch ---------------- */
 .sb-app .badge {
   font: 600 12px var(--sb-mono); letter-spacing: .06em;
   background: var(--sb-accent-2); color: #06130d; border-color: transparent;
   padding: 7px 12px;
 }
 .sb-app .badge.hold { background: var(--sb-warn); color: #1c1403; }
-.sb-app .zero-k {
-  font: 600 12px var(--sb-sans); letter-spacing: .07em;
-  text-transform: uppercase; color: var(--sb-fg-dim); flex: none;
-}
-.sb-app input.zero-v {
-  font: 700 30px var(--sb-mono); color: var(--sb-fg);
-  font-variant-numeric: tabular-nums;
-  width: 6ch; flex: none; padding: 2px 8px;
-  background: transparent; border: 1px solid transparent;
-  border-radius: 7px;
-}
-.sb-app input.zero-v:hover { border-color: var(--sb-line); }
-.sb-app input.zero-v:focus {
-  outline: none; border-color: var(--sb-accent);
-  background: var(--sb-bg-3); color: var(--sb-fg);
-}
-.sb-app .zero-u {
-  font: 600 15px var(--sb-mono); color: var(--sb-fg-dim); flex: none;
-}
 /* The shot screen's copy of the wind switch spans its column. */
 .sb-app .badge-wide { width: 100%; text-align: center; }
-.sb-app .summary {
-  font: 12px var(--sb-mono); color: var(--sb-fg-dim); flex: 1; min-width: 0;
-}
-.sb-app .summary b { color: var(--sb-fg); font-weight: 600; }
-
 /* ---------------- the distance table ---------------- */
 .sb-app .card-wrap {
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
@@ -751,9 +732,9 @@
 /* The readout distance and the shot title are inputs now: the distance
    is changed from wherever you are looking, not only from the table. */
 .sb-app .readout-range input.v {
-  font: 700 26px var(--sb-mono); color: var(--sb-fg);
+  font: 700 clamp(32px, 7vw, 52px) var(--sb-mono); color: var(--sb-fg);
   font-variant-numeric: tabular-nums;
-  width: 6ch; padding: 2px 6px; text-align: left;
+  width: 5ch; padding: 2px 6px; text-align: left;
   background: transparent; border: 1px solid transparent; border-radius: 6px;
 }
 .sb-app .readout-range input.v:hover { border-color: var(--sb-line); }
@@ -867,11 +848,8 @@ body { background: #101317; }
       <svg class="nav-ico" viewBox="0 0 48 48" aria-hidden="true"
            fill="none" stroke="currentColor" stroke-width="2.4"
            stroke-linecap="round" stroke-linejoin="round">
-        <path d="M44 9 26 20"/>
-        <path d="m26 20-3-1.8L6 28l3 5 16.5-9.5"/>
-        <path d="m39.5 15.5-9.5 5.5"/>
-        <path d="m25.5 23.5 1 1.7a3.5 3.5 0 0 0 4.8 1.3l.9-.5"/>
-        <path d="m28 13.5 5.5 3.2"/>
+        <path d="M24 5c4 5 7 11 7 17v19H17V22c0-6 3-12 7-17z"/>
+        <path d="M17 30h14"/>
       </svg></button>
     <button type="button" data-goto="screen-environment">
       <span class="nav-text"><span class="t">Environment</span><span
@@ -885,17 +863,6 @@ body { background: #101317; }
       </svg></button>
   </nav>
 
-  <!-- The zero, large and editable. It was buried in a summary line
-       nobody read, and it is the one number every other number on this
-       screen is measured from. Changing it here changes it everywhere:
-       there is only one S.rifle.zeroRange. -->
-  <div class="result-head">
-    <label class="zero-k" for="ro-zero">Zero:</label>
-    <input type="text" inputmode="decimal" id="ro-zero" class="zero-v"
-           aria-label="Zero range">
-    <span class="zero-u" id="ro-zero-unit"></span>
-  </div>
-
   <!-- The selected row, full size. This is the number you actually dial,
        so it sits above the table rather than inside a cell. -->
   <div class="readout" id="readout" aria-live="polite">
@@ -903,6 +870,15 @@ body { background: #101317; }
       <label class="k" for="ro-range">Distance <u data-u="distance"></u></label>
       <input type="text" inputmode="decimal" id="ro-range"
              class="v" aria-label="Distance for the solution shown">
+    </div>
+    <!-- Muzzle velocity sits beside the distance because those two are
+         the pair a shooter re-checks between strings; everything else on
+         this screen is derived from them. It is the same
+         S.rifle.mv as the field on the Bullet screen. -->
+    <div class="readout-range">
+      <label class="k" for="ro-mv">Muzzle velocity <u data-u="velocity"></u></label>
+      <input type="text" inputmode="decimal" id="ro-mv"
+             class="v" aria-label="Muzzle velocity">
     </div>
     <div class="readout-dials">
       <div class="dial">
@@ -1081,6 +1057,55 @@ body { background: #101317; }
         <circle cx="24" cy="24" r="2.2" fill="currentColor"
                 stroke="none"/>
       </svg></button>
+    <!-- The fourth door: one saved setup that carries a rifle, a bullet
+         and a sight together, so a shooter who has all three saved gets
+         back exactly what they left with in one tap. -->
+    <button type="button" class="bigbtn" data-goto="screen-setup">
+      <span class="nav-text"><span class="t">Full setup</span><span
+        class="v" id="nav-setup">&nbsp;</span></span>
+      <svg class="nav-ico" viewBox="0 0 48 48" aria-hidden="true"
+           fill="none" stroke="currentColor" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 12h34M7 24h34M7 36h34"/>
+        <circle cx="17" cy="12" r="3.4"/>
+        <circle cx="31" cy="24" r="3.4"/>
+        <circle cx="21" cy="36" r="3.4"/>
+      </svg></button>
+  </div>
+</section>
+
+<!-- ========== FULL SETUP: rifle, bullet and sight in one preset ========== -->
+<section class="screen" id="screen-setup" aria-label="Full setup">
+  <div class="page-head">
+    <button type="button" class="back" data-goto="screen-equipment">&larr; Back</button>
+    <h2>Full setup</h2><span class="head-spacer"></span>
+  </div>
+  <div class="page-body">
+
+    <h3 class="section">Full setup preset</h3>
+    <div class="library">
+      <select id="preset-setup" aria-label="Full setup preset"></select>
+      <div class="lib-actions">
+        <button type="button" id="preset-setup-load">Load</button>
+        <button type="button" id="preset-setup-save">Save as new&hellip;</button>
+        <button type="button" id="preset-setup-del" class="ghost">Delete</button>
+      </div>
+    </div>
+    <p class="hint" id="preset-setup-note"></p>
+    <p class="hint">Saving here captures the rifle, the bullet and the
+    sight as they stand right now, in one entry. Loading one replaces all
+    three at once.</p>
+
+    <h3 class="section">Shared presets</h3>
+    <div class="lib-actions">
+      <button type="button" id="preset-refresh">Refresh shared list</button>
+      <button type="button" id="preset-author" class="ghost">Set my name&hellip;</button>
+    </div>
+    <p class="hint" id="preset-status"></p>
+    <p class="hint warn">Presets you save are sent to a list everyone
+    using this page can see and load, and anyone can add to it. Do not put
+    anything in a preset name you would not publish. You can delete the
+    ones this browser saved; you cannot delete other people's.</p>
   </div>
 </section>
 
@@ -1091,6 +1116,17 @@ body { background: #101317; }
     <h2>Rifle</h2><span class="head-spacer"></span>
   </div>
   <div class="page-body">
+
+    <h3 class="section">Rifle preset</h3>
+    <div class="library">
+      <select id="preset-rifle" aria-label="Rifle preset"></select>
+      <div class="lib-actions">
+        <button type="button" id="preset-rifle-load">Load</button>
+        <button type="button" id="preset-rifle-save">Save as new&hellip;</button>
+        <button type="button" id="preset-rifle-del" class="ghost">Delete</button>
+      </div>
+    </div>
+    <p class="hint" id="preset-rifle-note"></p>
 
     <h3 class="section">Rifle</h3>
     <div class="library">
@@ -1108,18 +1144,6 @@ body { background: #101317; }
       <input type="file" id="lib-file" accept="application/json,.json" hidden>
     </div>
 
-    <div class="field wide">
-      <label for="rifle-search">Factory twist rates</label>
-      <input type="search" id="rifle-search" autocomplete="off"
-             role="combobox" aria-expanded="false" aria-autocomplete="list"
-             aria-controls="rifle-results"
-             placeholder="e.g. ruger precision 6.5, tikka, mrad">
-      <div id="rifle-results" class="results-list" role="listbox"
-           aria-label="Factory rifles" hidden></div>
-      <p class="hint" id="twist-note">Sets the twist rate only &mdash; not
-      the muzzle velocity, which depends on your barrel and your load and
-      is set under <em>Bullet</em>.</p>
-    </div>
     <div class="grid2">
       <div class="field"><label for="in-twist">Twist (in/rev)</label>
         <input type="text" inputmode="decimal" id="in-twist"></div>
@@ -1166,6 +1190,17 @@ body { background: #101317; }
   </div>
   <div class="page-body">
 
+    <h3 class="section">Sight preset</h3>
+    <div class="library">
+      <select id="preset-sight" aria-label="Sight preset"></select>
+      <div class="lib-actions">
+        <button type="button" id="preset-sight-load">Load</button>
+        <button type="button" id="preset-sight-save">Save as new&hellip;</button>
+        <button type="button" id="preset-sight-del" class="ghost">Delete</button>
+      </div>
+    </div>
+    <p class="hint" id="preset-sight-note"></p>
+
     <h3 class="section">Sight</h3>
     <div class="grid2">
       <div class="field"><label for="in-sh">Sight height <u data-u="sight_h"></u></label>
@@ -1183,6 +1218,17 @@ body { background: #101317; }
     <h2>Projectile</h2><span class="head-spacer"></span>
   </div>
   <div class="page-body">
+
+    <h3 class="section">Bullet preset</h3>
+    <div class="library">
+      <select id="preset-bullet" aria-label="Bullet preset"></select>
+      <div class="lib-actions">
+        <button type="button" id="preset-bullet-load">Load</button>
+        <button type="button" id="preset-bullet-save">Save as new&hellip;</button>
+        <button type="button" id="preset-bullet-del" class="ghost">Delete</button>
+      </div>
+    </div>
+    <p class="hint" id="preset-bullet-note"></p>
 
     <h3 class="section">Projectile</h3>
     <div class="bullet-pic">
@@ -1348,7 +1394,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.4.1 · 2026-08-19 04:12 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.5.0 · 2026-08-20 02:15 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -1430,6 +1476,13 @@ body { background: #101317; }
      headers it cannot add. The function also answers the CORS preflight and
      discards longitude before storing. -->
 <script>window.SB_LOG_ENDPOINT = 'https://znsppnckqvjnoxyonfyf.supabase.co/functions/v1/shot';</script>
+
+<!-- Shared presets. Set this to an endpoint that answers GET with
+     {format, presets:[...]} and accepts POST of {format, preset}.
+     Leave it undefined and presets still work: they save in this
+     browser and the shared list is simply reported as unavailable.
+     The contract is written out in PRESETS.md. -->
+<script>window.SB_PRESET_ENDPOINT = 'https://znsppnckqvjnoxyonfyf.supabase.co/functions/v1/preset';</script>
 
 <script>
 /* PyBallistics Simplified -- numeric primitives.
@@ -3998,6 +4051,288 @@ var PBShotLog = (function () {
 
 </script>
 <script>
+/* Presets — a rifle, a bullet, a sight, or all three at once.
+ *
+ * The app runs in a browser with no account, so a preset lives in two
+ * places at once: this browser's localStorage, which is what makes it
+ * yours, and a shared list on a server, which is what makes it
+ * everyone's. The local copy is authoritative for the user: saving works
+ * with the server absent, unreachable or refusing, and nothing in the
+ * interface ever waits on the network.
+ *
+ * THE SHARED LIST IS OPEN BY CONSTRUCTION. A static page cannot hold a
+ * secret, so the endpoint takes anything anyone sends it. Everything
+ * that follows from that is handled here rather than wished away:
+ * remote text is written with textContent and never as markup, names and
+ * payloads are length-capped before they are sent, a record is kept of
+ * what THIS browser authored so a user can delete their own, and the
+ * screen says plainly that the list is public. What cannot be fixed from
+ * the client is impersonation and flooding; those need the server.
+ *
+ * Payloads are SI throughout, exactly like the state they come from.
+ * Storing a display value would make a preset mean different things to
+ * two shooters with different unit switches, which is the one bug a
+ * preset system must not have.
+ */
+'use strict';
+
+var PBPresets = (function () {
+  var KEY = 'superior-ballistics-presets-v1';
+  var FORMAT = 'superior-ballistics-preset-1';
+  var KINDS = ['rifle', 'bullet', 'sight', 'setup'];
+
+  var NAME_MAX = 60;
+  var AUTHOR_MAX = 40;
+  var PAYLOAD_MAX = 8000;      /* serialised; a preset is a few hundred */
+
+  var sharedList = [];         /* last successful fetch */
+  var sharedState = 'idle';    /* idle | loading | ok | off | error */
+  var sharedError = '';
+
+  function endpoint() {
+    var u = window.SB_PRESET_ENDPOINT;
+    return (typeof u === 'string' && u) ? u : null;
+  }
+
+  // ------------------------------------------------------------------
+  // local store
+  // ------------------------------------------------------------------
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      var d = raw ? JSON.parse(raw) : null;
+      return (d && Array.isArray(d.presets)) ? d.presets : [];
+    } catch (e) { return []; }
+  }
+
+  function persist(list) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ format: FORMAT,
+                                                 presets: list }));
+      return true;
+    } catch (e) {
+      /* Quota or private browsing. The caller has to be told: a preset
+       * that silently fails to save is worse than a refused one. */
+      return false;
+    }
+  }
+
+  function newId() {
+    return 'p' + Date.now().toString(36) +
+           Math.floor(Math.random() * 1e6).toString(36);
+  }
+
+  function stamp(record) {
+    var d = new Date();
+    var off = -d.getTimezoneOffset();
+    var sign = off < 0 ? '-' : '+';
+    var a = Math.abs(off);
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    record.ts = d.toISOString();
+    record.ts_local = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' +
+      pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) +
+      ':' + pad(d.getSeconds()) + sign + pad(Math.floor(a / 60)) + ':' +
+      pad(a % 60);
+    record.tz_offset_min = off;
+    try {
+      record.tz = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+    } catch (e) { record.tz = null; }
+  }
+
+  /* Trim to the caps rather than refuse: a shooter who pasted a long
+   * name should get a saved preset, not an error dialog. */
+  function clean(s, max) {
+    /* Control characters out, by code point rather than by regex: a
+     * remote name is written with textContent so it cannot inject
+     * markup, but a newline or a bidi override would still let it
+     * wreck the layout of a list it does not own. */
+    var str = String(s === undefined || s === null ? '' : s);
+    var out = '';
+    for (var i = 0; i < str.length && out.length < max; i++) {
+      var c = str.charCodeAt(i);
+      var bad = c < 0x20 || c === 0x7f || c === 0x200e || c === 0x200f ||
+                (c >= 0x202a && c <= 0x202e);
+      out += bad ? ' ' : str.charAt(i);
+    }
+    return out.trim();
+  }
+
+  function author() {
+    try {
+      var a = localStorage.getItem(KEY + '-author');
+      return a ? clean(a, AUTHOR_MAX) : '';
+    } catch (e) { return ''; }
+  }
+
+  function setAuthor(name) {
+    try { localStorage.setItem(KEY + '-author', clean(name, AUTHOR_MAX)); }
+    catch (e) { /* not fatal */ }
+  }
+
+  // ------------------------------------------------------------------
+  // saving
+  // ------------------------------------------------------------------
+  function save(kind, name, payload, build) {
+    if (KINDS.indexOf(kind) < 0) throw new Error('unknown preset kind: ' + kind);
+    var body = JSON.stringify(payload);
+    if (body.length > PAYLOAD_MAX) {
+      return { ok: false, error: 'preset is too large to store' };
+    }
+    var record = {
+      format: FORMAT,
+      id: newId(),
+      kind: kind,
+      name: clean(name, NAME_MAX) || (kind + ' preset'),
+      author: author(),
+      build: build || null,
+      payload: JSON.parse(body),        /* a copy, not the live object */
+      sent: false
+    };
+    stamp(record);
+    var list = load();
+    list.push(record);
+    var ok = persist(list);
+    send(record);
+    return { ok: ok, record: record, count: list.length };
+  }
+
+  function remove(id) {
+    var list = load().filter(function (p) { return p.id !== id; });
+    persist(list);
+    return list.length;
+  }
+
+  function clear() { persist([]); }
+
+  function mine() { return load(); }
+  function isMine(id) {
+    return load().some(function (p) { return p.id === id; });
+  }
+
+  // ------------------------------------------------------------------
+  // the shared list
+  // ------------------------------------------------------------------
+  function send(record) {
+    var url = endpoint();
+    if (!url || typeof fetch !== 'function') return;
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ format: FORMAT, preset: record })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var list = load();
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === record.id) list[i].sent = true;
+      }
+      persist(list);
+    }).catch(function (e) {
+      /* Left unsent for a later sweep. The preset is already on disk, so
+       * a failed upload costs the shooter nothing. */
+      console.warn('[superior-ballistics] preset upload failed:', e.message);
+    });
+  }
+
+  function unsent() {
+    return load().filter(function (p) { return !p.sent; });
+  }
+
+  function retryUnsent() {
+    var pending = unsent();
+    pending.forEach(send);
+    return pending.length;
+  }
+
+  /* Anything the reader cannot vouch for is dropped rather than shown.
+   * A record from a newer format is skipped, not guessed at. */
+  function sanitise(p) {
+    if (!p || typeof p !== 'object') return null;
+    if (p.format !== FORMAT) return null;
+    if (KINDS.indexOf(p.kind) < 0) return null;
+    if (!p.payload || typeof p.payload !== 'object') return null;
+    return {
+      format: FORMAT,
+      id: clean(p.id, 64) || newId(),
+      kind: p.kind,
+      name: clean(p.name, NAME_MAX) || (p.kind + ' preset'),
+      author: clean(p.author, AUTHOR_MAX),
+      ts: clean(p.ts, 40),
+      build: clean(p.build, 60),
+      payload: p.payload,
+      shared: true
+    };
+  }
+
+  function refresh() {
+    var url = endpoint();
+    if (!url || typeof fetch !== 'function') {
+      sharedState = 'off';
+      return Promise.resolve([]);
+    }
+    sharedState = 'loading';
+    return fetch(url, { method: 'GET', headers: { Accept: 'application/json' } })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        var raw = (d && Array.isArray(d.presets)) ? d.presets : [];
+        sharedList = raw.map(sanitise).filter(Boolean);
+        sharedState = 'ok';
+        return sharedList;
+      })
+      .catch(function (e) {
+        sharedState = 'error';
+        sharedError = e.message;
+        console.warn('[superior-ballistics] preset fetch failed:', e.message);
+        return [];
+      });
+  }
+
+  function shared() { return sharedList.slice(); }
+  function status() { return { state: sharedState, error: sharedError,
+                               endpoint: !!endpoint() }; }
+
+  /* Everything this browser can offer for a kind: what you saved first,
+   * then what other people shared, with your own copies filtered out of
+   * the shared half so a preset never appears twice. */
+  function all(kind) {
+    var own = load().filter(function (p) { return p.kind === kind; });
+    var ids = {};
+    own.forEach(function (p) { ids[p.id] = true; });
+    var rest = sharedList.filter(function (p) {
+      return p.kind === kind && !ids[p.id];
+    });
+    return own.concat(rest);
+  }
+
+  function byId(id) {
+    var hit = null;
+    load().forEach(function (p) { if (p.id === id) hit = p; });
+    if (hit) return hit;
+    sharedList.forEach(function (p) { if (p.id === id) hit = p; });
+    return hit;
+  }
+
+  function toJSON() {
+    return JSON.stringify({ format: FORMAT,
+                            exported: new Date().toISOString(),
+                            presets: load() }, null, 1);
+  }
+
+  return {
+    KINDS: KINDS, format: FORMAT, storageKey: KEY,
+    save: save, remove: remove, clear: clear,
+    mine: mine, isMine: isMine, all: all, byId: byId,
+    shared: shared, refresh: refresh, status: status,
+    unsent: unsent, retryUnsent: retryUnsent,
+    author: author, setAuthor: setAuthor,
+    toJSON: toJSON
+  };
+})();
+
+</script>
+<script>
 /* Reticle view, as SVG.
  *
  * Geometry and conventions follow app.py::_draw_vector so a pattern file
@@ -5570,16 +5905,6 @@ var PBOnline = (function () {
   // ------------------------------------------------------------------
   // rendering
   // ------------------------------------------------------------------
-  /* The zero, kept in step with the field on the rifle screen. There is
-   * one S.rifle.zeroRange, so editing either moves both -- and every
-   * number on the card, because the scope angle is solved from it. */
-  function renderSummary() {
-    var f = $('ro-zero');
-    if (document.activeElement !== f) {
-      f.value = distDisp(S.rifle.zeroRange);
-    }
-    $('ro-zero-unit').textContent = U.label('distance');
-  }
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, function (ch) {
@@ -5900,6 +6225,13 @@ var PBOnline = (function () {
     if (document.activeElement !== $('ro-range')) {
       $('ro-range').value = Number.isFinite(d) ? distDisp(d) : '';
     }
+    /* The same S.rifle.mv as the field on the Bullet screen. Guarded so
+     * a re-render mid-edit does not yank the digits out from under the
+     * cursor -- the same reason the distance above is guarded. */
+    if (document.activeElement !== $('ro-mv')) {
+      $('ro-mv').value = fmt(U.fromSI('velocity', S.rifle.mv),
+                             U.decimals('velocity'));
+    }
     if (!row) {
       $('ro-elev').textContent = '—';
       $('ro-wind').textContent = '—';
@@ -5920,7 +6252,6 @@ var PBOnline = (function () {
   function render() {
     resolveSelection();
     renderNav();
-    renderSummary();
     renderRangeWarning();
     renderStability();
     renderZeroWxNote();
@@ -6274,23 +6605,39 @@ var PBOnline = (function () {
         save(); scheduleSolve(0);
       });
     }
-    /* The zero is edited in two places and stored in one. Committing
-     * re-solves: the scope angle is derived from it, so every row of the
-     * card moves. */
+    /* Muzzle velocity, editable from the main screen as well as from
+     * the Bullet screen. One value, two doors. */
     (function () {
-      var f = $('ro-zero');
+      var f = $('ro-mv');
       f.addEventListener('change', function () {
         var v = parseNum(this.value);
-        if (!Number.isFinite(v) || v <= 0) { render(); return; }
-        S.rifle.zeroRange = clamp('rifle.zeroRange', U.toSI('distance', v));
-        $('in-zr').value = fmt(U.fromSI('distance', S.rifle.zeroRange),
-                               U.decimals('distance'));
+        if (!Number.isFinite(v)) { render(); return; }
+        S.rifle.mv = clamp('rifle.mv', U.toSI('velocity', v));
+        $('in-mv').value = fmt(U.fromSI('velocity', S.rifle.mv),
+                               U.decimals('velocity'));
         save(); scheduleSolve(0); render();
       });
       f.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
       });
     })();
+
+    /* Tapping a number selects it, so a value can be replaced by typing
+     * instead of by deleting first. On a phone, clearing a field means
+     * summoning the keyboard, holding backspace and watching what you
+     * are about to retype disappear one digit at a time. Delegated, so
+     * it covers the table's distance cells, which are built later. */
+    document.querySelector('.sb-app').addEventListener('focusin', function (e) {
+      var t = e.target;
+      if (t && t.tagName === 'INPUT' && t.type !== 'checkbox' &&
+          t.type !== 'range' && t.type !== 'file' &&
+          (t.inputMode === 'decimal' || t.classList.contains('dist'))) {
+        /* Deferred: Safari moves the caret after focus and would undo a
+         * selection made synchronously here. */
+        setTimeout(function () { try { t.select(); } catch (err) {} }, 0);
+      }
+    });
+
     bindDistanceField('ro-range');
     bindDistanceField('shot-title');
 
@@ -6434,15 +6781,269 @@ var PBOnline = (function () {
     });
   }
 
+  /* Muzzle velocity is edited in a real field, not a window.prompt.
+   * The native dialog rendered the number badly on a phone and offered
+   * no units chip, and the value it prefilled was the MUZZLE velocity
+   * while the box you tapped shows the REMAINING velocity at that
+   * distance -- two different numbers, one dialog. This opens the field
+   * that owns the value, already selected by the focusin handler. */
   function editMV() {
-    var unit = U.label('velocity');
-    var cur = U.fromSI('velocity', S.rifle.mv).toFixed(U.decimals('velocity'));
-    var typed = window.prompt('Muzzle velocity (' + unit + ')', cur);
-    if (typed === null) return;
-    var v = parseNum(typed);
-    if (!Number.isFinite(v)) return;
-    S.rifle.mv = clamp('rifle.mv', U.toSI('velocity', v));
-    save(); refreshInputs(); scheduleSolve(0);
+    showScreen('screen-projectile');
+    var f = $('in-mv');
+    f.focus();
+    try { f.select(); } catch (e) {}
+  }
+
+
+  // ------------------------------------------------------------------
+  // presets
+  // ------------------------------------------------------------------
+  /* What belongs to what.
+   *
+   * The state groups do not line up with the three things a shooter
+   * thinks of, and the one that matters is muzzle velocity: it is stored
+   * at S.rifle.mv because the solver reads it there, but it is a
+   * property of the LOAD, so it travels with the bullet. Moving the
+   * state key instead would reset every saved session, so the split
+   * lives here and the state stays where it is.
+   *
+   * Zeroing weather goes with the rifle: it describes the day that
+   * rifle's zero was set. Click value and turret factor go with the
+   * sight: they are what that scope's turrets do.
+   *
+   * Everything here is SI, like the state it comes from. A payload in
+   * display units would mean different things to two shooters with
+   * different unit switches. */
+  /* The project's deep-copy idiom, named once instead of spelled out
+   * at every call site. A preset must not alias live state: the
+   * shooter keeps editing after they save. */
+  function copy(o) { return JSON.parse(JSON.stringify(o)); }
+
+  function presetPayload(kind) {
+    if (kind === 'rifle') {
+      return { twist: S.rifle.twist, twistLH: S.rifle.twistLH,
+               zeroRange: S.rifle.zeroRange, zeroWx: copy(S.zeroWx) };
+    }
+    if (kind === 'bullet') {
+      return { bullet: copy(S.bullet), mv: S.rifle.mv };
+    }
+    if (kind === 'sight') {
+      /* click value and turret factor describe what THAT scope's
+       * turrets do, so they belong to the sight. `out.corr` does not:
+       * MRAD-or-MOA is the toggle in the top bar next to metric and
+       * imperial, a reading preference of whoever is holding the rifle.
+       * Carrying it would let a shared preset silently flip a stranger's
+       * whole table into units they did not choose. */
+      return { sightH: S.rifle.sightH, reticleId: S.reticleId,
+               zoom: S.zoom,
+               out: { click: S.out.click, turret: S.out.turret } };
+    }
+    return { rifle: presetPayload('rifle'), bullet: presetPayload('bullet'),
+             sight: presetPayload('sight') };
+  }
+
+  /* Applied key by key, never by assigning a group wholesale: a payload
+   * from an older build, or from somebody else's browser, may be missing
+   * keys this one needs, and a wholesale assignment would leave them
+   * undefined for the solver to trip over. */
+  function applyPreset(kind, p) {
+    if (!p || typeof p !== 'object') return false;
+    var k;
+    if (kind === 'setup') {
+      applyPreset('rifle', p.rifle);
+      applyPreset('bullet', p.bullet);
+      applyPreset('sight', p.sight);
+      return true;
+    }
+    if (kind === 'rifle') {
+      if (Number.isFinite(p.twist)) S.rifle.twist = p.twist;
+      if (typeof p.twistLH === 'boolean') S.rifle.twistLH = p.twistLH;
+      if (Number.isFinite(p.zeroRange)) {
+        S.rifle.zeroRange = clamp('rifle.zeroRange', p.zeroRange);
+      }
+      if (p.zeroWx && typeof p.zeroWx === 'object') {
+        for (k in S.zeroWx) {
+          if (p.zeroWx[k] !== undefined) S.zeroWx[k] = p.zeroWx[k];
+        }
+      }
+      return true;
+    }
+    if (kind === 'bullet') {
+      if (p.bullet && typeof p.bullet === 'object') {
+        for (k in S.bullet) {
+          if (p.bullet[k] !== undefined) S.bullet[k] = p.bullet[k];
+        }
+      }
+      if (Number.isFinite(p.mv)) S.rifle.mv = clamp('rifle.mv', p.mv);
+      return true;
+    }
+    if (kind === 'sight') {
+      if (Number.isFinite(p.sightH)) S.rifle.sightH = p.sightH;
+      if (p.reticleId) S.reticleId = p.reticleId;
+      if (Number.isFinite(p.zoom)) S.zoom = p.zoom;
+      if (p.out && typeof p.out === 'object') {
+        /* corr is skipped even when an older payload carries it: the
+         * display unit stays the reader's choice. */
+        if (p.out.click !== undefined) S.out.click = p.out.click;
+        if (Number.isFinite(p.out.turret)) S.out.turret = p.out.turret;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  /* Built with textContent only. Names come from a list anyone can post
+   * to, so they are data, never markup. */
+  function renderPresetList(kind) {
+    var sel = $('preset-' + kind);
+    if (!sel) return;
+    var keep = sel.value;
+    sel.innerHTML = '';
+    var none = document.createElement('option');
+    none.value = '';
+    none.textContent = '\u2014 pick a preset \u2014';
+    sel.appendChild(none);
+    PBPresets.all(kind).forEach(function (p) {
+      var o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = p.name + (p.author ? ' \u00b7 ' + p.author : '') +
+        (PBPresets.isMine(p.id) ? ' \u00b7 mine' : '');
+      sel.appendChild(o);
+    });
+    sel.value = keep;
+    if (sel.value !== keep) sel.value = '';
+    var del = $('preset-' + kind + '-del');
+    if (del) del.disabled = !sel.value || !PBPresets.isMine(sel.value);
+  }
+
+  function renderPresetLists() {
+    PBPresets.KINDS.forEach(renderPresetList);
+    var st = PBPresets.status();
+    var n = PBPresets.shared().length;
+    var own = PBPresets.mine().length;
+    var msg;
+    if (!st.endpoint) {
+      msg = 'No shared list is configured for this build, so presets stay ' +
+        'in this browser. Everything else works. ' + own + ' saved here.';
+    } else if (st.state === 'loading') {
+      msg = 'Loading the shared list...';
+    } else if (st.state === 'error') {
+      msg = 'The shared list could not be read (' + st.error +
+        '). Your own presets are unaffected. ' + own + ' saved here.';
+    } else if (st.state === 'ok') {
+      msg = n + ' shared preset' + (n === 1 ? '' : 's') + ' loaded, ' +
+        own + ' saved in this browser.';
+    } else {
+      msg = own + ' preset' + (own === 1 ? '' : 's') + ' in this browser.';
+    }
+    var box = $('preset-status');
+    if (box) box.textContent = msg;
+    var tile = $('nav-setup');
+    if (tile) {
+      var setups = PBPresets.all('setup').length;
+      tile.textContent = setups
+        ? setups + ' saved setup' + (setups === 1 ? '' : 's')
+        : 'rifle + bullet + sight in one';
+    }
+  }
+
+  function bindPresetUi(kind) {
+    var sel = $('preset-' + kind);
+    if (!sel) return;
+    var note = $('preset-' + kind + '-note');
+    function say(t) { if (note) note.textContent = t; }
+
+    sel.addEventListener('change', function () {
+      var del = $('preset-' + kind + '-del');
+      if (del) del.disabled = !this.value || !PBPresets.isMine(this.value);
+    });
+
+    $('preset-' + kind + '-load').addEventListener('click', function () {
+      var p = sel.value ? PBPresets.byId(sel.value) : null;
+      if (!p) { say('Pick a preset first.'); return; }
+      if (!applyPreset(kind, p.payload)) {
+        say('That preset could not be read.');
+        return;
+      }
+      /* A sight preset carries the output units, and a bullet preset can
+       * change the drag model behind a select, so the whole interface is
+       * rebuilt rather than just refreshed. */
+      syncUnits();
+      save();
+      populateSelects();
+      refreshInputs();
+      rebuildTable();
+      scheduleSolve(0);
+      render();
+      say('Loaded "' + p.name + '".');
+    });
+
+    $('preset-' + kind + '-save').addEventListener('click', function () {
+      var suggested = kind === 'bullet' ? S.bullet.name : '';
+      var name = window.prompt('Name this ' + kind + ' preset', suggested);
+      if (name === null) return;
+      var r = PBPresets.save(kind, name, presetPayload(kind), buildStamp());
+      if (r.error) { say(r.error); return; }
+      if (!r.ok) {
+        say('Kept for this session, but this browser refused to store it: ' +
+            'private browsing, or the storage is full.');
+      } else {
+        say('Saved "' + r.record.name + '"' +
+            (PBPresets.status().endpoint
+              ? ' and queued for the shared list.'
+              : '. No shared list is configured, so it stays here.'));
+      }
+      renderPresetLists();
+      sel.value = r.record.id;
+      var del = $('preset-' + kind + '-del');
+      if (del) del.disabled = !PBPresets.isMine(sel.value);
+    });
+
+    $('preset-' + kind + '-del').addEventListener('click', function () {
+      if (!sel.value) return;
+      if (!PBPresets.isMine(sel.value)) {
+        say('That one was shared by somebody else, so it is not yours to ' +
+            'delete.');
+        return;
+      }
+      PBPresets.remove(sel.value);
+      renderPresetLists();
+      say('Deleted from this browser. A copy already sent to the shared ' +
+          'list stays there.');
+    });
+  }
+
+  /* The stamp identifies which build wrote a preset, the same way the
+   * shot log records it. Read from the page rather than kept in a second
+   * constant that could drift from the first. */
+  function buildStamp() {
+    var el = document.getElementById('build-stamp');
+    return el ? el.textContent.trim() : null;
+  }
+
+  function bindPresets() {
+    PBPresets.KINDS.forEach(bindPresetUi);
+    var refresh = $('preset-refresh');
+    if (refresh) {
+      refresh.addEventListener('click', function () {
+        renderPresetLists();
+        PBPresets.refresh().then(renderPresetLists);
+      });
+    }
+    var who = $('preset-author');
+    if (who) {
+      who.addEventListener('click', function () {
+        var n = window.prompt('A name to sign your presets with',
+                              PBPresets.author());
+        if (n === null) return;
+        PBPresets.setAuthor(n);
+        renderPresetLists();
+      });
+    }
+    /* Fetched once at startup and never waited on: the shared list is a
+     * convenience, and the app is completely usable without it. */
+    renderPresetLists();
+    PBPresets.refresh().then(renderPresetLists);
   }
 
   // ------------------------------------------------------------------
@@ -6821,92 +7422,7 @@ var PBOnline = (function () {
   }
 
   // ---- factory twist rates -----------------------------------------
-  var rifleIndex = null;
 
-  function searchRifles(q) {
-    if (typeof PB_RIFLES === 'undefined') {
-      /* A missing data asset threw inside the input handler and left the
-       * results list simply empty -- indistinguishable from "no match".
-       * Say which it is. */
-      throw new Error('PB_RIFLES asset is not loaded (data/rifles.js)');
-    }
-    if (!rifleIndex) {
-      rifleIndex = PB_RIFLES.map(function (r, i) {
-        return { i: i, key: (r.mk + ' ' + r.md + ' ' + (r.vr || '') + ' ' +
-                             r.c).toLowerCase() };
-      });
-    }
-    var terms = q.toLowerCase().split(/\s+/).filter(Boolean);
-    if (!terms.length) return [];
-    var out = [];
-    for (var i = 0; i < rifleIndex.length && out.length < 40; i++) {
-      var k = rifleIndex[i].key, ok = true;
-      for (var t = 0; t < terms.length; t++) {
-        if (k.indexOf(terms[t]) < 0) { ok = false; break; }
-      }
-      if (ok) out.push(PB_RIFLES[rifleIndex[i].i]);
-    }
-    return out;
-  }
-
-  function bindRifleSearch() {
-    var box = $('rifle-search'), list = $('rifle-results');
-    box.addEventListener('input', function () {
-      var q = this.value.trim();
-      if (q.length < 2) { list.hidden = true; return; }
-      var hits;
-      try { hits = searchRifles(q); }
-      catch (e) {
-        list.innerHTML = '';
-        var bad = document.createElement('div');
-        bad.className = 'none';
-        bad.textContent = 'factory list unavailable: ' + e.message;
-        list.appendChild(bad);
-        list.hidden = false;
-        return;
-      }
-      list.innerHTML = '';
-      if (!hits.length) {
-        var none = document.createElement('div');
-        none.className = 'none';
-        none.textContent = 'nothing matches “' + q + '”';
-        list.appendChild(none);
-      }
-      hits.forEach(function (r) {
-        var d = document.createElement('div');
-        d.setAttribute('role', 'option');
-        var name = document.createElement('span');
-        name.textContent = r.mk + ' ' + r.md + (r.vr ? ' ' + r.vr : '') + ' ';
-        var meta = document.createElement('span');
-        meta.className = 'meta';
-        meta.textContent = r.c + ' · 1:' + r.t + '″' +
-          (r.b ? ' · ' + r.b + '″ barrel' : '') +
-          (r.td ? ' · ' + r.td + 'H' : '');
-        d.appendChild(name); d.appendChild(meta);
-        d.addEventListener('mousedown', function (ev) {
-          ev.preventDefault();
-          S.rifle.twist = r.t;
-          if (r.td) S.rifle.twistLH = (String(r.td).toUpperCase()[0] === 'L');
-          box.value = '';
-          list.hidden = true;
-          save(); refreshInputs(); scheduleSolve(0);
-          /* Its own element: the library note below is rewritten by
-           * render() after every solve, so a message left there would
-           * vanish a heartbeat after it appeared. */
-          $('twist-note').textContent = 'Twist set to 1:' + r.t + '″ from ' +
-            r.mk + ' ' + r.md + (r.vr ? ' ' + r.vr : '') + ' in ' + r.c +
-            (r.p ? ' — ' + r.p : '') +
-            '. Twist varies between variants of a model and a rebarrelled ' +
-            'rifle carries whatever it was rebarrelled with, so check yours.';
-        });
-        list.appendChild(d);
-      });
-      list.hidden = false;
-    });
-    box.addEventListener('blur', function () {
-      setTimeout(function () { list.hidden = true; }, 180);
-    });
-  }
 
   // ------------------------------------------------------------------
   // the two online helpers
@@ -7323,7 +7839,7 @@ var PBOnline = (function () {
     populateSelects();
     bindInputs();
     bindSearch();
-    bindRifleSearch();
+    bindPresets();
     bindUnitChips();
     refreshInputs();
     renderRifleLibrary();
@@ -7335,7 +7851,7 @@ var PBOnline = (function () {
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.4.1',
+      version: '1.5.0',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(true), k, sub;
         for (k in (cfgOverrides || {})) {

@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  236cd742baeed32bac2e18c7558688633b255bbf39ecbb2ce11d1e709d4e9b3a
-bytes   1169736
-stamp   1.4.1 · 2026-08-19 04:12 UTC   (shown in the page footer)
+sha256  3224e762603dd2d74b585449d008053e06393defa813be827fee0284007b16aa
+bytes   1190277
+stamp   1.5.0 · 2026-08-20 02:15 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -23,9 +23,9 @@ citing "1.1.0" identifies four different programs. From 1.2.0 the number moves
 with the content, and `SuperiorBallistics.version` agrees with it; before that
 it reported 1.1.0 from inside 1.2.x builds.
 
-**`1.4.1` is itself ambiguous.** Two distinct programs carry it: `03:39 UTC`
-(sha `5df47633`) and this one, `04:12 UTC` (sha `236cd742`). The number was
-kept deliberately. Until it is bumped, never accept "1.4.1" alone in a report.
+**`1.4.1` is ambiguous and always will be.** Three distinct programs carry it:
+`2026-08-19 03:39`, `04:12` and `2026-08-20 01:32`. Never accept "1.4.1" alone
+in a report. From 1.5.0 the number moves with the release again.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
@@ -75,6 +75,25 @@ editing what is served. It targets an edge function rather than the database
 API because the app sends only `Content-Type` and cannot add the `apikey` and
 `Authorization` headers the table API requires; the function also answers the
 CORS preflight and discards longitude before storing.
+
+### Shared presets
+
+From 1.5.0 the app also publishes and reads **shared presets** — rifle, bullet,
+sight, or all three at once — through a second edge function. Presets always
+save to the shooter's own browser; the shared list is what travels.
+
+**That list is deliberately open.** No accounts, no authentication: anyone may
+read it and anyone may publish to it. That was a considered choice, and
+moderation is deletion by the owner. The function authenticates nobody; it
+validates only shape — format, kind, a payload, and a 64 KB body cap — because
+a malformed or enormous record would spoil the list for everyone. The table
+carries a `hidden` flag so a preset can be withdrawn from the list without
+being destroyed.
+
+What the client can defend it cannot fix: remote text is written with
+`textContent` and never as markup, lengths are capped and control characters
+stripped, and a browser may delete only what it authored. Impersonation — the
+author field is free text — and flooding remain open.
 
 **The endpoint is open by construction.** A static page cannot hold a secret,
 so anyone with the URL can insert rows. The table is append-only from outside —
