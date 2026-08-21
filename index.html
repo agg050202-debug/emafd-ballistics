@@ -1124,8 +1124,8 @@ body { background: #101317; }
     <p class="hint" id="preset-setup-current"></p>
     <div class="preset-actions">
       <button type="button" id="preset-setup-choose">Choose preset</button>
-      <button type="button" id="preset-setup-create">Create preset</button>
-      <button type="button" id="preset-setup-edit">Edit preset</button>
+      <button type="button" id="preset-setup-save">Save current
+        configuration as preset</button>
       <button type="button" id="preset-setup-delete" class="ghost">Delete preset</button>
     </div>
     <div class="preset-picker" id="preset-setup-picker" hidden>
@@ -1148,6 +1148,8 @@ body { background: #101317; }
     using this page can see and load, and anyone can add to it. Do not
     put anything in a preset name you would not publish. You can delete
     the ones this browser saved; you cannot delete other people's.</p>
+  </div>
+</section>
 
 <!-- ====== RIFLE: the gun, its zero, and the day it was set ====== -->
 <section class="screen" id="screen-rifle" aria-label="Rifle">
@@ -1161,8 +1163,8 @@ body { background: #101317; }
     <p class="hint" id="preset-rifle-current"></p>
     <div class="preset-actions">
       <button type="button" id="preset-rifle-choose">Choose preset</button>
-      <button type="button" id="preset-rifle-create">Create preset</button>
-      <button type="button" id="preset-rifle-edit">Edit preset</button>
+      <button type="button" id="preset-rifle-save">Save current
+        configuration as preset</button>
       <button type="button" id="preset-rifle-delete" class="ghost">Delete preset</button>
     </div>
     <div class="preset-picker" id="preset-rifle-picker" hidden>
@@ -1239,8 +1241,8 @@ body { background: #101317; }
     <p class="hint" id="preset-sight-current"></p>
     <div class="preset-actions">
       <button type="button" id="preset-sight-choose">Choose preset</button>
-      <button type="button" id="preset-sight-create">Create preset</button>
-      <button type="button" id="preset-sight-edit">Edit preset</button>
+      <button type="button" id="preset-sight-save">Save current
+        configuration as preset</button>
       <button type="button" id="preset-sight-delete" class="ghost">Delete preset</button>
     </div>
     <div class="preset-picker" id="preset-sight-picker" hidden>
@@ -1273,8 +1275,8 @@ body { background: #101317; }
     <p class="hint" id="preset-bullet-current"></p>
     <div class="preset-actions">
       <button type="button" id="preset-bullet-choose">Choose preset</button>
-      <button type="button" id="preset-bullet-create">Create preset</button>
-      <button type="button" id="preset-bullet-edit">Edit preset</button>
+      <button type="button" id="preset-bullet-save">Save current
+        configuration as preset</button>
       <button type="button" id="preset-bullet-delete" class="ghost">Delete preset</button>
     </div>
     <div class="preset-picker" id="preset-bullet-picker" hidden>
@@ -1449,7 +1451,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.5.0 · 2026-08-20 02:55 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.5.0 · 2026-08-21 19:16 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -7112,9 +7114,7 @@ var PBOnline = (function () {
         : 'No preset chosen. The setup below is whatever you have typed.';
     }
     var mine = !!(cur && PBPresets.isMine(cur.id));
-    var edit = $('preset-' + kind + '-edit');
     var del = $('preset-' + kind + '-delete');
-    if (edit) edit.disabled = !mine;
     if (del) del.disabled = !mine;
   }
 
@@ -7192,37 +7192,47 @@ var PBOnline = (function () {
       });
     }
 
-    $('preset-' + kind + '-create').addEventListener('click', function () {
-      var suggested = kind === 'bullet' ? S.bullet.name : '';
-      var name = window.prompt('Name this ' + kind + ' preset', suggested);
+    /* One button, because "create" and "edit" were the same intent --
+     * keep what I have set up -- forked into two controls the shooter
+     * had to choose between before knowing which one applied. Saving
+     * asks instead, and only when there is something to ask about: with
+     * no preset chosen, or somebody else's chosen, there is nothing to
+     * overwrite and it goes straight to naming a new one. */
+    $('preset-' + kind + '-save').addEventListener('click', function () {
+      var cur = presetSel[kind] ? PBPresets.byId(presetSel[kind]) : null;
+      var mine = !!(cur && PBPresets.isMine(cur.id));
+      var r;
+
+      if (mine) {
+        var overwrite = window.confirm(
+          'You are using "' + cur.name + '".\n\n' +
+          'OK\t\tupdate that preset with the current ' + kind + '\n' +
+          'Cancel\tsave this as a new preset instead');
+        if (overwrite) {
+          r = PBPresets.update(cur.id, cur.name, presetPayload(kind),
+                               buildStamp());
+          if (r.error) { say(r.error); return; }
+          say('Updated "' + r.record.name + '" to the current ' + kind + '.');
+          renderPresets();
+          return;
+        }
+      }
+
+      var suggested = kind === 'bullet' ? S.bullet.name
+                    : (cur ? cur.name + ' (copy)' : '');
+      var name = window.prompt('Name this new ' + kind + ' preset',
+                               suggested);
       if (name === null) return;
-      var r = PBPresets.save(kind, name, presetPayload(kind), buildStamp());
+      r = PBPresets.save(kind, name, presetPayload(kind), buildStamp());
       if (r.error) { say(r.error); return; }
       presetSel[kind] = r.record.id;
       say(r.ok
-        ? 'Created "' + r.record.name + '"' +
+        ? 'Saved "' + r.record.name + '"' +
           (PBPresets.status().endpoint
             ? ' and queued for the shared list.'
             : '. No shared list is configured, so it stays here.')
         : 'Kept for this session, but this browser refused to store it: ' +
           'private browsing, or the storage is full.');
-      renderPresets();
-    });
-
-    $('preset-' + kind + '-edit').addEventListener('click', function () {
-      var cur = presetSel[kind] ? PBPresets.byId(presetSel[kind]) : null;
-      if (!cur || !PBPresets.isMine(cur.id)) {
-        say('Choose one of your own presets first.');
-        return;
-      }
-      var name = window.prompt('Rename it, or keep the name and just ' +
-                               'overwrite it with the current setup',
-                               cur.name);
-      if (name === null) return;
-      var r = PBPresets.update(cur.id, name, presetPayload(kind),
-                               buildStamp());
-      if (r.error) { say(r.error); return; }
-      say('Updated "' + r.record.name + '" to the current ' + kind + '.');
       renderPresets();
     });
 
@@ -7317,10 +7327,17 @@ var PBOnline = (function () {
     logFor = d;
     var cu = U.correctionLabel(S.out.corr, S.out.click);
     var dec = U.correctionDecimals(S.out.corr);
+    /* The windage field below asks what went ON THE TURRETS, and in
+     * hold-yourself that is not the figure the screen shows: the screen
+     * shows the hold. Saying both keeps the sentence and the field it
+     * introduces from naming different numbers. */
     $('log-sub').textContent = distDisp(d) + ' ' + U.label('distance') +
-      ' — the app said ' + elevCall(row).text + ' and ' +
-      windFigure(d, row).text +
-      ' ' + cu + '.';
+      (S.windInDope
+        ? ' — the app said ' + elevCall(row).text + ' and ' +
+          windFigure(d, row).text + ' ' + cu + '.'
+        : ' — the app said ' + elevCall(row).text + ' and ' +
+          windCall(row).text + ' ' + cu + ' on the turrets, then hold ' +
+          windFigure(d, row).text + ' ' + cu + ' for the wind.');
     /* Pre-filled with the recommendation: if the shooter used it as-is,
      * logging is two taps. Signed, up and right positive. */
     $('log-elev').value = (-U.correction(row, 'drop', S.out.corr, S.out.click,
