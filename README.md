@@ -24,7 +24,7 @@ with the content, and `SuperiorBallistics.version` agrees with it; before that
 it reported 1.1.0 from inside 1.2.x builds.
 
 **Some numbers are ambiguous and always will be.** Three distinct programs
-carry `1.4.1` — `2026-08-19 03:39`, `04:12` and `2026-08-20 01:32` — and three
+carry `1.4.1` — `2026-08-19 03:39`, `04:12` and `2026-08-20 01:32` — and four
 carry `1.5.0`: `2026-08-20 02:15`, `02:55`, `2026-08-21 19:16` and `20:13`.
 Ask for the whole stamp; a bare version number is not an answer. It matters
 here: `02:55` shipped with five screens invisible and `19:16` is the repair, so
