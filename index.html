@@ -294,13 +294,20 @@
 .sb-app .bigbtn .nav-ico { width: 32px; height: 32px; }
 
 /* ---------------- presets ---------------- */
+/* Three controls, so three tracks. The middle label is a sentence, not
+   a word, so the buttons wrap their text instead of refusing to: nowrap
+   pushed "Save current configuration as preset" straight out of its box
+   and through the rest of the row. */
 .sb-app .preset-actions {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  align-items: stretch;
 }
-@media (max-width: 560px) {
-  .sb-app .preset-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 700px) {
+  .sb-app .preset-actions { grid-template-columns: 1fr; }
 }
-.sb-app .preset-actions button { white-space: nowrap; }
+.sb-app .preset-actions button {
+  white-space: normal; text-align: center; overflow-wrap: break-word;
+}
 .sb-app .preset-actions button:disabled {
   opacity: .45; cursor: default; border-color: var(--sb-line);
 }
@@ -753,6 +760,7 @@
 .sb-app .sb-unitmenu hr {
   border: 0; border-top: 1px solid var(--sb-line); margin: 4px 2px;
 }
+.sb-app .sb-unitmenu .menu-field-slot { display: block; }
 .sb-app .sb-unitmenu .menu-field {
   display: flex; flex-direction: column; gap: 4px; padding: 8px 10px 4px;
 }
@@ -1451,7 +1459,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.5.0 · 2026-08-21 20:13 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.5.0 · 2026-08-21 20:57 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -3669,6 +3677,17 @@ var PBUnitMenu = (function () {
    * offer more than a unit -- the shot detail's velocity box also lets
    * you edit the muzzle velocity from there. */
   function open(anchor, q, cb, opts) {
+    /* preventScroll matters more than it looks. Focusing an element
+     * the browser thinks is out of view scrolls the page to reveal
+     * it -- and the scroll listener below closes this menu on any
+     * scroll at all. Together those two shut the menu the instant
+     * it opened and left the page somewhere else. */
+    function focusQuietly(node) {
+      if (!node) return;
+      try { node.focus({ preventScroll: true }); }
+      catch (e) { node.focus(); }
+    }
+
     close();
     quantity = q; onPick = cb;
     opts = opts || {};
@@ -3710,53 +3729,75 @@ var PBUnitMenu = (function () {
     });
 
     /* An editable value, for the box whose number a shooter also wants
-     * to change. It lives in the menu rather than behind a dialog or a
-     * jump to another screen: the point of tapping the box is to fix the
-     * number without losing sight of the solution it feeds. */
-    var fieldInput = null;
+     * to change. It is a SECOND STEP, behind its own entry, not a field
+     * shown on opening: revealing an input focuses it, and on a phone a
+     * focused input raises the keyboard over half the screen before the
+     * shooter has even said that is what they wanted. Tap the entry and
+     * the field replaces it, ready to type.
+     *
+     * It lives in the menu rather than behind a dialog or a jump to
+     * another screen: the point of tapping the box is to fix the number
+     * without losing sight of the solution it feeds. */
+    var fieldSlot = null;
     if (opts.field) {
       el.appendChild(document.createElement('hr'));
-      var row = document.createElement('div');
-      row.className = 'menu-field';
-      var lab = document.createElement('label');
-      lab.textContent = opts.field.label;
-      var line = document.createElement('div');
-      line.className = 'menu-field-line';
-      fieldInput = document.createElement('input');
-      fieldInput.type = 'text';
-      fieldInput.setAttribute('inputmode', 'decimal');
-      fieldInput.value = opts.field.value;
-      var suffix = document.createElement('span');
-      suffix.textContent = opts.field.unit || '';
-      line.appendChild(fieldInput);
-      line.appendChild(suffix);
-      row.appendChild(lab);
-      row.appendChild(line);
-      el.appendChild(row);
+      fieldSlot = document.createElement('div');
+      fieldSlot.className = 'menu-field-slot';
+      el.appendChild(fieldSlot);
 
-      var commit = function () {
-        var fn = opts.field.commit;
-        var typed = fieldInput.value;
-        close();
-        if (fn) fn(typed);
-      };
-      fieldInput.addEventListener('keydown', function (ev) {
-        if (ev.key === 'Enter') { ev.preventDefault(); commit(); return; }
-        if (ev.key === 'Escape') return;      /* let the menu close */
-        /* Everything else is typing. The menu's own key handler runs on
-         * the document with capture and would otherwise steal the arrow
-         * keys out of the field. */
-        ev.stopPropagation();
-      });
-      fieldInput.addEventListener('blur', function () {
-        /* Committing on blur as well as on Enter is what makes this work
-         * on a phone, where there is no Enter to press. */
-        if (el && opts.field.commit) {
-          var typed = fieldInput.value;
+      var reveal = document.createElement('button');
+      reveal.type = 'button';
+      reveal.className = 'extra';
+      reveal.setAttribute('role', 'menuitem');
+      reveal.textContent = opts.field.action ||
+        ('Change ' + String(opts.field.label || 'value').toLowerCase() + '\u2026');
+      fieldSlot.appendChild(reveal);
+
+      reveal.addEventListener('click', function () {
+        fieldSlot.innerHTML = '';
+        var row = document.createElement('div');
+        row.className = 'menu-field';
+        var lab = document.createElement('label');
+        lab.textContent = opts.field.label;
+        var line = document.createElement('div');
+        line.className = 'menu-field-line';
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.setAttribute('inputmode', 'decimal');
+        input.value = opts.field.value;
+        var suffix = document.createElement('span');
+        suffix.textContent = opts.field.unit || '';
+        line.appendChild(input);
+        line.appendChild(suffix);
+        row.appendChild(lab);
+        row.appendChild(line);
+        fieldSlot.appendChild(row);
+
+        var commit = function () {
           var fn = opts.field.commit;
+          var typed = input.value;
           close();
-          fn(typed);
-        }
+          if (fn) fn(typed);
+        };
+        input.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter') { ev.preventDefault(); commit(); return; }
+          if (ev.key === 'Escape') return;      /* let the menu close */
+          /* Everything else is typing. The menu's own key handler runs
+           * on the document with capture and would otherwise steal the
+           * arrow keys out of the field. */
+          ev.stopPropagation();
+        });
+        input.addEventListener('blur', function () {
+          /* Committing on blur as well as on Enter is what makes this
+           * work on a phone, where there is no Enter to press. */
+          if (el && opts.field.commit) commit();
+        });
+
+        /* The menu just got taller, so it has to be placed again or it
+         * can hang off the bottom of a short screen. */
+        place();
+        focusQuietly(input);
+        try { input.select(); } catch (e) { /* older browsers */ }
       });
     }
 
@@ -3768,49 +3809,39 @@ var PBUnitMenu = (function () {
     (document.querySelector('.sb-app') || document.body).appendChild(el);
 
     /* Place under the chip, nudged back inside the viewport rather than
-     * hanging off the right edge on a phone. */
-    var r = anchor.getBoundingClientRect();
-    var w = el.offsetWidth, h = el.offsetHeight;
-    var left = r.left + window.scrollX;
-    var top = r.bottom + window.scrollY + 4;
-    if (left + w > window.scrollX + document.documentElement.clientWidth - 8) {
-      left = window.scrollX + document.documentElement.clientWidth - w - 8;
+     * hanging off the right edge on a phone. A function, not a one-off:
+     * revealing the value field makes the menu taller and it has to be
+     * placed again. */
+    function place() {
+      if (!el) return;
+      var r = anchor.getBoundingClientRect();
+      var w = el.offsetWidth, h = el.offsetHeight;
+      var left = r.left + window.scrollX;
+      var top = r.bottom + window.scrollY + 4;
+      var docW = document.documentElement.clientWidth;
+      var docH = document.documentElement.clientHeight;
+      if (left + w > window.scrollX + docW - 8) {
+        left = window.scrollX + docW - w - 8;
+      }
+      if (left < window.scrollX + 8) left = window.scrollX + 8;
+      if (r.bottom + h + 8 > docH) {
+        top = r.top + window.scrollY - h - 4;   /* flip above */
+      }
+      /* Then clamp into the viewport. Flipping above is not enough on a
+       * short screen: a menu taller than the space on either side of the
+       * anchor would hang off the edge. */
+      var viewTop = window.scrollY + 8;
+      var viewBottom = window.scrollY + docH - 8;
+      if (top + h > viewBottom) top = viewBottom - h;
+      if (top < viewTop) top = viewTop;
+      el.style.left = left + 'px';
+      el.style.top = top + 'px';
     }
-    if (left < window.scrollX + 8) left = window.scrollX + 8;
-    if (r.bottom + h + 8 > document.documentElement.clientHeight) {
-      top = r.top + window.scrollY - h - 4;   /* flip above */
-    }
-    /* Then clamp into the viewport. Flipping above is not enough on a
-     * short screen: a menu taller than the space on either side of the
-     * anchor used to hang off the edge, and the editable-value row made
-     * this menu tall enough for that to start happening. */
-    var viewTop = window.scrollY + 8;
-    var viewBottom = window.scrollY + document.documentElement.clientHeight - 8;
-    if (top + h > viewBottom) top = viewBottom - h;
-    if (top < viewTop) top = viewTop;
-    el.style.left = left + 'px';
-    el.style.top = top + 'px';
+    place();
 
-    /* preventScroll matters more than it looks. Focusing an element the
-     * browser thinks is out of view scrolls the page to reveal it -- and
-     * the scroll listener below closes this menu on any scroll at all.
-     * Together those two shut the menu the instant it opened and left
-     * the page somewhere else, which is exactly what a shooter tapping
-     * the velocity box was seeing. */
-    function focusQuietly(node) {
-      if (!node) return;
-      try { node.focus({ preventScroll: true }); }
-      catch (e) { node.focus(); }
-    }
-
-    if (fieldInput) {
-      /* The value is what you came for, so it is focused and selected:
-       * type the new number straight over the old one. */
-      focusQuietly(fieldInput);
-      try { fieldInput.select(); } catch (e) { /* older browsers */ }
-    } else {
-      focusQuietly(el.querySelector('button.on') || el.querySelector('button'));
-    }
+    /* Focus the unit already in use, never the value field: opening the
+     * menu must not raise a keyboard. */
+    focusQuietly(el.querySelector('button.on') || el.querySelector('button'));
 
     document.addEventListener('mousedown', outside, true);
     document.addEventListener('keydown', onKey, true);

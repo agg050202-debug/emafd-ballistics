@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  71161590ba9f1ac593640a31b9ea2ac1e887b394b4c21889ec1cb8a4aa25ff5b
-bytes   1201903
-stamp   1.5.0 · 2026-08-21 20:13 UTC   (shown in the page footer)
+sha256  c4c7322e0cf92a12b9156df62a6d3777068848f5eb530a8f4c5fe485893bf477
+bytes   1203236
+stamp   1.5.0 · 2026-08-21 20:57 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -24,8 +24,9 @@ with the content, and `SuperiorBallistics.version` agrees with it; before that
 it reported 1.1.0 from inside 1.2.x builds.
 
 **Some numbers are ambiguous and always will be.** Three distinct programs
-carry `1.4.1` — `2026-08-19 03:39`, `04:12` and `2026-08-20 01:32` — and four
-carry `1.5.0`: `2026-08-20 02:15`, `02:55`, `2026-08-21 19:16` and `20:13`.
+carry `1.4.1` — `2026-08-19 03:39`, `04:12` and `2026-08-20 01:32` — and five
+carry `1.5.0`: `2026-08-20 02:15`, `02:55`, `2026-08-21 19:16`, `20:13` and
+`20:57`.
 Ask for the whole stamp; a bare version number is not an answer. It matters
 here: `02:55` shipped with five screens invisible and `19:16` is the repair, so
 those two are not interchangeable in a bug report.
