@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  77d38ead3e42b93d31cc926e5af6c6af08f94591272c178688d8a6d5681c13c3
-bytes   1200548
-stamp   1.5.0 · 2026-08-21 19:16 UTC   (shown in the page footer)
+sha256  71161590ba9f1ac593640a31b9ea2ac1e887b394b4c21889ec1cb8a4aa25ff5b
+bytes   1201903
+stamp   1.5.0 · 2026-08-21 20:13 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -25,10 +25,10 @@ it reported 1.1.0 from inside 1.2.x builds.
 
 **Some numbers are ambiguous and always will be.** Three distinct programs
 carry `1.4.1` — `2026-08-19 03:39`, `04:12` and `2026-08-20 01:32` — and three
-carry `1.5.0`: `2026-08-20 02:15`, `02:55` and `2026-08-21 19:16`. Ask for the
-whole stamp; a bare version number is not an answer. It matters here: `02:55`
-shipped with five screens invisible, and `19:16` is the repair. Those two are
-not interchangeable in a bug report.
+carry `1.5.0`: `2026-08-20 02:15`, `02:55`, `2026-08-21 19:16` and `20:13`.
+Ask for the whole stamp; a bare version number is not an answer. It matters
+here: `02:55` shipped with five screens invisible and `19:16` is the repair, so
+those two are not interchangeable in a bug report.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has

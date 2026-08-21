@@ -1451,7 +1451,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.5.0 · 2026-08-21 19:16 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.5.0 · 2026-08-21 20:13 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -3780,23 +3780,48 @@ var PBUnitMenu = (function () {
     if (r.bottom + h + 8 > document.documentElement.clientHeight) {
       top = r.top + window.scrollY - h - 4;   /* flip above */
     }
+    /* Then clamp into the viewport. Flipping above is not enough on a
+     * short screen: a menu taller than the space on either side of the
+     * anchor used to hang off the edge, and the editable-value row made
+     * this menu tall enough for that to start happening. */
+    var viewTop = window.scrollY + 8;
+    var viewBottom = window.scrollY + document.documentElement.clientHeight - 8;
+    if (top + h > viewBottom) top = viewBottom - h;
+    if (top < viewTop) top = viewTop;
     el.style.left = left + 'px';
     el.style.top = top + 'px';
+
+    /* preventScroll matters more than it looks. Focusing an element the
+     * browser thinks is out of view scrolls the page to reveal it -- and
+     * the scroll listener below closes this menu on any scroll at all.
+     * Together those two shut the menu the instant it opened and left
+     * the page somewhere else, which is exactly what a shooter tapping
+     * the velocity box was seeing. */
+    function focusQuietly(node) {
+      if (!node) return;
+      try { node.focus({ preventScroll: true }); }
+      catch (e) { node.focus(); }
+    }
 
     if (fieldInput) {
       /* The value is what you came for, so it is focused and selected:
        * type the new number straight over the old one. */
-      fieldInput.focus();
+      focusQuietly(fieldInput);
       try { fieldInput.select(); } catch (e) { /* older browsers */ }
     } else {
-      var first = el.querySelector('button.on') || el.querySelector('button');
-      if (first) first.focus();
+      focusQuietly(el.querySelector('button.on') || el.querySelector('button'));
     }
 
     document.addEventListener('mousedown', outside, true);
     document.addEventListener('keydown', onKey, true);
-    window.addEventListener('scroll', close, true);
     window.addEventListener('resize', close);
+    /* Registered a tick late, so that a scroll caused by opening the
+     * menu -- by focus on a browser without preventScroll, or by a
+     * mobile keyboard sliding up -- cannot close what it just opened.
+     * A scroll the user makes afterwards still does. */
+    setTimeout(function () {
+      if (el) window.addEventListener('scroll', close, true);
+    }, 0);
   }
 
   return { open: open, close: close, isOpen: function () { return !!el; } };
