@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  e33b721291af11940ac7e48e4913838ff66ae7c059b055d39af68edd7f74bd86
-bytes   1203347
-stamp   1.5.1 · 2026-08-24 01:43 UTC   (shown in the page footer)
+sha256  b38d62924e3c675aaba5525326df1a6728fa73b4bdef4f854ca26dc92ed9d915
+bytes   1206025
+stamp   1.5.2 · 2026-08-24 02:48 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds

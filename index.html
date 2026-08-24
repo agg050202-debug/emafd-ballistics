@@ -622,13 +622,18 @@
 .sb-app .rose-los {
   stroke: var(--sb-fg-dim); stroke-width: 1; stroke-dasharray: 3 4;
 }
-.sb-app .rose-cardinal {
-  fill: var(--sb-fg-dim); font: 600 9px var(--sb-sans); letter-spacing: .12em;
-}
 .sb-app .rose-arrow { stroke: var(--sb-accent); stroke-width: 3; }
 .sb-app .rose-head { fill: var(--sb-accent); }
 .sb-app .rose-grip {
   fill: var(--sb-accent); stroke: var(--sb-bg-2); stroke-width: 2;
+}
+/* The bullet at the centre: what the wind is pushing, and which way
+   it is going. Solid, so it reads as an object rather than as one
+   more line on a dial already full of them. */
+.sb-app .rose-bullet { fill: var(--sb-fg-dim); }
+.sb-app .rose-bullet .rose-bullet-line {
+  fill: none; stroke: var(--sb-bg-2); stroke-width: 2.4;
+  stroke-linecap: round;
 }
 .sb-app .rose-readout {
   fill: var(--sb-fg); font: 700 20px var(--sb-mono);
@@ -1461,7 +1466,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.5.1 · 2026-08-24 01:43 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.5.2 · 2026-08-24 02:48 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -4998,9 +5003,15 @@ var PBChart = (function () {
  * at -x: blowing from the target back into your face. That is 12 o'clock,
  * and the angle grows clockwise (90 deg = 3 o'clock = from your right).
  *
- * The dial is drawn from the shooter's eye: target at the top. The arrow
- * starts where the wind comes FROM and points the way it blows, because
- * "which way is it pushing my bullet" is the question being asked.
+ * The dial is drawn from the shooter's eye: target at the top, and the
+ * bullet at the centre points that way, so the picture states the line
+ * of fire without needing a word for it.
+ *
+ * The arrow starts where the wind comes FROM and its head lands on the
+ * bullet, because "which way is it pushing my bullet" is the question
+ * being asked. It used to run through the centre and out the far side
+ * with a bead on the tail, which left the reader working out which end
+ * meant what.
  */
 'use strict';
 
@@ -5036,40 +5047,81 @@ var PBWindRose = (function () {
 
     g.appendChild(el('circle', { cx: cx, cy: cy, r: R, class: 'rose-face' }));
 
-    /* hour marks: the ticks a shooter already thinks in */
+    /* Twelve ticks, but only four numbers. The dial had a figure at
+     * every hour and a word at the top -- thirteen pieces of text on a
+     * face whose whole job is to show one angle, and the exact bearing
+     * is already printed outside it. The quarters are enough to orient
+     * by; the ticks carry the rest without saying anything. */
     for (var h = 0; h < 12; h++) {
       var a = h * 30;
-      var p1 = pt(cx, cy, R, a), p2 = pt(cx, cy, R - (h % 3 === 0 ? 13 : 7), a);
+      var major = h % 3 === 0;
+      var p1 = pt(cx, cy, R, a), p2 = pt(cx, cy, R - (major ? 13 : 7), a);
       g.appendChild(el('line', { x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1],
-                                 class: h % 3 === 0 ? 'rose-tick major'
-                                                    : 'rose-tick' }));
-      var lp = pt(cx, cy, R - 26, a);
-      g.appendChild(el('text', { x: lp[0], y: lp[1] + 4, class: 'rose-hour',
-                                 'text-anchor': 'middle' },
-                       String(h === 0 ? 12 : h)));
+                                 class: major ? 'rose-tick major'
+                                              : 'rose-tick' }));
+      if (major) {
+        var lp = pt(cx, cy, R - 26, a);
+        g.appendChild(el('text', { x: lp[0], y: lp[1] + 4, class: 'rose-hour',
+                                   'text-anchor': 'middle' },
+                         String(h === 0 ? 12 : h)));
+      }
     }
 
-    /* the shooter, and the line of fire towards the target at the top */
-    g.appendChild(el('line', { x1: cx, y1: cy, x2: cx, y2: cy - R + 4,
-                               class: 'rose-los' }));
-    g.appendChild(el('text', { x: cx, y: cy - R - 5, class: 'rose-cardinal',
-                               'text-anchor': 'middle' }, 'TARGET'));
+    /* The line of fire, dashed, starting clear of the bullet so the two
+     * do not overlap. */
+    var bulletH = Math.max(26, R * 0.30);
+    g.appendChild(el('line', { x1: cx, y1: cy - bulletH * 0.62,
+                               x2: cx, y2: cy - R + 4, class: 'rose-los' }));
 
-    /* wind arrow: tail at the source, head towards the centre */
-    var tail = pt(cx, cy, R - 34, deg);
-    var head = pt(cx, cy, 16, deg + 180);
+    /* The wind arrow, and the geometry is all one direction.
+     *
+     * `deg` is where the wind comes FROM, so the tail sits out there and
+     * the head runs INWARD to the bullet. Both ends share the bearing;
+     * only the radius differs. The head is built from the shaft's own
+     * unit vector rather than from two more polar points, because an
+     * angular spread at a small radius makes a triangle that widens as
+     * it nears the centre -- which is what a stubby, lopsided arrowhead
+     * looks like. */
+    var ang = (deg - 90) * Math.PI / 180;
+    var ux = Math.cos(ang), uy = Math.sin(ang);      /* points outward */
+    var px = -uy, py = ux;                            /* perpendicular */
+
+    var tipR = bulletH * 0.60 + 8;        /* stops just off the bullet */
+    var tailR = R - 26;
+    var headLen = Math.max(13, R * 0.13);
+    var headHalf = headLen * 0.46;
+
+    var tip = [cx + ux * tipR, cy + uy * tipR];
+    var tail = [cx + ux * tailR, cy + uy * tailR];
+    var neck = [cx + ux * (tipR + headLen), cy + uy * (tipR + headLen)];
+
+    /* The shaft stops at the neck, not at the tip: a line running under
+     * the head shows through its point on a light background. */
     g.appendChild(el('line', { x1: tail[0], y1: tail[1],
-                               x2: head[0], y2: head[1], class: 'rose-arrow' }));
-    /* arrowhead */
-    var hp = pt(cx, cy, 16, deg + 180);
-    var b1 = pt(cx, cy, 30, deg + 180 - 9);
-    var b2 = pt(cx, cy, 30, deg + 180 + 9);
+                               x2: neck[0], y2: neck[1],
+                               class: 'rose-arrow' }));
     g.appendChild(el('polygon', {
-      points: hp[0] + ',' + hp[1] + ' ' + b1[0] + ',' + b1[1] + ' ' +
-              b2[0] + ',' + b2[1], class: 'rose-head' }));
+      points: tip[0] + ',' + tip[1] + ' ' +
+              (neck[0] + px * headHalf) + ',' + (neck[1] + py * headHalf) +
+              ' ' +
+              (neck[0] - px * headHalf) + ',' + (neck[1] - py * headHalf),
+      class: 'rose-head' }));
 
-    /* grab handle at the source end */
-    g.appendChild(el('circle', { cx: tail[0], cy: tail[1], r: 9,
+    /* The bullet: the thing the wind is pushing, pointing at the target.
+     * Drawn last of the dial furniture so the arrow head meets it rather
+     * than covering it. The path is authored in a 48-unit box, nose at
+     * the top, and is centred on its own bounding box. */
+    var bs = bulletH / 36;
+    var bg = el('g', { transform: 'translate(' + (cx - 24 * bs) + ',' +
+                                  (cy - 23 * bs) + ') scale(' + bs + ')',
+                       class: 'rose-bullet' });
+    bg.appendChild(el('path', { d: 'M24 5c4 5 7 11 7 17v19H17V22c0-6 3-12 7-17z' }));
+    bg.appendChild(el('path', { d: 'M17 31h14', class: 'rose-bullet-line' }));
+    g.appendChild(bg);
+
+    /* The grab handle rides on the tail: dragging is what this dial is
+     * for, and the tail is the end that moves. */
+    g.appendChild(el('circle', { cx: tail[0], cy: tail[1], r: 8,
                                  class: 'rose-grip' }));
 
     /* The numbers used to sit at the centre, where the needle crosses
@@ -8155,7 +8207,7 @@ var PBOnline = (function () {
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.5.1',
+      version: '1.5.2',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(true), k, sub;
         for (k in (cfgOverrides || {})) {
