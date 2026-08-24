@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  c4c7322e0cf92a12b9156df62a6d3777068848f5eb530a8f4c5fe485893bf477
-bytes   1203236
-stamp   1.5.0 · 2026-08-21 20:57 UTC   (shown in the page footer)
+sha256  e33b721291af11940ac7e48e4913838ff66ae7c059b055d39af68edd7f74bd86
+bytes   1203347
+stamp   1.5.1 · 2026-08-24 01:43 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -26,10 +26,12 @@ it reported 1.1.0 from inside 1.2.x builds.
 **Some numbers are ambiguous and always will be.** Three distinct programs
 carry `1.4.1` — `2026-08-19 03:39`, `04:12` and `2026-08-20 01:32` — and five
 carry `1.5.0`: `2026-08-20 02:15`, `02:55`, `2026-08-21 19:16`, `20:13` and
-`20:57`.
-Ask for the whole stamp; a bare version number is not an answer. It matters
-here: `02:55` shipped with five screens invisible and `19:16` is the repair, so
-those two are not interchangeable in a bug report.
+`20:57`. Ask for the whole stamp; a bare version number is not an answer. It
+matters here: `02:55` shipped with five screens invisible and `19:16` is the
+repair, so those two are not interchangeable in a bug report.
+
+**From 1.5.1 the number rises on every release**, so a version identifies a
+build again. The stamp is still the safer thing to quote.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
@@ -50,8 +52,9 @@ pressed:
 - **Fetch live weather** — a request to `api.open-meteo.com` carrying the
   coordinates.
 
-Since 1.4.1 the wind toggle starts on **HOLD YOURSELF** rather than WIND IN
-DOPE. Saved sessions keep whatever the shooter chose; only a fresh visitor sees
+Since 1.4.1 the wind toggle starts on **HOLD YOURSELF** rather than the mode
+now labelled WIND DRIFT INCLUDED (called WIND IN DOPE before 1.5.1; only the
+label changed, the `wind_in_dope` column keeps its name). Saved sessions keep whatever the shooter chose; only a fresh visitor sees
 the new default. It changes nothing in the solver and everything in the data:
 `wind_in_dope = false` becomes the common case, and those records read as
 enormous windage errors unless they are filtered, because the correction was

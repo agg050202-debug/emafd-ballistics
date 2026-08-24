@@ -333,11 +333,13 @@
   .sb-app .readout .readout-side > * { flex: 1 1 0; }
 }
 /* The wind switch and the way into the full solution, stacked in the
-   right-hand cell. The column takes the width of its widest child, which
-   is the "Full detail" button in both states, so changing the badge
-   label cannot resize the track. min-width is only a floor. */
+   right-hand cell.
+   The floor is set to the WIDER of the badge's two labels -- "WIND DRIFT
+   INCLUDED" is longer than both "HOLD YOURSELF" and "Full detail", so
+   without it the whole readout jumped 44 px sideways every time the
+   switch was tapped. */
 .sb-app .readout-side {
-  display: flex; flex-direction: column; gap: 8px; min-width: 15ch;
+  display: flex; flex-direction: column; gap: 8px; min-width: 21ch;
 }
 .sb-app .readout-side .badge { text-align: center; }
 /* Distance and muzzle velocity, always side by side -- flex, not grid
@@ -964,7 +966,7 @@ body { background: #101317; }
          label rather than the control it is. -->
     <div class="readout-side">
       <button type="button" id="wind-badge" class="badge"
-              aria-label="Wind in dope" aria-pressed="false">
+              aria-label="Wind drift included" aria-pressed="false">
         HOLD YOURSELF</button>
       <button type="button" class="readout-more" data-goto="screen-shot">
         Full detail &rarr;</button>
@@ -1065,7 +1067,7 @@ body { background: #101317; }
            the wind or holding it belongs here too. Both buttons are the
            same state; render() writes them together. -->
       <button type="button" id="shot-wind-badge" class="badge badge-wide"
-              aria-label="Wind in dope" aria-pressed="false">
+              aria-label="Wind drift included" aria-pressed="false">
         HOLD YOURSELF</button>
       <div class="actions">
         <button type="button" id="btn-log-shot">◎ Log this shot</button>
@@ -1459,7 +1461,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.5.0 · 2026-08-21 20:57 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.5.1 · 2026-08-24 01:43 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -4543,7 +4545,7 @@ var PBPresets = (function () {
  *
  * The red dot is the RESIDUAL hold: physical truth minus what was
  * actually dialled, i.e. what you must still hold once the turrets are
- * set. Wind in dope leaves only the sub-click remainder; hold-yourself
+ * set. Drift included leaves only the sub-click remainder; hold-yourself
  * adds the wind hold. It is never the raw dope -- drawing that would
  * tell the shooter to hold and dial the same correction twice.
  */
@@ -5264,7 +5266,8 @@ var PBOnline = (function () {
  *
  * State is held in SI; the display converts. Every edit schedules a
  * debounced solve, and every solve computes BOTH the physical trajectory
- * (real wind) and the wind-free one, so the WIND IN DOPE / HOLD YOURSELF
+ * (real wind) and the wind-free one, so the WIND DRIFT INCLUDED /
+ * HOLD YOURSELF
  * switch re-picks which one feeds the table without re-solving.
  *
  * Navigation is a screen stack (showScreen), matching the desktop build's
@@ -5320,7 +5323,7 @@ var PBOnline = (function () {
       /* Hold-yourself is the default: it is the honest starting
        * point, because a shooter who has not told the app about the
        * wind should not be handed a windage number to dial. Tapping
-       * the badge puts the wind back in the dope. */
+       * the badge folds the wind drift back into the numbers. */
       windInDope: false,
       /* Where each input came from. A logged shot is only as good as its
        * worst input, and "typed" against "measured five minutes ago" is
@@ -5695,7 +5698,7 @@ var PBOnline = (function () {
   }
   /* The windage figure to SHOW for a distance.
    *
-   * With the wind in the dope it is what you dial, straight off the
+   * With the wind drift included it is what you dial, straight off the
    * displayed card. Holding it yourself, the dialled windage is the
    * wind-free one -- spin drift and nothing else -- so it does not move
    * when the wind changes, and showing it was telling the shooter that
@@ -6214,7 +6217,7 @@ var PBOnline = (function () {
     return PB_RETICLES[0];
   }
 
-  /* Residual hold = physical minus displayed. Wind in dope -> centre;
+  /* Residual hold = physical minus displayed. Drift included -> centre;
    * hold-yourself -> the dot IS the wind hold. Never the raw dope. */
   /* One click, as the true angle it really moves, in MIL.
    *
@@ -6274,11 +6277,11 @@ var PBOnline = (function () {
       ' clicks, so the last ' + rem.toFixed(2) + ' MIL cannot be dialled.';
     if (S.windInDope) {
       if (rem < 0.005) {
-        return 'Wind is in the dope: dial both numbers and aim dead ' +
+        return 'Wind drift is included: dial both numbers and aim dead ' +
           'centre — this row falls on whole clicks exactly.';
       }
-      return 'Wind is in the dope: dial both numbers, then aim at the ' +
-        'dot.' + subClick;
+      return 'Wind drift is included: dial both numbers, then aim at ' +
+        'the dot.' + subClick;
     }
     if (!hasWind()) {
       return 'No wind entered, so there is nothing to hold for. Enter a ' +
@@ -6469,7 +6472,7 @@ var PBOnline = (function () {
     renderChart();
     renderReticle();
     if ($('screen-shot').classList.contains('on')) renderShot();
-    var label = S.windInDope ? 'WIND IN DOPE' : 'HOLD YOURSELF';
+    var label = S.windInDope ? 'WIND DRIFT INCLUDED' : 'HOLD YOURSELF';
     [$('wind-badge'), $('shot-wind-badge')].forEach(function (badge) {
       badge.textContent = label;
       badge.classList.toggle('hold', !S.windInDope);
@@ -8152,7 +8155,7 @@ var PBOnline = (function () {
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.5.0',
+      version: '1.5.1',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(true), k, sub;
         for (k in (cfgOverrides || {})) {
