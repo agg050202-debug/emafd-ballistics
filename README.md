@@ -55,7 +55,8 @@ pressed:
 Since 1.4.1 the wind toggle starts on **HOLD YOURSELF** rather than the mode
 now labelled WIND DRIFT INCLUDED — called WIND IN DOPE before 1.5.1, where only
 the label changed and the `wind_in_dope` column kept its name. Saved sessions
-keep whatever the shooter chose; only a fresh visitor sees the new default. It changes nothing in the solver and everything in the data:
+keep whatever the shooter chose; only a fresh visitor sees the new default. It
+changes nothing in the solver and everything in the data:
 `wind_in_dope = false` becomes the common case, and those records read as
 enormous windage errors unless they are filtered, because the correction was
 meant to be held on the reticle rather than dialled.
