@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  b38d62924e3c675aaba5525326df1a6728fa73b4bdef4f854ca26dc92ed9d915
-bytes   1206025
-stamp   1.5.2 · 2026-08-24 02:48 UTC   (shown in the page footer)
+sha256  ff8bd17ebbb4c7db8acdeadc26a241dd31fdde0ac19189ddb93001fa145cc610
+bytes   1206898
+stamp   1.5.3 · 2026-08-24 18:24 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -32,6 +32,13 @@ repair, so those two are not interchangeable in a bug report.
 
 **From 1.5.1 the number rises on every release**, so a version identifies a
 build again. The stamp is still the safer thing to quote.
+
+**1.5.3 is a correctness boundary for the shot log.** Before it, HOLD YOURSELF
+asked for too much hold — the whole spin drift, 0.3 MIL at 800 m with a 15 m/s
+crosswind, always to the same side — and the log pre-filled `dialled_wind` with
+that drift instead of zero. Records with `wind_in_dope = false` from earlier
+builds carry the bias and mean something different by that column. Filter on
+`build` before pooling them.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has

@@ -1466,7 +1466,7 @@ body { background: #101317; }
   Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
   G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
   against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.5.2 · 2026-08-24 02:48 UTC</b> &mdash;
+  <p style="margin-top:6px">Build <b id="build-stamp">1.5.3 · 2026-08-24 18:24 UTC</b> &mdash;
   quote this when reporting anything, so a fixed bug is not reported twice.</p>
 </footer>
 
@@ -6303,7 +6303,18 @@ var PBOnline = (function () {
     if (!row) return null;
     var step = clickStepMil();
     function snap(v) { return Math.round(v / step) * step; }
-    return { x: snap(-row[5]), y: snap(-row[2]) };
+    /* Elevation is dialled in both modes. Windage is not: HOLD YOURSELF
+     * means the windage turret is left where it was, so nothing
+     * horizontal goes on the rifle and the whole deflection -- wind and
+     * spin drift together -- is held in the reticle.
+     *
+     * This used to subtract the wind-free windage, on the assumption
+     * that the shooter had dialled the spin drift. Nothing on screen
+     * ever told them to: the windage column shows the HOLD in this mode,
+     * not a dial. So the app asked for a hold that was right only for a
+     * turret setting it never mentioned -- 0.3 MIL too much with a
+     * 15 m/s crosswind at 800 m, which is 24 cm of miss. */
+    return { x: S.windInDope ? snap(-row[5]) : 0, y: snap(-row[2]) };
   }
 
   function holdResidual(d) {
@@ -7446,15 +7457,19 @@ var PBOnline = (function () {
       (S.windInDope
         ? ' — the app said ' + elevCall(row).text + ' and ' +
           windFigure(d, row).text + ' ' + cu + '.'
-        : ' — the app said ' + elevCall(row).text + ' and ' +
-          windCall(row).text + ' ' + cu + ' on the turrets, then hold ' +
-          windFigure(d, row).text + ' ' + cu + ' for the wind.');
+        : ' — the app said ' + elevCall(row).text + ' ' + cu +
+          ' on the elevation turret, windage untouched, then hold ' +
+          windFigure(d, row).text + ' ' + cu + '.');
     /* Pre-filled with the recommendation: if the shooter used it as-is,
      * logging is two taps. Signed, up and right positive. */
     $('log-elev').value = (-U.correction(row, 'drop', S.out.corr, S.out.click,
                                          S.out.turret)).toFixed(dec);
-    $('log-wind').value = (-U.correction(row, 'drift', S.out.corr, S.out.click,
-                                         S.out.turret)).toFixed(dec);
+    /* What went ON the windage turret, which in hold-yourself is
+     * nothing. The hold is recorded separately by the impact fields. */
+    $('log-wind').value = S.windInDope
+      ? (-U.correction(row, 'drift', S.out.corr, S.out.click,
+                       S.out.turret)).toFixed(dec)
+      : (0).toFixed(dec);
     $('log-iv').value = '';
     $('log-ih').value = '';
     $('log-note').value = '';
@@ -8207,7 +8222,7 @@ var PBOnline = (function () {
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.5.2',
+      version: '1.5.3',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(true), k, sub;
         for (k in (cfgOverrides || {})) {
