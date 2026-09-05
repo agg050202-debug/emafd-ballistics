@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  c4c7d1c6eff4e3b8e66eee1766f11477ff870ca6d182e6f325eb12064b2cff32
-bytes   1243321
-stamp   1.6.0 · 2026-09-05 03:22 UTC   (shown in the page footer)
+sha256  f1db6d2426f07929c2924b45b6d7e6038e406f1cbec32fd9405a958f82ffda42
+bytes   1247358
+stamp   1.7.0 · 2026-09-05 06:35 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -51,6 +51,11 @@ drop by under a hundredth of a MIL, while 15 m/s straight down or up the range
 at 800 m moves it by about a quarter of one. `wind_in_dope` keeps its name and
 its meaning: whether the correction was dialled or held. Filter on `build`
 before pooling across it.
+
+**1.7.0 is not a boundary at all**, and that is worth saying because the two
+above train you to look for one. It changes what a preset `kind` means, not
+what any shot-log column holds. Nothing in the data moved; do not go hunting
+for a step at that stamp.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
@@ -113,9 +118,20 @@ CORS preflight and discards longitude before storing.
 
 ### Shared presets
 
-From 1.5.0 the app also publishes and reads **shared presets** — rifle, bullet,
-sight, or all three at once — through a second edge function. Presets always
-save to the shooter's own browser; the shared list is what travels.
+From 1.5.0 the app also publishes and reads **shared presets** through a second
+edge function. There are three kinds: a `rifle` — which from 1.7.0 is the whole
+rifle, its barrel and zero together with the bullet it shoots and the sight
+bolted to it — and a `bullet` or a `sight` on its own, so one can be swapped
+without the other. Presets always save to the shooter's own browser; the shared
+list is what travels.
+
+**Presets published before 1.7.0 keep working, and the endpoint needed no
+migration.** Until then `rifle` meant the barrel and zero alone and the
+three-in-one version was filed under `setup`. Both shapes are still read and
+both appear under Rifle; only the wide one is written now. The client tells
+them apart by the shape of the payload rather than by its kind or a version
+number, so an old narrow record loads its barrel and zero and leaves the bullet
+and sight untouched.
 
 **That list is deliberately open.** No accounts, no authentication: anyone may
 read it and anyone may publish to it. That was a considered choice, and

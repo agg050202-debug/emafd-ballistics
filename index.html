@@ -712,14 +712,20 @@
   display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 10px; margin-top: 10px;
 }
+/* A column with the value at the bottom: the labels are not all one
+   line ("Remaining velocity" is two), and the grid stretches every tile
+   in a row to the tallest, so without this the numbers sat at different
+   heights across the row. */
 .sb-app .shot-secondary div {
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
   border-radius: 8px; padding: 10px 12px; min-width: 0;
+  display: flex; flex-direction: column; justify-content: space-between;
+  gap: 4px;
 }
 .sb-app .shot-secondary .k {
-  display: block; font: 10.5px var(--sb-sans); letter-spacing: .06em;
+  display: block; font: 10.5px/1.25 var(--sb-sans); letter-spacing: .06em;
   text-transform: uppercase; color: var(--sb-fg-dim);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 /* Number and unit never break across lines: "1440 km/h" in a 110 px
    box with a wide monospace face wrapped the unit onto a second line
@@ -1287,29 +1293,36 @@ body { background: #101317; }
       <input type="file" id="lib-file" accept="application/json,.json" hidden>
     </div>
 
-    <!-- The full setup is not another rifle: it is the shared-list copy
-         of everything the rifle above holds, so it can be handed to
-         somebody else's browser. -->
-    <h3 class="section">Full setup preset
+    <!-- A rifle preset is the whole rifle: its barrel and zero, the load
+         it shoots and the sight bolted to it. That is what a rifle is to
+         the person carrying it, and it is the shared-list copy of what a
+         card above holds, so it can be handed to somebody else's
+         browser. The bullet and the sight keep presets of their own,
+         inside their own screens, for swapping one without the other. -->
+    <h3 class="section">Rifle preset
       <button type="button" class="info" aria-expanded="false"
-              aria-controls="info-setup" aria-label="About full setup presets">i</button></h3>
-    <p class="hint info-text" id="info-setup" hidden>A full setup saves the
-    rifle, the bullet and the sight as they stand right now, in one entry,
-    and loading it replaces all three.</p>
-    <p class="hint" id="preset-setup-current"></p>
+              aria-controls="info-rifle-preset" aria-label="About rifle presets">i</button></h3>
+    <p class="hint info-text" id="info-rifle-preset" hidden>A rifle preset
+    saves the barrel and zero, the bullet and the sight as they stand
+    right now, in one entry, and loading it replaces all three &mdash; a
+    rifle comes with the load it shoots and the scope bolted to it. To
+    move just one of them, use the Bullet or Sight preset inside the
+    rifle. Presets travel between browsers; the cards above stay in this
+    one.</p>
+    <p class="hint" id="preset-rifle-current"></p>
     <div class="preset-actions">
-      <button type="button" id="preset-setup-choose">Choose preset</button>
-      <button type="button" id="preset-setup-save">Save current
+      <button type="button" id="preset-rifle-choose">Choose preset</button>
+      <button type="button" id="preset-rifle-save">Save current
         configuration as preset</button>
-      <button type="button" id="preset-setup-delete" class="ghost">Delete preset</button>
+      <button type="button" id="preset-rifle-delete" class="ghost">Delete preset</button>
     </div>
-    <div class="preset-picker" id="preset-setup-picker" hidden>
-      <input type="search" id="preset-setup-search" autocomplete="off"
-             placeholder="Search presets&hellip;" aria-label="Search setup presets">
-      <div class="results-list" id="preset-setup-list" role="listbox"
-           aria-label="Full setup presets"></div>
+    <div class="preset-picker" id="preset-rifle-picker" hidden>
+      <input type="search" id="preset-rifle-search" autocomplete="off"
+             placeholder="Search presets&hellip;" aria-label="Search rifle presets">
+      <div class="results-list" id="preset-rifle-list" role="listbox"
+           aria-label="Rifle presets"></div>
     </div>
-    <p class="hint" id="preset-setup-note"></p>
+    <p class="hint" id="preset-rifle-note"></p>
 
     <div class="lib-actions">
       <button type="button" id="preset-refresh">Refresh shared list</button>
@@ -1336,10 +1349,30 @@ body { background: #101317; }
   <div class="page-body">
     <p class="hint" id="rifle-status"></p>
 
-    <!-- Two doors, in the order a setup is built: the load in it, then
-         how you are looking through it. Each carries its current
-         setting so the page answers "what am I set up with" without
-         opening anything. -->
+    <!-- The rifle's own numbers first: the barrel it has and the zero it
+         is set to are what make it this rifle rather than another one,
+         and they are edited here. The preset that carries all of this,
+         plus the bullet and the sight, is on the Equipment page -- one
+         rifle, one preset, not one per screen. -->
+    <h3 class="section">Barrel and zero</h3>
+    <div class="grid2">
+      <div class="field"><label for="in-twist">Twist (in/rev)</label>
+        <input type="text" inputmode="decimal" id="in-twist"></div>
+      <div class="field"><label for="in-twistdir">Twist direction</label>
+        <select id="in-twistdir">
+          <option value="RH">Right hand</option>
+          <option value="LH">Left hand</option>
+        </select></div>
+      <div class="field"><label for="in-zr">Zero range <u data-u="distance"></u></label>
+        <input type="text" inputmode="decimal" id="in-zr"></div>
+    </div>
+    <p class="hint" id="stability-note"></p>
+
+    <!-- Then the two doors, in the order a setup is built: the load in
+         it, then how you are looking through it. Each carries its
+         current setting so the page answers "what am I set up with"
+         without opening anything. -->
+    <h3 class="section">What it shoots, and what you look through</h3>
     <button type="button" class="bigbtn" data-goto="screen-projectile">
       <span class="nav-text"><span class="t">Bullet</span><span
         class="v" id="nav-projectile">&nbsp;</span></span>
@@ -1360,36 +1393,6 @@ body { background: #101317; }
         <circle cx="24" cy="24" r="2.2" fill="currentColor"
                 stroke="none"/>
       </svg></button>
-
-    <h3 class="section">Rifle preset</h3>
-    <p class="hint" id="preset-rifle-current"></p>
-    <div class="preset-actions">
-      <button type="button" id="preset-rifle-choose">Choose preset</button>
-      <button type="button" id="preset-rifle-save">Save current
-        configuration as preset</button>
-      <button type="button" id="preset-rifle-delete" class="ghost">Delete preset</button>
-    </div>
-    <div class="preset-picker" id="preset-rifle-picker" hidden>
-      <input type="search" id="preset-rifle-search" autocomplete="off"
-             placeholder="Search presets&hellip;" aria-label="Search rifle presets">
-      <div class="results-list" id="preset-rifle-list" role="listbox"
-           aria-label="Rifle presets"></div>
-    </div>
-    <p class="hint" id="preset-rifle-note"></p>
-
-    <h3 class="section">Barrel and zero</h3>
-    <div class="grid2">
-      <div class="field"><label for="in-twist">Twist (in/rev)</label>
-        <input type="text" inputmode="decimal" id="in-twist"></div>
-      <div class="field"><label for="in-twistdir">Twist direction</label>
-        <select id="in-twistdir">
-          <option value="RH">Right hand</option>
-          <option value="LH">Left hand</option>
-        </select></div>
-      <div class="field"><label for="in-zr">Zero range <u data-u="distance"></u></label>
-        <input type="text" inputmode="decimal" id="in-zr"></div>
-    </div>
-    <p class="hint" id="stability-note"></p>
 
     <h3 class="section">Zeroing conditions
       <button type="button" class="info" aria-expanded="false"
@@ -1658,7 +1661,7 @@ body { background: #101317; }
 </section>
 
 <footer class="sb-footer">
-  <p>Build <b id="build-stamp">1.6.0 · 2026-09-05 03:22 UTC</b> &mdash; quote this when
+  <p>Build <b id="build-stamp">1.7.0 · 2026-09-05 06:35 UTC</b> &mdash; quote this when
   reporting anything, so a fixed bug is not reported twice.
   <button type="button" class="info" aria-expanded="false"
           aria-controls="info-credits" aria-label="About this solver">i</button></p>
@@ -4488,7 +4491,22 @@ var PBShotLog = (function () {
 var PBPresets = (function () {
   var KEY = 'superior-ballistics-presets-v1';
   var FORMAT = 'superior-ballistics-preset-1';
-  var KINDS = ['rifle', 'bullet', 'sight', 'setup'];
+  /* What can be written, and what the interface offers.
+   *
+   * A `rifle` preset carries the WHOLE rifle: its barrel and zero, the
+   * bullet it shoots and the sight bolted to it. That is what a rifle is
+   * to the person carrying it. `bullet` and `sight` stay separate so one
+   * can be swapped without the other. */
+  var KINDS = ['rifle', 'bullet', 'sight'];
+  /* What can be READ. Until 1.7.0 `rifle` meant the barrel and the zero
+   * alone and the three-in-one version was filed under `setup`; both
+   * shapes are still out there in the shared list, so both are accepted
+   * and both appear under Rifle. Only the wide shape is ever written,
+   * and applyPreset tells the two payloads apart by shape rather than by
+   * kind, so a narrow one still loads and simply leaves the bullet and
+   * the sight alone. */
+  var READ_KINDS = ['rifle', 'bullet', 'sight', 'setup'];
+  var ALSO = { rifle: ['setup'] };
 
   var NAME_MAX = 60;
   var AUTHOR_MAX = 40;
@@ -4683,7 +4701,7 @@ var PBPresets = (function () {
   function sanitise(p) {
     if (!p || typeof p !== 'object') return null;
     if (p.format !== FORMAT) return null;
-    if (KINDS.indexOf(p.kind) < 0) return null;
+    if (READ_KINDS.indexOf(p.kind) < 0) return null;
     if (!p.payload || typeof p.payload !== 'object') return null;
     return {
       format: FORMAT,
@@ -4730,13 +4748,16 @@ var PBPresets = (function () {
 
   /* Everything this browser can offer for a kind: what you saved first,
    * then what other people shared, with your own copies filtered out of
-   * the shared half so a preset never appears twice. */
+   * the shared half so a preset never appears twice. Rifle also sweeps
+   * up the legacy `setup` records -- see ALSO. */
   function all(kind) {
-    var own = load().filter(function (p) { return p.kind === kind; });
+    var want = [kind].concat(ALSO[kind] || []);
+    function wanted(p) { return want.indexOf(p.kind) >= 0; }
+    var own = load().filter(wanted);
     var ids = {};
     own.forEach(function (p) { ids[p.id] = true; });
     var rest = sharedList.filter(function (p) {
-      return p.kind === kind && !ids[p.id];
+      return wanted(p) && !ids[p.id];
     });
     return own.concat(rest);
   }
@@ -4756,7 +4777,7 @@ var PBPresets = (function () {
   }
 
   return {
-    KINDS: KINDS, format: FORMAT, storageKey: KEY,
+    KINDS: KINDS, READ_KINDS: READ_KINDS, format: FORMAT, storageKey: KEY,
     save: save, update: update, remove: remove, clear: clear,
     mine: mine, isMine: isMine, all: all, byId: byId,
     shared: shared, refresh: refresh, status: status,
@@ -6321,7 +6342,16 @@ var PBOnline = (function () {
      * time of flight have nothing to step to, so they stay inert rather
      * than pretending to be buttons. */
     var sec = [
-      ['Velocity', U.fromSI('velocity', row[7]), 'velocity', undefined, '', true],
+      /* "Remaining velocity", not "Velocity". This box holds what the
+       * bullet has LEFT at this distance, which is a different number
+       * from the muzzle velocity in the readout on the main screen and
+       * was read as a bug twice: 2930 km/h up there against 1933 km/h
+       * here is 813.8 m/s at the muzzle against 536.8 m/s arriving at
+       * 500 m, and both are right. It is also what the Mach and Energy
+       * boxes beside it are computed from, so it earns its place -- it
+       * just has to say which velocity it is. */
+      ['Remaining velocity', U.fromSI('velocity', row[7]), 'velocity',
+       undefined, '', true],
       ['Mach', row[8], null, 2],
       ['Time of flight', row[9], null, 2, 's'],
       ['Drop (linear)', U.fromSI('drop', row[1] * 1e-2), 'drop'],
@@ -7458,7 +7488,11 @@ var PBOnline = (function () {
   function copy(o) { return JSON.parse(JSON.stringify(o)); }
 
   function presetPayload(kind) {
-    if (kind === 'rifle') {
+    /* Internal only, never a wire kind: the barrel and the zero on
+     * their own. It is what `rifle` used to mean, and it is still the
+     * `rifle` member of the wide payload below, so the shape on the
+     * wire has not changed -- only which kind carries it. */
+    if (kind === 'barrel') {
       return { twist: S.rifle.twist, twistLH: S.rifle.twistLH,
                zeroRange: S.rifle.zeroRange, zeroWx: copy(S.zeroWx) };
     }
@@ -7476,7 +7510,12 @@ var PBOnline = (function () {
                zoom: S.zoom,
                out: { click: S.out.click, turret: S.out.turret } };
     }
-    return { rifle: presetPayload('rifle'), bullet: presetPayload('bullet'),
+    /* 'rifle', and anything else: the whole rifle. A shooter has one
+     * rifle, shoots one load through it and has one scope bolted to it,
+     * so that is one preset. The three members are EMBEDDED rather than
+     * referenced -- see PRESETS.md -- because a reference into a list
+     * anyone can delete from is a preset that stops working. */
+    return { rifle: presetPayload('barrel'), bullet: presetPayload('bullet'),
              sight: presetPayload('sight') };
   }
 
@@ -7487,13 +7526,20 @@ var PBOnline = (function () {
   function applyPreset(kind, p) {
     if (!p || typeof p !== 'object') return false;
     var k;
-    if (kind === 'setup') {
-      applyPreset('rifle', p.rifle);
+    /* A rifle preset carries all three. Told apart from the narrow
+     * payload `rifle` meant before 1.7.0 by SHAPE, not by kind, so a
+     * preset somebody shared from an older build still loads -- it just
+     * sets the barrel and the zero and leaves the bullet and the sight
+     * where they are, which is what it always described. `setup` is the
+     * old name for the wide one and lands here too. */
+    if (kind === 'setup' ||
+        (kind === 'rifle' && (p.rifle || p.bullet || p.sight))) {
+      applyPreset('barrel', p.rifle);
       applyPreset('bullet', p.bullet);
       applyPreset('sight', p.sight);
       return true;
     }
-    if (kind === 'rifle') {
+    if (kind === 'barrel' || kind === 'rifle') {
       if (Number.isFinite(p.twist)) S.rifle.twist = p.twist;
       if (typeof p.twistLH === 'boolean') S.rifle.twistLH = p.twistLH;
       if (Number.isFinite(p.zeroRange)) {
@@ -7560,8 +7606,8 @@ var PBOnline = (function () {
       none.className = 'none';
       none.textContent = PBPresets.all(kind).length
         ? 'Nothing matches that.'
-        : 'No ' + kind + ' presets yet. "Create preset" makes one from ' +
-          'your current setup.';
+        : 'No ' + kind + ' presets yet. "Save current configuration as ' +
+          'preset" makes one from what you are shooting now.';
       list.appendChild(none);
       return;
     }
@@ -7587,7 +7633,8 @@ var PBOnline = (function () {
         ? 'Using "' + cur.name + '"' +
           (cur.author ? ' by ' + cur.author : '') +
           (PBPresets.isMine(cur.id) ? '' : ' (shared \u2014 not yours to edit)')
-        : 'No preset chosen. The setup below is whatever you have typed.';
+        : 'No preset chosen. What you are shooting is whatever you have ' +
+          'typed.';
     }
     var mine = !!(cur && PBPresets.isMine(cur.id));
     var del = $('preset-' + kind + '-delete');
@@ -7634,6 +7681,13 @@ var PBOnline = (function () {
       return;
     }
     presetSel[kind] = id;
+    /* A whole-rifle preset IS a different rifle, so it stops being the
+     * card that was selected: leaving it selected would print
+     * "Tikka T3x · modified" over somebody else's Ruger. It shows as the
+     * dashed "Current setup" card until + keeps it under a name. A
+     * bullet or sight preset is a change made TO the rifle being shot,
+     * so that one stays selected and simply reads as modified. */
+    if (kind === 'rifle') S.activeRifle = null;
     syncUnits();
     save();
     populateSelects();
@@ -7641,6 +7695,7 @@ var PBOnline = (function () {
     rebuildTable();
     scheduleSolve(0);
     render();
+    renderRifleList();
     var picker = $('preset-' + kind + '-picker');
     if (picker) picker.hidden = true;
     if (note) note.textContent = 'Loaded "' + p.name + '".';
@@ -7694,7 +7749,12 @@ var PBOnline = (function () {
         }
       }
 
+      /* Suggest the name the thing already has: the bullet's own name,
+       * or the name of the rifle card being shot. A preset of "Tikka
+       * T3x - 6.5 Creedmoor" wants to be called that. */
+      var active = activeRifle();
       var suggested = kind === 'bullet' ? S.bullet.name
+                    : (kind === 'rifle' && active && !cur) ? active.name
                     : (cur ? cur.name + ' (copy)' : '');
       var name = window.prompt('Name this new ' + kind + ' preset',
                                suggested);
@@ -9007,7 +9067,7 @@ var PBOnline = (function () {
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.6.0',
+      version: '1.7.0',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(), k, sub;
         for (k in (cfgOverrides || {})) {
