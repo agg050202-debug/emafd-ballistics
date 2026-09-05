@@ -97,6 +97,11 @@
 }
 
 .sb-app *, .sb-app *::before, .sb-app *::after { box-sizing: border-box; }
+/* The hidden attribute must win over any display rule below. Without
+   this, a `display: flex` on the element's class beats the browser's
+   own [hidden] { display: none }, and a panel the script hid stays on
+   screen -- the preset pickers and the reorder bar both did. */
+.sb-app [hidden] { display: none !important; }
 
 /* ---------------- top bar ---------------- */
 .sb-app .topbar {
@@ -126,7 +131,12 @@
   font-family: var(--sb-sans); color: var(--sb-fg);
 }
 .sb-app .sub { margin: 0; font-size: 11.5px; color: var(--sb-fg-dim); }
-.sb-app .topbar-right { display: flex; align-items: center; gap: 12px; }
+/* Wraps: on a narrow phone the two switches and the status do not fit
+   on one line, and without this they ran off the right edge and gave
+   the whole page a sideways scroll. */
+.sb-app .topbar-right {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
 
 .sb-app .seg {
   display: inline-flex; border: 1px solid var(--sb-line);
@@ -194,17 +204,118 @@
   border-bottom: 1px solid var(--sb-line);
   font: 600 11px var(--sb-sans); letter-spacing: .08em;
   text-transform: uppercase; color: var(--sb-fg-dim);
+  /* Flex so an info button can sit beside the words. */
+  display: flex; align-items: center; gap: 8px;
 }
 .sb-app h3.section:first-child { margin-top: 0; }
 
-/* ---------------- rifle library ---------------- */
-.sb-app .library {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px; align-items: center;
+/* ---------------- the i buttons ----------------
+   Any explanation longer than a couple of lines lives behind one of
+   these: the page reads clean, and the paragraph is one tap away. The
+   button names its paragraph with aria-controls; app.js toggles it. */
+.sb-app button.info {
+  width: 20px; height: 20px; padding: 0; flex: none;
+  border-radius: 50%; border: 1px solid var(--sb-accent);
+  background: transparent; color: var(--sb-accent);
+  font: italic 700 12px/18px Georgia, "Times New Roman", serif;
+  text-align: center; vertical-align: middle; letter-spacing: 0;
+  text-transform: none;
 }
-@media (max-width: 560px) {
-  .sb-app .library { grid-template-columns: 1fr; }
+.sb-app button.info:hover,
+.sb-app button.info[aria-expanded="true"] {
+  background: var(--sb-accent); color: #fff; border-color: var(--sb-accent);
 }
+.sb-app .hint button.info, .sb-app .sb-footer button.info { margin-left: 4px; }
+.sb-app .with-info { display: flex; align-items: center; gap: 8px; }
+.sb-app .with-info > input, .sb-app .with-info > select {
+  flex: 1 1 auto; min-width: 0;
+}
+
+/* ---------------- rifle library ----------------
+   The Equipment page is the list of rifles: one wide card per rifle
+   with its name and a summary, a square three-dot button beside it,
+   and a wide + underneath. Built by renderRifleList(). */
+.sb-app .rifle-list { display: flex; flex-direction: column; gap: 10px; }
+.sb-app .rifle-card {
+  display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 10px;
+  align-items: stretch;
+  transition: transform .12s ease;
+}
+.sb-app .rifle-card .rifle-open {
+  min-height: 66px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  padding: 12px 16px; text-align: center; min-width: 0;
+  background: var(--sb-bg-2); border: 1px solid var(--sb-line);
+  border-radius: var(--sb-radius);
+}
+.sb-app .rifle-card .rifle-open:hover { border-color: var(--sb-accent); }
+/* The one being shot: a second, inset line so it reads as selected
+   rather than merely hovered. */
+.sb-app .rifle-card.on .rifle-open {
+  border-color: var(--sb-accent);
+  box-shadow: inset 0 0 0 1px var(--sb-accent);
+}
+/* The setup being shot that is not a saved rifle: dashed, because it
+   is a place-holder for a card that does not exist yet. */
+.sb-app .rifle-card.unsaved .rifle-open { border-style: dashed; }
+.sb-app .rifle-card .t {
+  font: 600 15px var(--sb-sans); color: var(--sb-fg);
+  overflow-wrap: anywhere;
+}
+.sb-app .rifle-card .v {
+  font: 12px var(--sb-mono); color: var(--sb-accent);
+  white-space: pre-line; line-height: 1.4; overflow-wrap: anywhere;
+}
+.sb-app .rifle-card .v .mod { color: var(--sb-warn); }
+/* A square, as in the sketch, centred on the card however many lines
+   the name takes. */
+.sb-app .rifle-card .rifle-more {
+  width: 56px; height: 56px; align-self: center;
+  font-size: 22px; line-height: 1; padding: 0; min-width: 0;
+  background: var(--sb-bg-2); border: 1px solid var(--sb-line);
+  border-radius: var(--sb-radius); color: var(--sb-fg);
+}
+.sb-app .rifle-card .rifle-more:hover { border-color: var(--sb-accent); }
+.sb-app .rifle-card .grab {
+  display: none; align-items: center; justify-content: center;
+  font-size: 22px; color: var(--sb-fg-dim); padding: 0; min-width: 0;
+  background: var(--sb-bg-2); border: 1px solid var(--sb-line);
+  border-radius: var(--sb-radius); cursor: grab;
+}
+.sb-app .rifle-card .grab:focus-visible {
+  outline: 2px solid var(--sb-accent); outline-offset: 1px;
+}
+.sb-app .rifle-add {
+  width: 100%; min-height: 54px; font-size: 26px; line-height: 1;
+  color: var(--sb-accent); background: var(--sb-bg-2);
+  border: 1px dashed var(--sb-accent); border-radius: var(--sb-radius);
+}
+.sb-app .rifle-add:hover { background: var(--sb-bg-3); }
+/* Reorder mode: the handle replaces the menu, the whole card drags.
+   touch-action none, or the page scrolls instead of the card moving;
+   user-select none, or a long press selects the name. */
+.sb-app .reorder-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+}
+.sb-app .rifle-list.reorder .rifle-card {
+  grid-template-columns: 44px minmax(0, 1fr);
+  cursor: grab; touch-action: none; user-select: none;
+  -webkit-user-select: none;
+}
+.sb-app .rifle-list.reorder .rifle-more { display: none; }
+.sb-app .rifle-list.reorder .grab { display: flex; }
+/* The unsaved card is not in the saved order, so it has nothing to drag. */
+.sb-app .rifle-list.reorder .rifle-card.unsaved { cursor: default; }
+.sb-app .rifle-list.reorder .rifle-card.unsaved .grab { visibility: hidden; }
+.sb-app .rifle-list.reorder .rifle-open { pointer-events: none; }
+/* z-index above the sticky page head (10), so the card being dragged
+   is never hidden under it near the top of the list. */
+.sb-app .rifle-card.dragging {
+  transition: none; position: relative; z-index: 11; cursor: grabbing;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+}
+.sb-app .rifle-card.dragging .rifle-open { border-color: var(--sb-accent); }
 .sb-app .lib-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .sb-app .lib-actions button { white-space: nowrap; }
 .sb-app .lib-actions button:disabled {
@@ -332,16 +443,13 @@
   .sb-app .readout .readout-side { justify-self: stretch; flex-direction: row; }
   .sb-app .readout .readout-side > * { flex: 1 1 0; }
 }
-/* The wind switch and the way into the full solution, stacked in the
-   right-hand cell.
-   The floor is set to the WIDER of the badge's two labels -- "WIND DRIFT
-   INCLUDED" is longer than both "HOLD YOURSELF" and "Full detail", so
-   without it the whole readout jumped 44 px sideways every time the
-   switch was tapped. */
+/* The way into the full solution, alone in the right-hand cell now
+   that the wind switch has moved down to the reticle. It keeps the
+   cell's whole width -- the space the switch used to take. */
 .sb-app .readout-side {
   display: flex; flex-direction: column; gap: 8px; min-width: 21ch;
 }
-.sb-app .readout-side .badge { text-align: center; }
+.sb-app .readout-side .readout-more { width: 100%; }
 /* Distance and muzzle velocity, always side by side -- flex, not grid
    tracks, so they stay a pair when the readout collapses to one column
    on a phone instead of stacking into a tower. */
@@ -474,7 +582,9 @@
 }
 .sb-app button:hover { border-color: var(--sb-accent); }
 .sb-app button.ghost { color: var(--sb-fg-dim); }
-.sb-app .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.sb-app .actions {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+}
 
 /* ---------------- catalogue search ---------------- */
 .sb-app .results-list {
@@ -503,8 +613,17 @@
   padding: 7px 12px;
 }
 .sb-app .badge.hold { background: var(--sb-warn); color: #1c1403; }
-/* The shot screen's copy of the wind switch spans its column. */
-.sb-app .badge-wide { width: 100%; text-align: center; }
+/* The reticle's header row: a title, the i for the marks, and the wind
+   switch at the right. Wraps on a narrow phone rather than overflowing. */
+.sb-app .viz-head {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.sb-app .viz-head h2 {
+  margin: 0; flex: 1 1 auto; min-width: 0;
+  font: 600 11px var(--sb-sans); letter-spacing: .06em;
+  text-transform: uppercase; color: var(--sb-fg-dim);
+}
+.sb-app .viz-head .badge { margin-left: auto; white-space: nowrap; }
 /* ---------------- the distance table ---------------- */
 .sb-app .card-wrap {
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
@@ -543,12 +662,17 @@
 }
 .sb-app .dope td.sub { color: var(--sb-fg-dim); cursor: pointer; }
 .sb-app .dope tr.trans td.sub { color: var(--sb-warn); }
-.sb-app .dope td.rowdel { text-align: center; }
+.sb-app .dope td.rowdel { text-align: center; white-space: nowrap; }
+.sb-app .dope td.rowdel button + button { margin-left: 6px; }
+/* Red, always: the two buttons at the end of a row used to be grey
+   glyphs that only coloured on hover, which a phone never sees, so
+   they did not read as buttons at all. */
 .sb-app .dope button.del {
   padding: 3px 8px; font-size: 13px; line-height: 1;
-  color: var(--sb-fg-dim); border-color: transparent; background: transparent;
+  color: var(--sb-hold); border-color: var(--sb-hold);
+  background: color-mix(in srgb, var(--sb-hold) 12%, transparent);
 }
-.sb-app .dope button.del:hover { color: var(--sb-hold); border-color: var(--sb-hold); }
+.sb-app .dope button.del:hover { background: var(--sb-hold); color: #fff; }
 .sb-app .dope tr.empty td { color: var(--sb-fg-dim); font-style: italic; }
 
 .sb-app .table-actions {
@@ -586,19 +710,36 @@
 .sb-app .dial-unit { font: 12px var(--sb-mono); color: var(--sb-fg-dim); }
 .sb-app .shot-secondary {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 10px; margin-top: 12px;
+  gap: 10px; margin-top: 10px;
 }
 .sb-app .shot-secondary div {
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
-  border-radius: 8px; padding: 10px 12px;
+  border-radius: 8px; padding: 10px 12px; min-width: 0;
 }
 .sb-app .shot-secondary .k {
   display: block; font: 10.5px var(--sb-sans); letter-spacing: .06em;
   text-transform: uppercase; color: var(--sb-fg-dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Number and unit never break across lines: "1440 km/h" in a 110 px
+   box with a wide monospace face wrapped the unit onto a second line
+   and left that tile taller than its neighbours. The unit is a smaller
+   span of its own, so the number keeps its size and the pair fits. */
 .sb-app .shot-secondary .v {
-  display: block; font: 600 17px var(--sb-mono); color: var(--sb-fg);
+  display: block; font: 600 clamp(14px, 4.2vw, 17px) var(--sb-mono);
+  color: var(--sb-fg); white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
+.sb-app .shot-secondary .v .u {
+  font: 11px var(--sb-mono); color: var(--sb-fg-dim); margin-left: 4px;
+}
+/* The two actions under the tiles, same gap as the tiles carry and
+   the same width each. */
+.sb-app .shot-actions {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin-top: 10px;
+}
+.sb-app .shot-actions button { white-space: normal; }
 .sb-app .shot-reticle { display: flex; flex-direction: column; gap: 8px; }
 
 /* ---------------- wind rose ---------------- */
@@ -795,6 +936,10 @@
 }
 .sb-app .sb-unitmenu button.extra:hover,
 .sb-app .sb-unitmenu button.extra:focus { color: #fff; }
+/* The rifle card's three-dot menu reuses the unit menu's box. */
+.sb-app .sb-unitmenu button.danger { color: var(--sb-hold); }
+.sb-app .sb-unitmenu button.danger:hover,
+.sb-app .sb-unitmenu button.danger:focus { background: var(--sb-hold); color: #fff; }
 
 /* The readout distance and the shot title are inputs now: the distance
    is changed from wherever you are looking, not only from the table. */
@@ -825,16 +970,16 @@
 }
 
 /* ---------------- shot log ---------------- */
+/* Green, always, for the same reason the delete button is always red. */
 .sb-app .dope button.logbtn {
   padding: 3px 7px; font-size: 13px; line-height: 1;
-  color: var(--sb-fg-dim); border-color: transparent; background: transparent;
+  color: var(--sb-accent-2); border-color: var(--sb-accent-2);
+  background: color-mix(in srgb, var(--sb-accent-2) 12%, transparent);
   font-family: var(--sb-mono);
 }
-.sb-app .dope button.logbtn:hover {
-  color: var(--sb-accent-2); border-color: var(--sb-accent-2);
-}
+.sb-app .dope button.logbtn:hover,
 .sb-app .dope button.logbtn.has {
-  color: var(--sb-accent-2); border-color: var(--sb-accent-2);
+  background: var(--sb-accent-2); color: #06130d;
 }
 
 .sb-app .sb-modal {
@@ -966,13 +1111,10 @@ body { background: #101317; }
         <span class="dial-unit" id="ro-wind-unit">&nbsp;</span>
       </div>
     </div>
-    <!-- The wind switch sits with the numbers it changes. It used to
-         live in a strip of its own above, where it read as a status
-         label rather than the control it is. -->
+    <!-- One control here now: the wind switch moved down to the reticle,
+         because it changes the sight picture and the log, never these
+         numbers. Full detail takes the whole cell. -->
     <div class="readout-side">
-      <button type="button" id="wind-badge" class="badge"
-              aria-label="Wind drift included" aria-pressed="false">
-        HOLD YOURSELF</button>
       <button type="button" class="readout-more" data-goto="screen-shot">
         Full detail &rarr;</button>
     </div>
@@ -1002,7 +1144,19 @@ body { background: #101317; }
 
   <div class="viz single">
     <div class="viz-box">
-      <h2>Reticle &mdash; residual hold</h2>
+      <!-- The wind switch lives with the picture it changes. Whether the
+           drift is dialled or held decides where the dot is drawn and
+           what the log records as dialled; the Drift figure above is the
+           same either way. -->
+      <div class="viz-head">
+        <h2>Reticle</h2>
+        <button type="button" class="info" aria-expanded="false"
+                aria-controls="ladder-note"
+                aria-label="About the marks on the reticle">i</button>
+        <button type="button" id="wind-badge" class="badge"
+                aria-label="Wind drift: dialled on the turret, or held in the reticle"
+                aria-pressed="false">HOLD YOURSELF</button>
+      </div>
       <svg id="reticle" class="reticle" role="img"
            aria-label="Reticle with the residual hold point"></svg>
       <div class="reticle-ctl">
@@ -1016,7 +1170,7 @@ body { background: #101317; }
         <span>Show the table as holdover marks</span>
       </label>
       <p class="hint" id="hold-note"></p>
-      <p class="hint" id="ladder-note"></p>
+      <p class="hint info-text" id="ladder-note" hidden></p>
     </div>
   </div>
 
@@ -1067,27 +1221,36 @@ body { background: #101317; }
         </div>
       </div>
       <div class="shot-secondary" id="shot-secondary"></div>
-      <!-- The same switch as the main screen. Full detail is where a
-           shooter decides how to take the shot, so the choice of dialling
-           the wind or holding it belongs here too. Both buttons are the
-           same state; render() writes them together. -->
-      <button type="button" id="shot-wind-badge" class="badge badge-wide"
-              aria-label="Wind drift included" aria-pressed="false">
-        HOLD YOURSELF</button>
-      <div class="actions">
+      <!-- Two actions, same width, same gap as the tiles above them:
+           record the shot, or change the wind without leaving the
+           solution it feeds. -->
+      <div class="actions shot-actions">
         <button type="button" id="btn-log-shot">◎ Log this shot</button>
+        <button type="button" id="btn-shot-wind"
+                aria-label="Change the wind">Wind&hellip;</button>
       </div>
     </div>
     <div class="shot-reticle">
+      <div class="viz-head">
+        <h2>Reticle</h2>
+        <button type="button" class="info" aria-expanded="false"
+                aria-controls="shot-ladder-note"
+                aria-label="About the marks on the reticle">i</button>
+        <!-- The same switch as the main screen. Both buttons are the
+             same state; render() writes them together. -->
+        <button type="button" id="shot-wind-badge" class="badge"
+                aria-label="Wind drift: dialled on the turret, or held in the reticle"
+                aria-pressed="false">HOLD YOURSELF</button>
+      </div>
       <svg id="shot-ret" class="reticle" role="img"
            aria-label="Reticle with the residual hold point"></svg>
       <p class="hint" id="shot-hold-note"></p>
-      <p class="hint" id="shot-ladder-note"></p>
+      <p class="hint info-text" id="shot-ladder-note" hidden></p>
     </div>
   </div>
 </section>
 
-<!-- ==================== EQUIPMENT: bullet, rifle, sight ==================== -->
+<!-- ==================== EQUIPMENT: your rifles ==================== -->
 <section class="screen" id="screen-equipment" aria-label="Equipment">
   <div class="page-head">
     <button type="button" class="back" data-goto="screen-main">&larr; Back</button>
@@ -1095,22 +1258,88 @@ body { background: #101317; }
   </div>
   <div class="page-body">
 
-    <!-- Three doors, in the order a setup is built: the rifle you
-         brought, the load in it, then how you are looking through
-         it. Each carries its current setting so the page answers
-         "what am I set up with" without opening anything. -->
-    <button type="button" class="bigbtn" data-goto="screen-rifle">
-      <span class="nav-text"><span class="t">Rifle</span><span
-        class="v" id="nav-rifle">&nbsp;</span></span>
-      <svg class="nav-ico" viewBox="0 0 48 48" aria-hidden="true"
-           fill="none" stroke="currentColor" stroke-width="2.4"
-           stroke-linecap="round" stroke-linejoin="round">
-        <path d="M44 9 26 20"/>
-        <path d="m26 20-3-1.8L6 28l3 5 16.5-9.5"/>
-        <path d="m39.5 15.5-9.5 5.5"/>
-        <path d="m25.5 23.5 1 1.7a3.5 3.5 0 0 0 4.8 1.3l.9-.5"/>
-        <path d="m28 13.5 5.5 3.2"/>
-      </svg></button>
+    <!-- The page IS the rifle list. Tap one to shoot it and edit its
+         bullet, sight and zero inside; the three-dot button moves,
+         updates, renames or deletes it. Cards are built by
+         renderRifleList(). -->
+    <h3 class="section">Rifles
+      <button type="button" class="info" aria-expanded="false"
+              aria-controls="info-rifles" aria-label="About rifles">i</button></h3>
+    <p class="hint info-text" id="info-rifles" hidden>Tap a rifle to shoot
+    it; its bullet, sight and zero are edited inside. A rifle keeps the
+    bullet, muzzle velocity, twist, sight height, zero, reticle and
+    turret &mdash; not the weather or the distances, which change every
+    outing. Edits are not written back until you choose Update from its
+    &#8943; menu, so a rifle you have changed says &ldquo;modified&rdquo;
+    until then.</p>
+    <div class="reorder-bar" id="reorder-bar" hidden>
+      <span class="hint">Drag a rifle to where you want it.</span>
+      <button type="button" id="btn-reorder-done">Done</button>
+    </div>
+    <div class="rifle-list" id="rifle-list" role="list"></div>
+    <button type="button" class="rifle-add" id="btn-rifle-new"
+            aria-label="Add a rifle from the current setup"
+            title="Add a rifle from the current setup">+</button>
+    <p class="hint" id="rifle-note"></p>
+    <div class="lib-actions">
+      <button type="button" id="btn-lib-export" class="ghost">Export library</button>
+      <button type="button" id="btn-lib-import" class="ghost">Import library</button>
+      <input type="file" id="lib-file" accept="application/json,.json" hidden>
+    </div>
+
+    <!-- The full setup is not another rifle: it is the shared-list copy
+         of everything the rifle above holds, so it can be handed to
+         somebody else's browser. -->
+    <h3 class="section">Full setup preset
+      <button type="button" class="info" aria-expanded="false"
+              aria-controls="info-setup" aria-label="About full setup presets">i</button></h3>
+    <p class="hint info-text" id="info-setup" hidden>A full setup saves the
+    rifle, the bullet and the sight as they stand right now, in one entry,
+    and loading it replaces all three.</p>
+    <p class="hint" id="preset-setup-current"></p>
+    <div class="preset-actions">
+      <button type="button" id="preset-setup-choose">Choose preset</button>
+      <button type="button" id="preset-setup-save">Save current
+        configuration as preset</button>
+      <button type="button" id="preset-setup-delete" class="ghost">Delete preset</button>
+    </div>
+    <div class="preset-picker" id="preset-setup-picker" hidden>
+      <input type="search" id="preset-setup-search" autocomplete="off"
+             placeholder="Search presets&hellip;" aria-label="Search setup presets">
+      <div class="results-list" id="preset-setup-list" role="listbox"
+           aria-label="Full setup presets"></div>
+    </div>
+    <p class="hint" id="preset-setup-note"></p>
+
+    <div class="lib-actions">
+      <button type="button" id="preset-refresh">Refresh shared list</button>
+      <button type="button" id="preset-author" class="ghost">Set my name&hellip;</button>
+    </div>
+    <p class="hint" id="preset-status"></p>
+    <p class="hint warn">Saved presets go to a public list.
+      <button type="button" class="info" aria-expanded="false"
+              aria-controls="info-public" aria-label="About the public list">i</button></p>
+    <p class="hint warn info-text" id="info-public" hidden>Presets you save
+    are sent to a list everyone using this page can see and load, and
+    anyone can add to it. Do not put anything in a preset name you would
+    not publish. You can delete the ones this browser saved; you cannot
+    delete other people's.</p>
+  </div>
+</section>
+
+<!-- ====== RIFLE: one rifle -- its bullet, its sight, its zero ====== -->
+<section class="screen" id="screen-rifle" aria-label="Rifle">
+  <div class="page-head">
+    <button type="button" class="back" data-goto="screen-equipment">&larr; Back</button>
+    <h2 id="rifle-title">Rifle</h2><span class="head-spacer"></span>
+  </div>
+  <div class="page-body">
+    <p class="hint" id="rifle-status"></p>
+
+    <!-- Two doors, in the order a setup is built: the load in it, then
+         how you are looking through it. Each carries its current
+         setting so the page answers "what am I set up with" without
+         opening anything. -->
     <button type="button" class="bigbtn" data-goto="screen-projectile">
       <span class="nav-text"><span class="t">Bullet</span><span
         class="v" id="nav-projectile">&nbsp;</span></span>
@@ -1132,48 +1361,6 @@ body { background: #101317; }
                 stroke="none"/>
       </svg></button>
 
-    <!-- The full setup is not a fourth door: it is the same four
-         controls applied to all three at once, sitting under the three
-         they combine. -->
-    <h3 class="section">Full setup preset</h3>
-    <p class="hint" id="preset-setup-current"></p>
-    <div class="preset-actions">
-      <button type="button" id="preset-setup-choose">Choose preset</button>
-      <button type="button" id="preset-setup-save">Save current
-        configuration as preset</button>
-      <button type="button" id="preset-setup-delete" class="ghost">Delete preset</button>
-    </div>
-    <div class="preset-picker" id="preset-setup-picker" hidden>
-      <input type="search" id="preset-setup-search" autocomplete="off"
-             placeholder="Search presets&hellip;" aria-label="Search setup presets">
-      <div class="results-list" id="preset-setup-list" role="listbox"
-           aria-label="Full setup presets"></div>
-    </div>
-    <p class="hint" id="preset-setup-note"></p>
-    <p class="hint">A full setup saves the rifle, the bullet and the
-    sight as they stand right now, in one entry, and loading it replaces
-    all three.</p>
-
-    <div class="lib-actions">
-      <button type="button" id="preset-refresh">Refresh shared list</button>
-      <button type="button" id="preset-author" class="ghost">Set my name&hellip;</button>
-    </div>
-    <p class="hint" id="preset-status"></p>
-    <p class="hint warn">Presets you save are sent to a list everyone
-    using this page can see and load, and anyone can add to it. Do not
-    put anything in a preset name you would not publish. You can delete
-    the ones this browser saved; you cannot delete other people's.</p>
-  </div>
-</section>
-
-<!-- ====== RIFLE: the gun, its zero, and the day it was set ====== -->
-<section class="screen" id="screen-rifle" aria-label="Rifle">
-  <div class="page-head">
-    <button type="button" class="back" data-goto="screen-equipment">&larr; Back</button>
-    <h2>Rifle</h2><span class="head-spacer"></span>
-  </div>
-  <div class="page-body">
-
     <h3 class="section">Rifle preset</h3>
     <p class="hint" id="preset-rifle-current"></p>
     <div class="preset-actions">
@@ -1190,22 +1377,7 @@ body { background: #101317; }
     </div>
     <p class="hint" id="preset-rifle-note"></p>
 
-    <h3 class="section">Rifle</h3>
-    <div class="library">
-      <select id="rifle-select" aria-label="Saved rifles"></select>
-      <div class="lib-actions">
-        <button type="button" id="btn-rifle-save">Save</button>
-        <button type="button" id="btn-rifle-new">Save as new&hellip;</button>
-        <button type="button" id="btn-rifle-del" class="ghost">Delete</button>
-      </div>
-    </div>
-    <p class="hint" id="rifle-note"></p>
-    <div class="lib-actions">
-      <button type="button" id="btn-lib-export" class="ghost">Export library</button>
-      <button type="button" id="btn-lib-import" class="ghost">Import library</button>
-      <input type="file" id="lib-file" accept="application/json,.json" hidden>
-    </div>
-
+    <h3 class="section">Barrel and zero</h3>
     <div class="grid2">
       <div class="field"><label for="in-twist">Twist (in/rev)</label>
         <input type="text" inputmode="decimal" id="in-twist"></div>
@@ -1219,16 +1391,18 @@ body { background: #101317; }
     </div>
     <p class="hint" id="stability-note"></p>
 
-    <h3 class="section">Zeroing conditions</h3>
+    <h3 class="section">Zeroing conditions
+      <button type="button" class="info" aria-expanded="false"
+              aria-controls="info-zwx" aria-label="About zeroing conditions">i</button></h3>
+    <p class="hint info-text" id="info-zwx" hidden>Your zero was set on one
+    particular day. Turn this on and the scope angle is solved under
+    <em>those</em> conditions while the bullet flies through today's air
+    &mdash; which is what actually happens. Leave it off and the solver
+    assumes you zeroed in the conditions you are shooting in now.</p>
     <label class="check">
       <input type="checkbox" id="in-zwx">
       <span>Correct for the weather I zeroed in</span>
     </label>
-    <p class="hint">Your zero was set on one particular day. Turn this on
-    and the scope angle is solved under <em>those</em> conditions while the
-    bullet flies through today's air &mdash; which is what actually
-    happens. Leave it off and the solver assumes you zeroed in the
-    conditions you are shooting in now.</p>
     <div class="grid2" id="zwx-fields">
       <div class="field"><label for="in-zwx-temp">Temperature <u data-u="temp"></u></label>
         <input type="text" inputmode="decimal" id="in-zwx-temp"></div>
@@ -1247,7 +1421,7 @@ body { background: #101317; }
 <!-- ============ SIGHT: how you are looking through it ============ -->
 <section class="screen" id="screen-sight" aria-label="Sight">
   <div class="page-head">
-    <button type="button" class="back" data-goto="screen-equipment">&larr; Back</button>
+    <button type="button" class="back" data-goto="screen-rifle">&larr; Back</button>
     <h2>Sight</h2><span class="head-spacer"></span>
   </div>
   <div class="page-body">
@@ -1281,7 +1455,7 @@ body { background: #101317; }
 <!-- ========== PROJECTILE: the bullet, and the load driving it ========== -->
 <section class="screen" id="screen-projectile" aria-label="Projectile">
   <div class="page-head">
-    <button type="button" class="back" data-goto="screen-equipment">&larr; Back</button>
+    <button type="button" class="back" data-goto="screen-rifle">&larr; Back</button>
     <h2>Projectile</h2><span class="head-spacer"></span>
   </div>
   <div class="page-body">
@@ -1335,11 +1509,18 @@ body { background: #101317; }
           <option value="G1">G1 &mdash; flat-base / legacy</option>
         </select></div>
       <div class="field"><label for="in-profile">Aero coefficients</label>
-        <select id="in-profile"></select></div>
+        <div class="with-info">
+          <select id="in-profile"></select>
+          <button type="button" class="info" aria-expanded="false"
+                  aria-controls="coef-provenance"
+                  aria-label="Where these coefficients come from">i</button>
+        </div></div>
     </div>
     <p class="hint">The BC must match the standard: a G1 number entered
     against G7 will be wrong by roughly a factor of two.</p>
-    <p class="hint" id="coef-provenance"></p>
+    <!-- Provenance is load-bearing for a thesis tool (INTEGRATION.md):
+         folded behind the i, never dropped. -->
+    <p class="hint info-text" id="coef-provenance" hidden></p>
   </div>
 </section>
 
@@ -1365,15 +1546,25 @@ body { background: #101317; }
     <div class="actions">
       <button type="button" id="btn-locate">Use my location</button>
       <button type="button" id="btn-weather">Fetch live weather</button>
+      <button type="button" class="info" aria-expanded="false"
+              aria-controls="info-online"
+              aria-label="What these two buttons send">i</button>
     </div>
-    <p class="hint" id="online-note">Both of these leave the device.
-    “Use my location” asks the browser for your coordinates; “Fetch live
-    weather” sends those coordinates to the Open-Meteo public API and
-    fills in temperature, pressure, humidity and wind. Nothing else on
-    this page ever contacts the network, and neither runs unless you
-    press it.</p>
+    <p class="hint info-text" id="info-online" hidden>Both of these leave
+    the device. “Use my location” asks the browser for your coordinates;
+    “Fetch live weather” sends those coordinates to the Open-Meteo public
+    API and fills in temperature, pressure, humidity and wind. Nothing
+    else on this page ever contacts the network, and neither runs unless
+    you press it.</p>
+    <p class="hint" id="online-note"></p>
 
-    <h3 class="section">Atmosphere</h3>
+    <h3 class="section">Atmosphere
+      <button type="button" class="info" aria-expanded="false"
+              aria-controls="info-atmo" aria-label="About these fields">i</button></h3>
+    <p class="hint info-text" id="info-atmo" hidden>Station pressure is
+    what a Kestrel reads &mdash; not the altimeter setting corrected to
+    sea level. Positive shot angle is uphill. Latitude and azimuth drive
+    the Coriolis term.</p>
     <div class="grid2">
       <div class="field"><label for="in-temp">Temperature <u data-u="temp"></u></label>
         <input type="text" inputmode="decimal" id="in-temp"></div>
@@ -1384,11 +1575,13 @@ body { background: #101317; }
       <div class="field"><label for="in-los">Shot angle (deg)</label>
         <input type="text" inputmode="decimal" id="in-los"></div>
     </div>
-    <p class="hint">Station pressure is what a Kestrel reads &mdash; not
-    the altimeter setting corrected to sea level. Positive shot angle is
-    uphill. Latitude and azimuth drive the Coriolis term.</p>
 
-    <h3 class="section">Wind</h3>
+    <h3 class="section">Wind
+      <button type="button" class="info" aria-expanded="false"
+              aria-controls="info-wind" aria-label="How to read the dial">i</button></h3>
+    <p class="hint info-text" id="info-wind" hidden>Drag the dial, or use
+    the arrow keys. The clock is relative to your shot: 12 o'clock blows
+    from the target into your face, 3 o'clock from your right.</p>
     <div class="rose-wrap">
       <div class="rose-box">
         <svg id="wind-rose" class="rose" role="slider" tabindex="0"
@@ -1399,9 +1592,6 @@ body { background: #101317; }
           <span id="rose-clock">3 o'clock</span>
         </div>
       </div>
-      <p class="hint">Drag the dial, or use the arrow keys. The clock is
-      relative to your shot: 12 o'clock blows from the target into your
-      face, 3 o'clock from your right.</p>
     </div>
     <div class="grid2">
       <div class="field"><label for="in-wspd">Speed <u data-u="wind"></u></label>
@@ -1431,20 +1621,28 @@ body { background: #101317; }
         <select id="in-click"></select></div>
       <div class="field" id="turret-field">
         <label for="in-turret">Turret factor</label>
-        <input type="text" inputmode="decimal" id="in-turret"></div>
+        <div class="with-info">
+          <input type="text" inputmode="decimal" id="in-turret">
+          <button type="button" class="info" aria-expanded="false"
+                  aria-controls="turret-hint"
+                  aria-label="About the turret factor">i</button>
+        </div></div>
     </div>
-    <p class="hint" id="turret-hint">A turret factor other than 1.000
-    scales the clicks you dial. Set it only if you have <em>measured</em>
-    your scope's tracking on a tall target: a scope that moves 9.7 MIL
-    when you dial 10.0 has a factor of 10.0 / 9.7 = 1.031.</p>
-    <h3 class="section">Shot log</h3>
+    <p class="hint info-text" id="turret-hint" hidden>A turret factor other
+    than 1.000 scales the clicks you dial. Set it only if you have
+    <em>measured</em> your scope's tracking on a tall target: a scope that
+    moves 9.7 MIL when you dial 10.0 has a factor of 10.0 / 9.7 = 1.031.</p>
+    <h3 class="section">Shot log
+      <button type="button" class="info" aria-expanded="false"
+              aria-controls="info-log" aria-label="What the log records">i</button></h3>
+    <p class="hint info-text" id="info-log" hidden>Every logged shot stores
+    the prediction, what you actually dialled, where it landed, and the
+    complete setup that produced it &mdash; bullet, rifle, zero,
+    atmosphere and wind. It is recorded to check whether the model is
+    realistic; it never feeds back into the solver, because a prediction
+    corrected by the last observation is no longer an independent test of
+    anything.</p>
     <p class="hint" id="log-summary"></p>
-    <p class="hint">Every logged shot stores the prediction, what you
-    actually dialled, where it landed, and the complete setup that
-    produced it &mdash; bullet, rifle, zero, atmosphere and wind. It is
-    recorded to check whether the model is realistic; it never feeds back
-    into the solver, because a prediction corrected by the last
-    observation is no longer an independent test of anything.</p>
     <p class="hint warn" id="log-privacy"></p>
     <div class="actions">
       <button type="button" id="btn-log-json">Export JSON</button>
@@ -1460,14 +1658,17 @@ body { background: #101317; }
 </section>
 
 <footer class="sb-footer">
-  <p>Ported from the PyBallisticsV2 solver (Python + NumPy), validated
-  cell-by-cell against it across 22 configurations. The canonical M852
-  case reproduces &minus;1357.3097&nbsp;cm of drop at 1000&nbsp;m.
-  Aerodynamic coefficients: BRL MR-3733 (McCoy); standard drag functions
-  G7/G1 per McCoy. Weather by Open-Meteo. Academic tool &mdash; verify
-  against your own data before trusting a solution.</p>
-  <p style="margin-top:6px">Build <b id="build-stamp">1.5.3 · 2026-08-24 18:24 UTC</b> &mdash;
-  quote this when reporting anything, so a fixed bug is not reported twice.</p>
+  <p>Build <b id="build-stamp">1.6.0 · 2026-09-05 03:22 UTC</b> &mdash; quote this when
+  reporting anything, so a fixed bug is not reported twice.
+  <button type="button" class="info" aria-expanded="false"
+          aria-controls="info-credits" aria-label="About this solver">i</button></p>
+  <p class="info-text" id="info-credits" hidden>Ported from the
+  PyBallisticsV2 solver (Python + NumPy), validated cell-by-cell against it
+  across 22 configurations. The canonical M852 case reproduces
+  &minus;1357.3097&nbsp;cm of drop at 1000&nbsp;m. Aerodynamic
+  coefficients: BRL MR-3733 (McCoy); standard drag functions G7/G1 per
+  McCoy. Weather by Open-Meteo. Academic tool &mdash; verify against your
+  own data before trusting a solution.</p>
 </footer>
 
 <!-- Shot log entry. One dialog, reused: the point is to record a shot
@@ -1527,6 +1728,36 @@ body { background: #101317; }
     <div class="actions">
       <button type="button" id="log-save">Save shot</button>
       <button type="button" id="log-cancel" class="ghost">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- The wind, from the shot detail. The same dial and the same two
+     fields as the Environment screen, bound to the same state, so the
+     wind can be changed without losing sight of the solution it feeds. -->
+<div class="sb-modal" id="wind-modal" hidden role="dialog" aria-modal="true"
+     aria-labelledby="wind-title">
+  <div class="sb-modal-card">
+    <h3 id="wind-title">Wind</h3>
+    <div class="rose-wrap">
+      <div class="rose-box">
+        <svg id="wind-rose-2" class="rose" role="slider" tabindex="0"
+             aria-label="Wind direction relative to the shot"
+             aria-valuemin="0" aria-valuemax="359" aria-valuenow="90"></svg>
+        <div class="rose-readout">
+          <b id="rose2-deg">90&deg;</b>
+          <span id="rose2-clock">3 o'clock</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="wm-wspd">Speed <u data-u="wind"></u></label>
+        <input type="text" inputmode="decimal" id="wm-wspd"></div>
+      <div class="field"><label for="wm-wdir">Direction (deg, relative)</label>
+        <input type="text" inputmode="decimal" id="wm-wdir"></div>
+    </div>
+    <div class="actions">
+      <button type="button" id="wind-done">Done</button>
     </div>
   </div>
 </div>
@@ -5317,10 +5548,12 @@ var PBOnline = (function () {
 /* Superior Ballistics -- Field. Application wiring.
  *
  * State is held in SI; the display converts. Every edit schedules a
- * debounced solve, and every solve computes BOTH the physical trajectory
- * (real wind) and the wind-free one, so the WIND DRIFT INCLUDED /
- * HOLD YOURSELF
- * switch re-picks which one feeds the table without re-solving.
+ * debounced solve of the physical trajectory -- the real wind, always.
+ * The table, the readout and the shot detail print that one solution,
+ * drop and drift both. The WIND DRIFT INCLUDED / HOLD YOURSELF switch
+ * does not change a number: it says whether the drift goes on the
+ * windage turret or is held in the reticle, which decides where the
+ * aim dot is drawn and what the shot log records as dialled.
  *
  * Navigation is a screen stack (showScreen), matching the desktop build's
  * Range Field: one screen at a time, a back button returns.
@@ -5372,10 +5605,12 @@ var PBOnline = (function () {
       /* The distances the shooter is actually shooting, in metres. This
        * is the worksheet: the table is an input, not a fixed grid. */
       rows: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
-      /* Hold-yourself is the default: it is the honest starting
-       * point, because a shooter who has not told the app about the
-       * wind should not be handed a windage number to dial. Tapping
-       * the badge folds the wind drift back into the numbers. */
+      /* Whether the drift is dialled on the windage turret (true) or
+       * held in the reticle (false). Hold-yourself is the default: it
+       * is the honest starting point, because a shooter who has not
+       * told the app about the wind should not be handed a windage
+       * number to dial. The Drift figure is the same either way; the
+       * switch moves the aim dot and sets what the log calls dialled. */
       windInDope: false,
       /* Where each input came from. A logged shot is only as good as its
        * worst input, and "typed" against "measured five minutes ago" is
@@ -5435,7 +5670,7 @@ var PBOnline = (function () {
   }
 
   var S = defaults();
-  var resPhys = null, resFree = null, solveTimer = null, solving = false;
+  var resPhys = null, solveTimer = null, solving = false;
   /* Only populated while the zeroing-weather correction is on: the same
    * shot solved as if it were off, so the interface can say what the
    * correction is actually worth instead of leaving it an invisible
@@ -5513,6 +5748,10 @@ var PBOnline = (function () {
   // screens
   // ------------------------------------------------------------------
   function showScreen(id) {
+    /* Nothing floats across screens: the rifle menu closes, and
+     * leaving Equipment ends reorder mode rather than parking it. */
+    closeRifleMenu(false);
+    if (reorder && id !== 'screen-equipment') setReorder(false);
     var all = document.querySelectorAll('.sb-app .screen');
     for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === id);
     window.scrollTo(0, 0);
@@ -5521,6 +5760,8 @@ var PBOnline = (function () {
     if (id === 'screen-main') { renderChart(); renderReticle(); }
     if (id === 'screen-shot') renderShot();
     if (id === 'screen-environment') renderRose();
+    if (id === 'screen-equipment') renderRifleList();
+    if (id === 'screen-rifle') renderRifleScreen();
   }
 
   // ------------------------------------------------------------------
@@ -5564,7 +5805,7 @@ var PBOnline = (function () {
     return dd.length ? Math.max.apply(null, dd) : 1000;
   }
 
-  function buildConfig(withWind) {
+  function buildConfig() {
     var cfg = C.defaults(), b = S.bullet;
     cfg.bullet.d = clamp('bullet.d', b.d);
     cfg.bullet.L = clamp('bullet.L', b.L);
@@ -5594,7 +5835,7 @@ var PBOnline = (function () {
     cfg.air.temp = clamp('atmo.temp', S.atmo.temp);
     cfg.air.pressure = clamp('atmo.pressure', S.atmo.pressure);
     cfg.air.humidity = clamp('atmo.humidity', S.atmo.humidity);
-    cfg.air.wind_speed = withWind ? clamp('wind.speed', S.wind.speed) : 0.0;
+    cfg.air.wind_speed = clamp('wind.speed', S.wind.speed);
 
     cfg.pos.latitude = clamp('geom.lat', S.geom.lat);
     cfg.pos.azimuth = clamp('geom.az', S.geom.az);
@@ -5670,11 +5911,9 @@ var PBOnline = (function () {
     solving = true;
     var t0 = performance.now();
     try {
-      resPhys = R.runCase(buildConfig(true));
-      resFree = (clamp('wind.speed', S.wind.speed) === 0)
-        ? resPhys : R.runCase(buildConfig(false));
+      resPhys = R.runCase(buildConfig());
       if (S.zeroWx.enabled) {
-        var plain = buildConfig(true);
+        var plain = buildConfig();
         plain.aim.zero_air_enabled = false;
         resNoZwx = R.runCase(plain);
       } else {
@@ -5682,7 +5921,7 @@ var PBOnline = (function () {
       }
       setStatus((performance.now() - t0).toFixed(0) + ' ms', false);
     } catch (e) {
-      resPhys = resFree = resNoZwx = null;
+      resPhys = resNoZwx = null;
       setStatus('error', false);
       console.error('[superior-ballistics] solve failed', e);
     }
@@ -5696,7 +5935,16 @@ var PBOnline = (function () {
     n.classList.toggle('solving', !!busy);
   }
 
-  function displayed() { return S.windInDope ? resPhys : resFree; }
+  /* The solution every surface prints. There used to be two -- with
+   * and without the wind -- and the switch picked between them, so the
+   * windage column changed its name when it was tapped and, in
+   * hold-yourself, the drop came from a flight through still air. One
+   * trajectory now: the bullet flies through the wind whether or not
+   * the shooter dials for it. For a crosswind the drop moves by well
+   * under a hundredth of a MIL; for a 15 m/s head or tail wind at 800 m
+   * it moves by about a quarter of a MIL, which is the physical figure
+   * and is what the shot log has always been meant to test. */
+  function displayed() { return resPhys; }
   function hasWind() { return clamp('wind.speed', S.wind.speed) > 0; }
 
   /* One row of the card at an arbitrary distance.
@@ -5748,47 +5996,19 @@ var PBOnline = (function () {
     return { letter: row[1] < 0 ? 'U' : 'D', mag: Math.abs(v),
              text: (row[1] < 0 ? 'U' : 'D') + fmt(Math.abs(v), dec) };
   }
-  /* The windage figure to SHOW for a distance.
-   *
-   * With the wind drift included it is what you dial, straight off the
-   * displayed card. Holding it yourself, the dialled windage is the
-   * wind-free one -- spin drift and nothing else -- so it does not move
-   * when the wind changes, and showing it was telling the shooter that
-   * a 12 m/s crosswind needs 0.14 MIL. What matters in that mode is the
-   * HOLD, so that is what the box reads, and it agrees with the dot on
-   * the reticle because both are physical minus dialled.
-   *
-   * The synthetic row keeps the card's own layout, so the conversion to
-   * MIL / MOA / clicks / linear stays U.correction's job. */
-  function windFigure(d, row) {
-    if (S.windInDope || !resPhys || !row || !Number.isFinite(d)) {
-      return windCall(row);
-    }
-    var a = cardAt(resPhys.card, d);
-    var h = holdResidual(d);
-    if (!a || !h) return windCall(row);
-    /* Taken from holdResidual, which is what the reticle dot is drawn
-     * from, so the number and the dot are the same quantity and cannot
-     * drift apart -- it subtracts the dial as whole clicks, which the
-     * shooter can actually set, rather than the exact figure they
-     * cannot. Sign returns to the card's convention: a hold to the
-     * right is a drift to the left.
-     *
-     * The other two columns are the same angle in other units, so they
-     * are scaled by the same factor rather than recomputed; at these
-     * angles that is exact well past the displayed precision, and the
-     * guard covers a row with no drift to scale from. */
-    var mil = -h.mil_x;
-    var k = (Math.abs(a[5]) > 1e-9) ? (mil / a[5]) : 0;
-    var r = row.slice();
-    r[4] = a[4] * k;
-    r[5] = mil;
-    r[6] = a[6] * k;
-    return windCall(r);
-  }
+  /* The windage figure to SHOW for a distance: the whole horizontal
+   * deflection of the physical flight -- wind and spin drift together
+   * -- in the card's own sign convention. It is what goes on the turret
+   * when the drift is dialled, and exactly what is held when it is not,
+   * because in that mode the dial is zero and the reticle dot is
+   * physical minus nothing. The same number in both modes, on purpose:
+   * the switch decides where the correction goes, not what it is. */
+  function windFigure(d, row) { return windCall(row); }
 
-  /* What the windage box is called right now. */
-  function windLabel() { return S.windInDope ? 'Drift' : 'Hold'; }
+  /* What the windage box is called. It no longer flips to "Hold": the
+   * figure is the drift either way, and the switch on the reticle says
+   * whether it is dialled or held. */
+  function windLabel() { return 'Drift'; }
 
   function windCall(row) {
     var v = U.correction(row, 'drift', S.out.corr, S.out.click,
@@ -6049,6 +6269,18 @@ var PBOnline = (function () {
     }
   }
 
+  /* The wind button under the tiles carries the wind it would change,
+   * so the shot detail states the one input the horizontal figure
+   * depends on most. */
+  function renderShotWindButton() {
+    var b = $('btn-shot-wind');
+    if (!b) return;
+    b.textContent = hasWind()
+      ? 'Wind ' + fmt(U.fromSI('wind', S.wind.speed), 1) + ' ' +
+        U.label('wind') + ' · ' + U.degToClock(S.wind.dir) + " o'clock…"
+      : 'Wind: calm…';
+  }
+
   function renderShot() {
     var d = S.shotRange, res = displayed();
     var row = (res && Number.isFinite(d)) ? cardAt(res.card, d) : null;
@@ -6058,6 +6290,7 @@ var PBOnline = (function () {
       $('shot-title').value = Number.isFinite(d) ? distDisp(d) : '';
     }
     $('shot-title-unit').textContent = U.label('distance');
+    renderShotWindButton();
 
     var cu = U.correctionLabel(S.out.corr, S.out.click);
     if (!row) {
@@ -6090,7 +6323,7 @@ var PBOnline = (function () {
     var sec = [
       ['Velocity', U.fromSI('velocity', row[7]), 'velocity', undefined, '', true],
       ['Mach', row[8], null, 2],
-      ['Time of flight', row[9], null, 2, ' s'],
+      ['Time of flight', row[9], null, 2, 's'],
       ['Drop (linear)', U.fromSI('drop', row[1] * 1e-2), 'drop'],
       ['Drift (linear)', U.fromSI('drop', row[4] * 1e-2), 'drop'],
       ['Energy', U.fromSI('energy', row[10]), 'energy']
@@ -6101,11 +6334,18 @@ var PBOnline = (function () {
       var d = document.createElement('div');
       var q = s[2];
       var dec = (s[3] !== undefined) ? s[3] : (q ? U.decimals(q) : 2);
-      var unit = q ? (' ' + U.label(q)) : (s[4] || '');
+      var unit = q ? U.label(q) : (s[4] || '');
       var k = document.createElement('span');
       k.className = 'k'; k.textContent = s[0];
+      /* Number and unit as two spans, so the unit can be smaller and
+       * the pair never wraps inside the tile. */
       var v = document.createElement('span');
-      v.className = 'v'; v.textContent = fmt(s[1], dec) + unit;
+      v.className = 'v'; v.textContent = fmt(s[1], dec);
+      if (unit) {
+        var us = document.createElement('span');
+        us.className = 'u'; us.textContent = unit;
+        v.appendChild(us);
+      }
       d.appendChild(k); d.appendChild(v);
       if (q) {
         d.className = 'tappable';
@@ -6161,7 +6401,7 @@ var PBOnline = (function () {
                    { size: $('shot-ret').clientWidth || 320,
                      zoomMil: S.zoom, hold: hold, ladder: holdLadder(),
                      dialled: dialledFor(d) });
-    $('shot-hold-note').textContent = holdNoteFor(hold);
+    $('shot-hold-note').textContent = holdNoteFor(hold, w.text);
     $('shot-ladder-note').textContent = ladderNote(d) + dialNote(d);
   }
 
@@ -6269,8 +6509,10 @@ var PBOnline = (function () {
     return PB_RETICLES[0];
   }
 
-  /* Residual hold = physical minus displayed. Drift included -> centre;
-   * hold-yourself -> the dot IS the wind hold. Never the raw dope. */
+  /* Residual hold = physical minus what is actually on the turrets.
+   * Drift included -> the dot sits at the centre, bar the sub-click
+   * remainder. Hold-yourself -> the windage turret is untouched, so the
+   * dot IS the whole deflection. Never the raw dope. */
   /* One click, as the true angle it really moves, in MIL.
    *
    * The turret factor is defined by this app's own hint text: a scope
@@ -6288,10 +6530,6 @@ var PBOnline = (function () {
   /* What is actually ON the turrets for this distance, in MIL, in the
    * same hold sense as the reticle markers.
    *
-   * Built from the DISPLAYED solution, not the physical one: HOLD
-   * YOURSELF deliberately leaves the wind off the turrets, and dialling
-   * it here would erase the very hold the shooter is being told to make.
-   *
    * Rounded to whole clicks, because that is all a turret can do. The
    * remainder is real -- up to half a click on each axis -- and carrying
    * it is the difference between a picture of the solution and a picture
@@ -6308,51 +6546,73 @@ var PBOnline = (function () {
      * horizontal goes on the rifle and the whole deflection -- wind and
      * spin drift together -- is held in the reticle.
      *
-     * This used to subtract the wind-free windage, on the assumption
-     * that the shooter had dialled the spin drift. Nothing on screen
-     * ever told them to: the windage column shows the HOLD in this mode,
-     * not a dial. So the app asked for a hold that was right only for a
-     * turret setting it never mentioned -- 0.3 MIL too much with a
-     * 15 m/s crosswind at 800 m, which is 24 cm of miss. */
-    return { x: S.windInDope ? snap(-row[5]) : 0, y: snap(-row[2]) };
+     * The dial is expressed in the same sense as the ladder marks: where
+     * the bullet STRIKES relative to the crosshair, in reticle
+     * coordinates (+x right, +y down). The card's drop is negative below
+     * the line of sight, so the vertical is negated; the card's drift is
+     * already positive to the right, so the horizontal is not. Dialling
+     * the strike of the selected row is what puts that row at the
+     * centre once the markers are re-referenced.
+     *
+     * Until 1.6.0 the horizontal was negated too, which mirrored every
+     * mark and the dot: a bullet blown LEFT by a 3 o'clock wind was
+     * drawn on the RIGHT. The desktop's paintEvent draws the raw column
+     * (x = cx + wmil * ppm), and the engine's z axis is positive to the
+     * right, so the un-negated column is the picture. */
+    return { x: S.windInDope ? snap(row[5]) : 0, y: snap(-row[2]) };
   }
 
+  /* Where the bullet lands relative to the crosshair once the turrets
+   * are set -- physical truth minus what was dialled, in reticle
+   * coordinates. That point is the mark to put ON the target: a strike
+   * 9 MIL low means the mark 9 MIL below the crosshair goes on the
+   * target, and a strike 7 MIL left (a 3 o'clock wind) means the mark
+   * 7 MIL to the LEFT does, which is the R7 hold the table prints. */
   function holdResidual(d) {
     if (!resPhys || !Number.isFinite(d)) return null;
     var a = cardAt(resPhys.card, d);
     var dial = dialledFor(d);
     if (!a || !dial) return null;
-    /* Physical truth minus what was dialled. Card MIL columns: [2] drop,
-     * [5] drift. A residual drop below the sight line is held
-     * DOWN-reticle (+y); a residual drift to the right is held left
-     * (-x). */
-    return { mil_y: -a[2] - dial.y, mil_x: -a[5] - dial.x };
+    /* Card MIL columns: [2] drop (negative below), [5] drift (positive
+     * right). Screen y grows downward, so only the drop is negated. */
+    return { mil_y: -a[2] - dial.y, mil_x: a[5] - dial.x };
   }
 
-  function holdNoteFor(hold) {
+  /* The windage call for a distance, as printed in the table -- "R7.41"
+   * -- for the notes that name the hold. */
+  function windTextAt(d) {
+    var res = displayed();
+    var row = (res && Number.isFinite(d)) ? cardAt(res.card, d) : null;
+    return row ? windFigure(d, row).text : '';
+  }
+
+  function holdNoteFor(hold, call) {
     if (!hold) return 'Pick a distance to place the aim dot.';
     var rem = Math.hypot(hold.mil_x, hold.mil_y);
-    /* A turret moves in whole clicks, so part of the correction cannot
-     * be dialled at all. Naming it is the honest thing: it is the
-     * difference between the number the solver produced and the number
-     * the shooter can actually put on the rifle. */
-    var subClick = ' A turret only moves in whole ' + S.out.click +
-      ' clicks, so the last ' + rem.toFixed(2) + ' MIL cannot be dialled.';
     if (S.windInDope) {
+      /* A turret moves in whole clicks, so part of the correction cannot
+       * be dialled at all. Naming it is the honest thing: it is the
+       * difference between the number the solver produced and the number
+       * the shooter can actually put on the rifle. */
       if (rem < 0.005) {
-        return 'Wind drift is included: dial both numbers and aim dead ' +
+        return 'Wind drift is dialled: dial both numbers and aim dead ' +
           'centre — this row falls on whole clicks exactly.';
       }
-      return 'Wind drift is included: dial both numbers, then aim at ' +
-        'the dot.' + subClick;
+      return 'Wind drift is dialled: dial both numbers, then aim with ' +
+        'the dot (the ' + rem.toFixed(2) + ' MIL left after whole clicks).';
     }
+    /* Even in dead calm there is something to hold: the windage turret
+     * is untouched in this mode, so the bullet's spin drift is still on
+     * the shooter to aim off. It is small close in and not small at
+     * distance. The dot sits on the side the bullet lands; the call
+     * names the side to hold, which is the other one. */
     if (!hasWind()) {
-      return 'No wind entered, so there is nothing to hold for. Enter a ' +
-        'wind speed to see the hold.' + (rem < 0.005 ? '' : subClick);
+      return 'Calm, but windage is not dialled, so the spin drift is ' +
+        'yours: put the dot on the target' + (call ? ' (' + call + ')' : '') +
+        '.';
     }
-    return 'Hold yourself: dial elevation only, then aim AT the dot — ' +
-      Math.abs(hold.mil_x).toFixed(2) + ' MIL ' +
-      (hold.mil_x < 0 ? 'left' : 'right') + '.';
+    return 'Hold yourself: dial the drop only, then put the dot on the ' +
+      'target' + (call ? ' — that is the ' + call + ' hold' : '') + '.';
   }
 
   /* The table, drawn on the reticle.
@@ -6371,8 +6631,12 @@ var PBOnline = (function () {
     distances().forEach(function (d) {
       var row = cardAt(resPhys.card, d);
       if (!row) return;
+      /* Strike relative to the crosshair, in reticle coordinates: the
+       * drop is negative below the line of sight and screen y grows
+       * downward, so it is negated; the drift is positive to the right
+       * on both, so it is not. Same convention as dialledFor(). */
       out.push({
-        mil_x: -row[5], mil_y: -row[2],
+        mil_x: row[5], mil_y: -row[2],
         label: distDisp(d),
         selected: d === S.shotRange
       });
@@ -6409,10 +6673,21 @@ var PBOnline = (function () {
     var res = displayed();
     var row = (res && Number.isFinite(d)) ? cardAt(res.card, d) : null;
     if (!row) return '';
-    var e = elevCall(row), w = windCall(row);
+    var cu = U.correctionLabel(S.out.corr, S.out.click);
+    var e = elevCall(row);
+    /* Only what is actually ON the turrets. In hold-yourself that is
+     * elevation and nothing else, and saying otherwise here was worse
+     * than saying nothing: a shooter who dialled the windage this
+     * sentence used to quote, and then held the figure in the Hold
+     * column, put both corrections in and missed by the windage. */
+    if (!S.windInDope) {
+      return ' Drawn with ' + e.text + ' ' + cu + ' on the elevation ' +
+        'turret for ' + distDisp(d) + ' ' + U.label('distance') +
+        ', windage untouched.';
+    }
     return ' Drawn with the ' + distDisp(d) + ' ' + U.label('distance') +
-      ' solution on the turrets: ' + e.text + ' ' + w.text + ' ' +
-      U.correctionLabel(S.out.corr, S.out.click) + '.';
+      ' solution on the turrets: ' + e.text + ' ' + windCall(row).text +
+      ' ' + cu + '.';
   }
 
   function renderReticle() {
@@ -6426,19 +6701,26 @@ var PBOnline = (function () {
       size: size, zoomMil: S.zoom, hold: hold, ladder: holdLadder(),
       dialled: dialledFor(d)
     });
-    $('hold-note').textContent = holdNoteFor(hold);
+    $('hold-note').textContent = holdNoteFor(hold, windTextAt(d));
     $('ladder-note').textContent = ladderNote(d) + dialNote(d);
   }
 
+  /* Two dials, one bearing: the Environment screen's and the wind
+   * dialog's. Both are drawn from the same state every time, so
+   * whichever one is on screen is right. A hidden SVG measures 0 and
+   * falls back to a nominal size; it is redrawn when it is shown. */
   function renderRose() {
-    var svg = $('wind-rose');
-    var size = svg.clientWidth || 300;
     var deg = clamp('wind.dir', S.wind.dir);
-    PBWindRose.draw(svg, deg, { size: size });
-    /* Outside the dial: at half the bearings the needle used to run
-     * straight through the figures. */
-    $('rose-deg').textContent = Math.round(deg) + '°';
-    $('rose-clock').textContent = U.degToClock(deg) + " o'clock";
+    [['wind-rose', 'rose-deg', 'rose-clock'],
+     ['wind-rose-2', 'rose2-deg', 'rose2-clock']].forEach(function (ids) {
+      var svg = $(ids[0]);
+      if (!svg) return;
+      PBWindRose.draw(svg, deg, { size: svg.clientWidth || 300 });
+      /* Outside the dial: at half the bearings the needle used to run
+       * straight through the figures. */
+      $(ids[1]).textContent = Math.round(deg) + '°';
+      $(ids[2]).textContent = U.degToClock(deg) + " o'clock";
+    });
   }
 
   /* Each tile carries its own state, so the setup is readable without
@@ -6449,22 +6731,23 @@ var PBOnline = (function () {
       sg = PBStability.millerSg(b.mass, b.d, b.L, S.rifle.twist, S.rifle.mv,
                                 S.atmo.temp, S.atmo.pressure);
     } catch (e) { /* not fatal for a label */ }
+    /* The rifle being shot, by name, then its load. With no rifle
+     * saved the bullet takes the first line, as it always did. */
+    var r = activeRifle();
+    var bshort = (b.name.length > 24 ? b.name.slice(0, 23) + '…' : b.name);
     $('nav-equipment').textContent =
-      (b.name.length > 24 ? b.name.slice(0, 23) + '…' : b.name) + '\n' +
+      (r ? r.name + (rifleModified() ? ' · modified' : '') + '\n' +
+           bshort + ' · '
+         : bshort + '\n') +
       b.dragModel + ' ' + b.bc.toFixed(3) + ' · ' +
       fmt(U.fromSI('velocity', S.rifle.mv), 0) + ' ' +
       U.label('velocity') + ' · zero ' +
       distDisp(S.rifle.zeroRange) + ' ' + U.label('distance') +
       (sg ? ' · Sg ' + sg.sg.toFixed(2) : '');
-    /* The three doors on the equipment screen each carry their own
-     * setting, so the hub answers "what am I set up with" without
-     * opening anything. A button labelled only "Bullet" would make you
-     * go in just to find out what is loaded. */
-    $('nav-rifle').textContent =
-      '1:' + fmt(S.rifle.twist, 2).replace(/\.?0+$/, '') + '″ ' +
-      (S.rifle.twistLH ? 'LH' : 'RH') + ' · zero ' +
-      distDisp(S.rifle.zeroRange) + ' ' + U.label('distance') +
-      (sg ? ' · Sg ' + sg.sg.toFixed(2) : '');
+    /* The two doors on the rifle screen each carry their own setting,
+     * so the page answers "what am I set up with" without opening
+     * anything. A button labelled only "Bullet" would make you go in
+     * just to find out what is loaded. */
     $('nav-projectile').textContent =
       (b.name.length > 30 ? b.name.slice(0, 29) + '…' : b.name) + '\n' +
       b.dragModel + ' ' + b.bc.toFixed(3) + ' · ' +
@@ -6535,6 +6818,7 @@ var PBOnline = (function () {
     renderChart();
     renderReticle();
     if ($('screen-shot').classList.contains('on')) renderShot();
+    renderShotWindButton();
     var label = S.windInDope ? 'WIND DRIFT INCLUDED' : 'HOLD YOURSELF';
     [$('wind-badge'), $('shot-wind-badge')].forEach(function (badge) {
       badge.textContent = label;
@@ -6557,6 +6841,8 @@ var PBOnline = (function () {
     ['in-press', 'atmo', 'pressure', 'pressure', 2],
     ['in-alt', 'atmo', 'altitude', 'altitude', 0],
     ['in-wspd', 'wind', 'speed', 'wind', 1],
+    /* The wind dialog's copy of the speed field, same state. */
+    ['wm-wspd', 'wind', 'speed', 'wind', 1],
     ['in-zwx-temp', 'zeroWx', 'temp', 'temp', 1],
     ['in-zwx-press', 'zeroWx', 'pressure', 'pressure', 2]
   ];
@@ -6565,6 +6851,7 @@ var PBOnline = (function () {
     ['in-twist', 'rifle', 'twist', 2],
     ['in-hum', 'atmo', 'humidity', 0],
     ['in-wdir', 'wind', 'dir', 0],
+    ['wm-wdir', 'wind', 'dir', 0],
     ['in-los', 'geom', 'los', 1],
     ['in-lat', 'geom', 'lat', 4],
     ['in-lon', 'geom', 'lon', 4],
@@ -6746,6 +7033,7 @@ var PBOnline = (function () {
           if (!Number.isFinite(v)) return;
           S[b[1]][b[2]] = U.toSI(b[3], v);
           if (GEOMETRY_KEYS[b[0]]) onBulletGeometryChanged();
+          if (b[1] === 'wind') syncWindInputs(this);
           markTyped(b[1]);
           save(); scheduleSolve();
         });
@@ -6767,11 +7055,12 @@ var PBOnline = (function () {
     for (i = 0; i < PLAIN.length; i++) {
       (function (b) {
         var el = $(b[0]);
+        var isDir = (b[1] === 'wind' && b[2] === 'dir');
         el.addEventListener('input', function () {
           var v = parseNum(this.value);
           if (!Number.isFinite(v)) return;
           S[b[1]][b[2]] = v;
-          if (b[0] === 'in-wdir') renderRose();
+          if (isDir) { renderRose(); syncWindInputs(this); }
           markTyped(b[1], b[0]);
           save(); scheduleSolve();
         });
@@ -6781,7 +7070,7 @@ var PBOnline = (function () {
           var v = clamp(b[1] + '.' + b[2], S[b[1]][b[2]]);
           S[b[1]][b[2]] = v;
           this.value = Number(v).toFixed(b[3]);
-          if (b[0] === 'in-wdir') renderRose();
+          if (isDir) { renderRose(); syncWindInputs(this); }
           save(); scheduleSolve(0);
         });
       })(PLAIN[i]);
@@ -6851,14 +7140,37 @@ var PBOnline = (function () {
       });
     }
 
-    /* The table header changes with the mode -- Drift when it is
-     * dialled, Hold when it is not -- so the table is rebuilt, not just
-     * refilled. */
+    /* The switch changes no number, only where the aim dot sits and
+     * what the log will call dialled, so a render is all it takes. */
     [$('wind-badge'), $('shot-wind-badge')].forEach(function (b) {
       b.addEventListener('click', function () {
         S.windInDope = !S.windInDope;
-        save(); rebuildTable(); render();
+        save(); render();
       });
+    });
+
+    /* The i buttons: each names the paragraph it reveals. Delegated,
+     * because there are a dozen of them and the set will change. */
+    document.querySelector('.sb-app').addEventListener('click', function (ev) {
+      var b = ev.target.closest ? ev.target.closest('button.info') : null;
+      if (!b) return;
+      ev.preventDefault();
+      var t = $(b.getAttribute('aria-controls'));
+      if (!t) return;
+      t.hidden = !t.hidden;
+      b.setAttribute('aria-expanded', String(!t.hidden));
+    });
+
+    /* The wind dialog, from the shot detail. Opening it draws the dial
+     * at its real size: hidden, the SVG measured zero. */
+    $('btn-shot-wind').addEventListener('click', function () {
+      $('wind-modal').hidden = false;
+      renderRose();
+      syncWindInputs(null);
+    });
+    $('wind-done').addEventListener('click', closeWind);
+    $('wind-modal').addEventListener('mousedown', function (ev) {
+      if (ev.target === this) closeWind();     /* click the backdrop */
     });
 
     /* Change the distance from the readout or from the shot detail, not
@@ -6946,11 +7258,21 @@ var PBOnline = (function () {
     });
 
     $('btn-reset').addEventListener('click', function () {
-      if (!window.confirm('Reset every input to the built-in M852 reference?')) {
+      if (!window.confirm('Reset every input to the built-in M852 reference? ' +
+                          'Your saved rifles are replaced by the three ' +
+                          'starting ones.')) {
         return;
       }
+      if (reorder) setReorder(false);
       S = defaults();
       S.reticleId = defaultReticleId();
+      /* PBUnits holds its own copy of the system and the overrides;
+       * without this the segment said Metric while every number stayed
+       * in the old units until something else re-synced. */
+      syncUnits();
+      /* The starting rifles come back too: an Equipment page with an
+       * empty list after "reset everything" looked broken, not reset. */
+      seedRifles();
       save(); populateSelects(); refreshInputs(); rebuildTable();
       showScreen('screen-main'); scheduleSolve(0);
     });
@@ -6965,6 +7287,13 @@ var PBOnline = (function () {
       if (ev.target === this) closeLog();      /* click the backdrop */
     });
     document.addEventListener('keydown', function (ev) {
+      if (!$('wind-modal').hidden) {
+        if (ev.key === 'Escape') { ev.preventDefault(); closeWind(); }
+        else if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') {
+          ev.preventDefault(); ev.target.blur();   /* commit the field */
+        }
+        return;
+      }
       if ($('log-modal').hidden) return;
       if (ev.key === 'Escape') { ev.preventDefault(); closeLog(); }
       else if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') {
@@ -6995,12 +7324,10 @@ var PBOnline = (function () {
     $('btn-locate').addEventListener('click', doLocate);
     $('btn-weather').addEventListener('click', doWeather);
 
-    $('rifle-select').addEventListener('change', function () {
-      selectRifle(this.value);
+    $('btn-rifle-new').addEventListener('click', addRifle);
+    $('btn-reorder-done').addEventListener('click', function () {
+      setReorder(false);
     });
-    $('btn-rifle-save').addEventListener('click', function () { saveRifle(false); });
-    $('btn-rifle-new').addEventListener('click', function () { saveRifle(true); });
-    $('btn-rifle-del').addEventListener('click', deleteRifle);
     $('btn-lib-export').addEventListener('click', exportLibrary);
     $('btn-lib-import').addEventListener('click', function () {
       $('lib-file').click();
@@ -7018,16 +7345,19 @@ var PBOnline = (function () {
       });
     }
 
-    /* the wind rose */
-    PBWindRose.attach($('wind-rose'),
-      function () { return clamp('wind.dir', S.wind.dir); },
-      function (deg) {
-        S.wind.dir = deg;
-        $('in-wdir').value = deg.toFixed(0);
-        markTyped('wind');
-        renderRose();
-      },
-      function () { save(); scheduleSolve(0); });
+    /* the wind rose -- the Environment screen's and the dialog's,
+     * driving the same bearing */
+    [$('wind-rose'), $('wind-rose-2')].forEach(function (svg) {
+      PBWindRose.attach(svg,
+        function () { return clamp('wind.dir', S.wind.dir); },
+        function (deg) {
+          S.wind.dir = deg;
+          syncWindInputs(null);
+          markTyped('wind');
+          renderRose();
+        },
+        function () { save(); scheduleSolve(0); });
+    });
 
     /* Where the sticky page heads park.
      *
@@ -7063,6 +7393,30 @@ var PBOnline = (function () {
         if ($('screen-shot').classList.contains('on')) renderShot();
       }, 120);
     });
+  }
+
+  /* The wind has two homes -- the Environment screen and the dialog
+   * on the shot detail -- and two copies of each field. Whichever one
+   * was typed into keeps its keystrokes; the other three are rewritten
+   * from state. */
+  function syncWindInputs(except) {
+    var spd = fmt(U.fromSI('wind', S.wind.speed), U.decimals('wind'));
+    var dir = Number(clamp('wind.dir', S.wind.dir)).toFixed(0);
+    [['in-wspd', spd], ['wm-wspd', spd],
+     ['in-wdir', dir], ['wm-wdir', dir]].forEach(function (p) {
+      var el = $(p[0]);
+      if (el && el !== except) el.value = p[1];
+    });
+  }
+
+  function closeWind() {
+    var m = $('wind-modal');
+    if (m.hidden) return;
+    /* A field still holding focus has not fired change yet. */
+    if (document.activeElement && m.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    m.hidden = true;
   }
 
   /* One place that turns a typed display value into the stored SI
@@ -7416,13 +7770,24 @@ var PBOnline = (function () {
    * changing after the shot is logged. */
   function logSnapshot(d, row) {
     var cu = S.out.corr;
+    /* The PHYSICAL flight. displayed() is that flight now, so `row` and
+     * `truth` agree; the explicit read of resPhys stays as the guard
+     * that keeps it so. Before 1.6.0, displayed() in hold-yourself was
+     * the wind-free trajectory, and a record could state a predicted
+     * drift of a quarter of a MIL next to a hold of seven, so the
+     * residual in SHOT-LOG-FIELDS.md stopped collapsing to the measured
+     * impact. What the log exists to test is where the bullet really
+     * goes; what the shooter did about it is the `dialled` block. */
+    var truth = (resPhys && Number.isFinite(d)) ? cardAt(resPhys.card, d)
+                                                : null;
+    var t = truth || row;
     return {
       build: ($('build-stamp') || {}).textContent || '',
       distance_m: d,
       predicted: {
-        drop_cm: row[1], drop_mil: row[2], drop_moa: row[3],
-        drift_cm: row[4], drift_mil: row[5], drift_moa: row[6],
-        vel_mps: row[7], mach: row[8], tof_s: row[9], energy_j: row[10],
+        drop_cm: t[1], drop_mil: t[2], drop_moa: t[3],
+        drift_cm: t[4], drift_mil: t[5], drift_moa: t[6],
+        vel_mps: t[7], mach: t[8], tof_s: t[9], energy_j: t[10],
         scope_angle_moa: resPhys ? resPhys.scope_angle * 60 : null
       },
       windInDope: S.windInDope,
@@ -7545,10 +7910,9 @@ var PBOnline = (function () {
     var pv = $('log-privacy');
     if (pv) {
       pv.textContent = (S.geom.lat || S.geom.lon)
-        ? 'The export includes your latitude and longitude. Latitude is ' +
-          'physics (it drives Coriolis); longitude is not used by the ' +
-          'solver at all, so strip it before sharing if the shooting ' +
-          'location is sensitive.'
+        ? 'Exports carry your latitude and longitude. Strip the ' +
+          'longitude before sharing if the location is sensitive; the ' +
+          'solver never uses it.'
         : '';
     }
   }
@@ -7607,8 +7971,15 @@ var PBOnline = (function () {
     return null;
   }
 
-  /* Has the setup drifted from what was saved? Without this the select
-   * keeps showing "My 6.5" after you have changed the muzzle velocity,
+  function rifleById(id) {
+    for (var i = 0; i < S.rifles.length; i++) {
+      if (S.rifles[i].id === id) return S.rifles[i];
+    }
+    return null;
+  }
+
+  /* Has the setup drifted from what was saved? Without this the card
+   * keeps saying "My 6.5" after you have changed the muzzle velocity,
    * and you believe you are shooting the rifle you saved. */
   function rifleModified() {
     var r = activeRifle();
@@ -7621,125 +7992,543 @@ var PBOnline = (function () {
            Math.floor(Math.random() * 1e4).toString(36);
   }
 
-  /* Rebuilding a <select> under a user who has it open is hostile, and
-   * render() runs after every solve. Split it: the options change rarely,
-   * the "modified" state changes constantly. */
-  function updateRifleStatus() {
-    var r = activeRifle();
-    if (!r) { renderRifleNote(false, null); return; }
-    var mod = rifleModified();
-    var sel = $('rifle-select');
-    for (var i = 0; i < sel.options.length; i++) {
-      if (sel.options[i].value === r.id) {
-        sel.options[i].textContent = r.name + (mod ? '  · modified' : '');
-      }
-    }
-    renderRifleNote(mod, r);
+  /* One line under a rifle's name: its load, its speed, its zero. From
+   * a saved setup, or from the live state for the one being shot, so
+   * the card shows what you would actually be shooting. */
+  function rifleSummary(setup) {
+    var b = setup.bullet || {}, rf = setup.rifle || {};
+    var name = b.name || '';
+    return (name.length > 30 ? name.slice(0, 29) + '…' : name) +
+      (Number.isFinite(rf.mv)
+        ? ' · ' + fmt(U.fromSI('velocity', rf.mv), 0) + ' ' + U.label('velocity')
+        : '') +
+      (Number.isFinite(rf.zeroRange)
+        ? ' · zero ' + distDisp(rf.zeroRange) + ' ' + U.label('distance')
+        : '');
   }
 
-  function renderRifleNote(mod, r) {
+  function rifleNote(text, warn) {
     var note = $('rifle-note');
-    if (!S.rifles.length) {
-      note.textContent = 'Set the bullet, barrel and sight, then ' +
-        '“Save as new” to keep them together. A rifle stores the bullet, ' +
-        'muzzle velocity, twist, sight height, zero, reticle and turret — ' +
-        'not the weather or the distances, which change every outing.';
-      note.classList.remove('warn');
-    } else if (r && mod) {
-      note.textContent = '“' + r.name + '” has unsaved changes. “Save” ' +
-        'writes them into it; “Save as new” keeps both.';
-      note.classList.add('warn');
-    } else if (r) {
-      note.textContent = 'Shooting “' + r.name + '”.';
-      note.classList.remove('warn');
-    } else {
-      note.textContent = 'Pick a saved rifle, or “Save as new” to keep ' +
-        'the current setup.';
-      note.classList.remove('warn');
-    }
+    if (!note) return;
+    note.textContent = text || '';
+    note.classList.toggle('warn', !!warn);
   }
 
-  function renderRifleLibrary() {
-    var sel = $('rifle-select');
+  /* Reorder mode: the cards grow a handle and drag; the menus hide
+   * until Done. Entered from a card's menu, so the shooter asked for
+   * it -- a list that dragged whenever a finger lingered would move
+   * rifles by accident on a firing line. */
+  var reorder = false;
+  var dragging = false;
+
+  function setReorder(on) {
+    reorder = !!on;
+    $('reorder-bar').hidden = !reorder;
+    renderRifleList();
+  }
+
+  /* One rifle to a new position in the saved order. Shared by the drag
+   * and by the arrow keys on a card's handle. */
+  function moveRifle(from, to) {
+    if (from === to || from < 0 || to < 0 ||
+        from >= S.rifles.length || to >= S.rifles.length) return;
+    var moved = S.rifles.splice(from, 1)[0];
+    S.rifles.splice(to, 0, moved);
+    save();
+  }
+
+  function rifleIndex(id) {
+    for (var i = 0; i < S.rifles.length; i++) {
+      if (S.rifles[i].id === id) return i;
+    }
+    return -1;
+  }
+
+  /* The Equipment page is this list. One card per rifle, the one being
+   * shot marked; if the setup being shot is not a saved rifle at all, a
+   * dashed card for it at the top, so the bullet and sight are always
+   * reachable. Built with textContent -- names are typed by the user. */
+  function renderRifleList() {
+    var list = $('rifle-list');
+    if (!list) return;
+    /* A rebuild ends any drag and closes any menu: both point at cards
+     * that are about to be replaced. */
+    closeRifleMenu(false);
+    dragging = false;
+    var active = activeRifle();
     var mod = rifleModified();
-    sel.innerHTML = '';
-    var none = document.createElement('option');
-    none.value = '';
-    none.textContent = S.rifles.length ? '— not saved —' : '— no rifles saved —';
-    sel.appendChild(none);
+    list.innerHTML = '';
+    list.classList.toggle('reorder', reorder);
+
+    if (!active) list.appendChild(rifleCard(null, false));
     S.rifles.forEach(function (r) {
-      var o = document.createElement('option');
-      o.value = r.id;
-      o.textContent = r.name + (r.id === S.activeRifle && mod ? '  · modified' : '');
-      sel.appendChild(o);
+      list.appendChild(rifleCard(r, r.id === S.activeRifle && mod));
     });
-    sel.value = S.activeRifle || '';
 
-    var r = activeRifle();
-    $('btn-rifle-save').disabled = !r;
-    $('btn-rifle-del').disabled = !r;
-    renderRifleNote(mod, r);
-  }
-
-  function saveRifle(asNew) {
-    var name;
-    if (asNew) {
-      var suggested = S.bullet.name && S.bullet.vendor !== 'built-in'
-        ? S.bullet.vendor + ' ' + (S.bullet.mass / U.K.GRAIN_KG).toFixed(0) + ' gr'
-        : 'My rifle';
-      name = window.prompt('Name this rifle', suggested);
-      if (name === null) return;
-      name = name.trim();
-      if (!name) return;
-      /* Two rifles with the same name are indistinguishable in the list
-       * and both get overwritten on import, which merges by name. Ask
-       * instead of quietly making a second one. */
-      var clash = null;
-      for (var i = 0; i < S.rifles.length; i++) {
-        if (S.rifles[i].name === name) clash = S.rifles[i];
-      }
-      if (clash) {
-        if (!window.confirm('“' + name + '” already exists. Replace it?')) {
-          return;
-        }
-        clash.setup = snapshot();
-        S.activeRifle = clash.id;
-      } else {
-        S.rifles.push({ id: newRifleId(), name: name, setup: snapshot() });
-        S.activeRifle = S.rifles[S.rifles.length - 1].id;
-      }
+    if (reorder) {
+      rifleNote('');           /* the bar above the list says what to do */
+    } else if (!S.rifles.length) {
+      rifleNote('No rifles yet. Set the bullet, sight and zero in the ' +
+                'card above, then + keeps them as a rifle.');
+    } else if (active && mod) {
+      rifleNote('“' + active.name + '” has changes that are not saved ' +
+                'into it. Its ⋯ menu → Update writes them.', true);
+    } else if (active) {
+      rifleNote('Shooting “' + active.name + '”.');
     } else {
-      var r = activeRifle();
-      if (!r) return;
-      r.setup = snapshot();
+      rifleNote('The setup being shot is not one of the saved rifles. ' +
+                'Tap a rifle to shoot it, or + to keep this one.');
     }
-    save(); renderRifleLibrary();
+    $('btn-rifle-new').disabled = reorder;
   }
 
-  function deleteRifle() {
+  function rifleCard(r, modified) {
+    var card = document.createElement('div');
+    card.className = 'rifle-card' +
+      (r ? (r.id === S.activeRifle ? ' on' : '') : ' unsaved on');
+    card.setAttribute('role', 'listitem');
+    if (r) card.dataset.id = r.id;
+
+    /* The handle. Drag it with a pointer, or focus it and use the arrow
+     * keys: reordering must not be pointer-only. Shown only in reorder
+     * mode (CSS), so it is out of the tab order the rest of the time. */
+    var grab = document.createElement('button');
+    grab.type = 'button';
+    grab.className = 'grab';
+    grab.textContent = '≡';
+    if (r) {
+      grab.setAttribute('aria-label',
+        'Move ' + r.name + ': drag, or use the arrow keys');
+      grab.addEventListener('keydown', function (ev) {
+        if (!reorder) return;
+        var i = rifleIndex(r.id), to = -1;
+        if (ev.key === 'ArrowUp') to = i - 1;
+        else if (ev.key === 'ArrowDown') to = i + 1;
+        else return;
+        ev.preventDefault();
+        if (to < 0 || to >= S.rifles.length) return;
+        moveRifle(i, to);
+        renderRifleList();
+        var again = $('rifle-list').querySelector(
+          '.rifle-card[data-id="' + r.id + '"] .grab');
+        if (again) again.focus();
+      });
+    } else {
+      grab.setAttribute('aria-hidden', 'true');
+      grab.tabIndex = -1;
+    }
+
+    var open = document.createElement('button');
+    open.type = 'button';
+    open.className = 'rifle-open';
+    if (reorder) { open.tabIndex = -1; open.setAttribute('aria-disabled', 'true'); }
+    var t = document.createElement('span');
+    t.className = 't';
+    t.textContent = r ? r.name : 'Current setup';
+    var v = document.createElement('span');
+    v.className = 'v';
+    /* The live state for the rifle being shot, the saved setup for the
+     * rest: the card says what you would get by tapping it. */
+    var live = !r || r.id === S.activeRifle;
+    v.textContent = rifleSummary(live ? snapshot() : r.setup);
+    if (!r) {
+      var un = document.createElement('span');
+      un.className = 'mod';
+      un.textContent = ' · not saved';
+      v.appendChild(un);
+    } else if (modified) {
+      var m = document.createElement('span');
+      m.className = 'mod';
+      m.textContent = ' · modified';
+      v.appendChild(m);
+    }
+    open.appendChild(t);
+    open.appendChild(v);
+    open.setAttribute('aria-label',
+      (r ? 'Shoot ' + r.name : 'The current setup') +
+      ' — open its bullet, sight and zero');
+    open.addEventListener('click', function () {
+      if (reorder) return;
+      if (r && !selectRifle(r.id)) return;
+      showScreen('screen-rifle');
+    });
+    card.appendChild(grab);
+    card.appendChild(open);
+
+    if (r) {
+      var more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'rifle-more';
+      more.textContent = '⋯';
+      more.setAttribute('aria-label', 'Options for ' + r.name);
+      more.setAttribute('aria-haspopup', 'menu');
+      more.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        openRifleMenu(this, r);
+      });
+      card.appendChild(more);
+      bindDrag(card, r);
+    } else {
+      /* Keeps the grid's two tracks for the unsaved card too. */
+      var spacer = document.createElement('span');
+      spacer.className = 'rifle-more';
+      spacer.style.visibility = 'hidden';
+      spacer.setAttribute('aria-hidden', 'true');
+      card.appendChild(spacer);
+    }
+    return card;
+  }
+
+  /* The three-dot menu. Reuses the unit menu's box for the look, but
+   * not its code: that one lists units. Closed by anything that looks
+   * like the shooter moving on. */
+  var rifleMenu = null, rifleMenuAnchor = null;
+  /* refocus: put focus back on the button that opened it. True when
+   * the menu is left by keyboard or by choosing an item, so a keyboard
+   * user keeps their place; false when the pointer went elsewhere. */
+  function closeRifleMenu(refocus) {
+    if (!rifleMenu) return;
+    rifleMenu.remove();
+    rifleMenu = null;
+    document.removeEventListener('mousedown', rifleMenuOutside, true);
+    document.removeEventListener('keydown', rifleMenuKey, true);
+    window.removeEventListener('scroll', closeRifleMenuByEvent, true);
+    window.removeEventListener('resize', closeRifleMenuByEvent);
+    var a = rifleMenuAnchor;
+    rifleMenuAnchor = null;
+    if (a) {
+      a.setAttribute('aria-expanded', 'false');
+      if (refocus && a.isConnected) {
+        try { a.focus({ preventScroll: true }); } catch (e) { a.focus(); }
+      }
+    }
+  }
+  function closeRifleMenuByEvent() { closeRifleMenu(false); }
+  function rifleMenuOutside(ev) {
+    if (rifleMenu && !rifleMenu.contains(ev.target)) closeRifleMenu(false);
+  }
+  function rifleMenuKey(ev) {
+    if (!rifleMenu) return;
+    if (ev.key === 'Escape') { ev.preventDefault(); closeRifleMenu(true); return; }
+    var items = rifleMenu.querySelectorAll('button');
+    var i = Array.prototype.indexOf.call(items, document.activeElement);
+    if (ev.key === 'ArrowDown') {
+      ev.preventDefault();
+      items[(i + 1 + items.length) % items.length].focus();
+    } else if (ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      items[(i - 1 + items.length) % items.length].focus();
+    }
+  }
+
+  function openRifleMenu(anchor, r) {
+    closeRifleMenu(false);
+    PBUnitMenu.close();
+    var el = document.createElement('div');
+    el.className = 'sb-unitmenu';
+    el.setAttribute('role', 'menu');
+    el.setAttribute('aria-label', 'Options for ' + r.name);
+    var items = [
+      ['Move', function () { setReorder(true); }],
+      ['Update with current setup', function () { updateRifle(r); }],
+      ['Rename…', function () { renameRifle(r); }],
+      ['Delete', function () { deleteRifle(r); }, true]
+    ];
+    items.forEach(function (it) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'menuitem');
+      b.className = 'extra' + (it[2] ? ' danger' : '');
+      b.textContent = it[0];
+      b.addEventListener('click', function () {
+        closeRifleMenu(true);
+        it[1]();
+      });
+      el.appendChild(b);
+    });
+    /* Tabbing out of the menu closes it, so it cannot be left floating
+     * over whatever the keyboard reaches next. */
+    el.addEventListener('focusout', function (ev) {
+      if (rifleMenu === el && !el.contains(ev.relatedTarget)) {
+        closeRifleMenu(false);
+      }
+    });
+    (document.querySelector('.sb-app') || document.body).appendChild(el);
+    rifleMenu = el;
+    rifleMenuAnchor = anchor;
+    anchor.setAttribute('aria-expanded', 'true');
+
+    /* Under the button, right-aligned to it; flipped above when it
+     * does not fit below, then clamped into the viewport either way --
+     * a landscape phone has room on neither side. */
+    var rect = anchor.getBoundingClientRect();
+    var w = el.offsetWidth, h = el.offsetHeight;
+    var docW = document.documentElement.clientWidth;
+    var docH = document.documentElement.clientHeight;
+    var left = rect.right + window.scrollX - w;
+    var top = rect.bottom + window.scrollY + 4;
+    if (left < window.scrollX + 8) left = window.scrollX + 8;
+    if (left + w > window.scrollX + docW - 8) left = window.scrollX + docW - w - 8;
+    if (rect.bottom + h + 8 > docH) top = rect.top + window.scrollY - h - 4;
+    var viewTop = window.scrollY + 8, viewBottom = window.scrollY + docH - 8;
+    if (top + h > viewBottom) top = viewBottom - h;
+    if (top < viewTop) top = viewTop;
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+
+    try { el.querySelector('button').focus({ preventScroll: true }); }
+    catch (e) { /* older browsers */ }
+    document.addEventListener('mousedown', rifleMenuOutside, true);
+    document.addEventListener('keydown', rifleMenuKey, true);
+    window.addEventListener('resize', closeRifleMenuByEvent);
+    setTimeout(function () {
+      if (rifleMenu) window.addEventListener('scroll', closeRifleMenuByEvent, true);
+    }, 0);
+  }
+
+  /* Drag to reorder, the way a playlist does it. The dragged card
+   * follows the pointer; the others slide out of its way by its own
+   * height; nothing in the state moves until the pointer is released.
+   * Pointer events, so one handler covers mouse, pen and touch, and
+   * capture so a fast flick that leaves the card still lands. */
+  function bindDrag(card, r) {
+    card.addEventListener('pointerdown', function (ev) {
+      if (!reorder || dragging) return;
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      ev.preventDefault();
+      var list = $('rifle-list');
+      var cards = Array.prototype.slice.call(
+        list.querySelectorAll('.rifle-card[data-id]'));
+      var from = cards.indexOf(card);
+      if (from < 0) return;
+      /* One pointer owns the drag: a second finger landing on the card
+       * must neither steer it nor drop it. */
+      var id = ev.pointerId;
+      var gap = 10;
+      var shift = card.getBoundingClientRect().height + gap;
+      /* Midpoints in DOCUMENT coordinates, measured once before anything
+       * moves, so the page scrolling under the drag does not move the
+       * targets out from under the card. */
+      var scroll0 = window.scrollY;
+      var mids = cards.map(function (c) {
+        var cr = c.getBoundingClientRect();
+        return cr.top + cr.height / 2 + scroll0;
+      });
+      var startY = ev.clientY, lastY = startY;
+      var centre0 = mids[from];
+      var target = from;
+      var raf = null;
+      dragging = true;
+      card.classList.add('dragging');
+      try { card.setPointerCapture(id); } catch (e) { /* none */ }
+
+      function place() {
+        var dy = (lastY - startY) + (window.scrollY - scroll0);
+        var centre = centre0 + dy;
+        /* Where the card would land: past every sibling whose original
+         * midpoint it has crossed. */
+        var n = 0;
+        for (var i = 0; i < cards.length; i++) {
+          if (i !== from && mids[i] < centre) n++;
+        }
+        target = n;
+        card.style.transform = 'translateY(' + dy + 'px)';
+        for (i = 0; i < cards.length; i++) {
+          if (i === from) continue;
+          var s = 0;
+          if (i > from && i <= target) s = -shift;
+          else if (i < from && i >= target) s = shift;
+          cards[i].style.transform = s ? 'translateY(' + s + 'px)' : '';
+        }
+      }
+      /* Auto-scroll near the top or bottom edge, so a rifle can be
+       * dragged past the cards that are on screen. Runs on frames, not
+       * on pointer events: a finger held still at the edge sends none. */
+      function tick() {
+        if (!dragging) return;
+        var edge = 56, h = window.innerHeight, step = 0;
+        if (lastY < edge) step = -Math.ceil((edge - lastY) / 4);
+        else if (lastY > h - edge) step = Math.ceil((lastY - (h - edge)) / 4);
+        if (step) { window.scrollBy(0, step); place(); }
+        raf = window.requestAnimationFrame(tick);
+      }
+      function move(e) {
+        if (e.pointerId !== id) return;
+        lastY = e.clientY;
+        place();
+      }
+      function up(e) {
+        if (e.pointerId !== id) return;
+        finish(e.type === 'pointerup');
+      }
+      /* Teardown that does not depend on the card surviving: a rebuild
+       * of the list mid-drag detaches the card, the browser releases
+       * the capture, and lostpointercapture lands here. */
+      function finish(commit) {
+        card.removeEventListener('pointermove', move);
+        card.removeEventListener('pointerup', up);
+        card.removeEventListener('pointercancel', up);
+        card.removeEventListener('lostpointercapture', up);
+        if (raf) window.cancelAnimationFrame(raf);
+        try {
+          if (card.hasPointerCapture(id)) card.releasePointerCapture(id);
+        } catch (err) { /* none */ }
+        dragging = false;
+        card.classList.remove('dragging');
+        cards.forEach(function (c) { c.style.transform = ''; });
+        if (commit && target !== from) moveRifle(from, target);
+        renderRifleList();
+      }
+      card.addEventListener('pointermove', move);
+      card.addEventListener('pointerup', up);
+      card.addEventListener('pointercancel', up);
+      card.addEventListener('lostpointercapture', up);
+      raf = window.requestAnimationFrame(tick);
+    });
+  }
+
+  /* After every solve: the card marks and the rifle screen's title
+   * follow the live state. The list is rebuilt only while it is on
+   * screen and not being dragged; rebuilding under a drag would drop
+   * the card mid-air. */
+  function updateRifleStatus() {
+    if (dragging) return;
+    if ($('screen-equipment').classList.contains('on')) renderRifleList();
+    renderRifleScreen();
+  }
+
+  /* The rifle screen's head: whose bullet, sight and zero these are. */
+  function renderRifleScreen() {
     var r = activeRifle();
-    if (!r) return;
+    var title = $('rifle-title'), status = $('rifle-status');
+    if (!title || !status) return;
+    title.textContent = r ? r.name : 'Current setup';
+    if (r && rifleModified()) {
+      status.textContent = 'Changed since it was saved — ⋯ → Update on ' +
+        'the Equipment page writes the changes into it.';
+      status.classList.add('warn');
+    } else if (r) {
+      status.textContent = 'Shooting this rifle. Edits here are kept ' +
+        'until ⋯ → Update writes them into it.';
+      status.classList.remove('warn');
+    } else {
+      status.textContent = 'Not saved as a rifle. + on the Equipment page ' +
+        'keeps this setup under a name.';
+      status.classList.remove('warn');
+    }
+  }
+
+  /* + : a new rifle from whatever is being shot right now. */
+  function addRifle() {
+    var suggested = S.bullet.name && S.bullet.vendor !== 'built-in'
+      ? S.bullet.vendor + ' ' + (S.bullet.mass / U.K.GRAIN_KG).toFixed(0) + ' gr'
+      : 'My rifle';
+    var name = window.prompt('Name this rifle', suggested);
+    if (name === null) return;
+    name = name.trim();
+    if (!name) return;
+    /* Two rifles with the same name are indistinguishable in the list
+     * and both get overwritten on import, which merges by name. Ask
+     * instead of quietly making a second one. */
+    var clash = null;
+    for (var i = 0; i < S.rifles.length; i++) {
+      if (S.rifles[i].name === name) clash = S.rifles[i];
+    }
+    if (clash) {
+      if (!window.confirm('“' + name + '” already exists. Replace it?')) return;
+      clash.setup = snapshot();
+      S.activeRifle = clash.id;
+    } else {
+      S.rifles.push({ id: newRifleId(), name: name, setup: snapshot() });
+      S.activeRifle = S.rifles[S.rifles.length - 1].id;
+    }
+    save(); renderRifleList(); renderNav();
+    rifleNote('Saved “' + name + '”.');
+  }
+
+  /* ⋯ → Update: the setup being shot, written into this rifle. For the
+   * rifle being shot that is the obvious thing; for another one it
+   * overwrites a setup with a different rifle's, so it asks. */
+  function updateRifle(r) {
+    if (r.id !== S.activeRifle) {
+      var cur = activeRifle();
+      if (!window.confirm('Overwrite “' + r.name + '” with the setup you ' +
+                          'are shooting now' +
+                          (cur ? ' (“' + cur.name + '”' +
+                                 (rifleModified() ? ', modified' : '') + ')'
+                               : '') + '?')) return;
+      S.activeRifle = r.id;
+    }
+    r.setup = snapshot();
+    save(); renderRifleList(); renderNav();
+    rifleNote('Updated “' + r.name + '” to the current setup.');
+  }
+
+  function renameRifle(r) {
+    var name = window.prompt('New name for “' + r.name + '”', r.name);
+    if (name === null) return;
+    name = name.trim();
+    if (!name || name === r.name) return;
+    for (var i = 0; i < S.rifles.length; i++) {
+      if (S.rifles[i] !== r && S.rifles[i].name === name) {
+        rifleNote('There is already a rifle called “' + name + '”.', true);
+        return;
+      }
+    }
+    r.name = name;
+    save(); renderRifleList(); renderNav(); renderRifleScreen();
+  }
+
+  function deleteRifle(r) {
     if (!window.confirm('Delete “' + r.name + '” from the library?')) return;
     S.rifles = S.rifles.filter(function (x) { return x.id !== r.id; });
-    S.activeRifle = null;
-    save(); renderRifleLibrary();
+    /* The setup being shot stays as it is; it is just no longer a
+     * saved rifle, and the list says so with the dashed card. */
+    if (S.activeRifle === r.id) S.activeRifle = null;
+    save(); renderRifleList(); renderNav(); renderRifleScreen();
+    rifleNote('Deleted “' + r.name + '”.');
+  }
+
+  /* Tapping a card. Returns false when the switch was refused, so the
+   * caller does not open a rifle that was not selected. The rifle
+   * already being shot is left alone -- re-applying its saved setup
+   * would silently discard the shooter's edits. */
+  /* The built-in reference setup, in snapshot form: a first run, or a
+   * reset, is shooting this, and switching away from it loses nothing
+   * worth asking about. */
+  function defaultSnapshot() {
+    var d = defaults();
+    return JSON.parse(JSON.stringify({
+      bullet: d.bullet, rifle: d.rifle, zeroWx: d.zeroWx,
+      reticleId: defaultReticleId(), zoom: d.zoom, out: d.out
+    }));
   }
 
   function selectRifle(id) {
-    if (!id) { S.activeRifle = null; save(); renderRifleLibrary(); return; }
-    for (var i = 0; i < S.rifles.length; i++) {
-      if (S.rifles[i].id !== id) continue;
-      if (rifleModified() &&
-          !window.confirm('“' + activeRifle().name + '” has unsaved ' +
-                          'changes. Switch anyway and lose them?')) {
-        renderRifleLibrary();
-        return;
-      }
-      applySnapshot(S.rifles[i].setup);
-      S.activeRifle = id;
-      save(); refreshInputs(); rebuildTable(); scheduleSolve(0);
-      return;
+    var r = rifleById(id);
+    if (!r) return false;
+    if (r.id === S.activeRifle) return true;
+    var cur = activeRifle();
+    var now = JSON.stringify(snapshot());
+    /* Something typed and not kept: a modified rifle, or a setup that
+     * is no saved rifle at all and is not the built-in reference
+     * either. Either way it is about to be replaced, so ask. */
+    var unsaved = cur
+      ? rifleModified()
+      : (now !== JSON.stringify(defaultSnapshot()) &&
+         now !== JSON.stringify(r.setup));
+    if (unsaved && !window.confirm(cur
+          ? '“' + cur.name + '” has unsaved changes. Switch anyway and ' +
+            'lose them?'
+          : 'The setup you are shooting is not saved as a rifle. Switch ' +
+            'anyway and lose it? (+ on this page keeps it first.)')) {
+      return false;
     }
+    applySnapshot(r.setup);
+    S.activeRifle = id;
+    save(); refreshInputs(); rebuildTable(); scheduleSolve(0);
+    renderRifleList(); renderNav();
+    return true;
   }
 
   /* The library lives in localStorage, which is per-browser and vanishes
@@ -7760,7 +8549,6 @@ var PBOnline = (function () {
   function importLibrary(file) {
     var reader = new FileReader();
     reader.onload = function () {
-      var note = $('rifle-note');
       try {
         var doc = JSON.parse(reader.result);
         if (!doc || doc.format !== LIB_FORMAT || !Array.isArray(doc.rifles)) {
@@ -7777,17 +8565,15 @@ var PBOnline = (function () {
           else { S.rifles.push({ id: newRifleId(), name: r.name,
                                  setup: r.setup }); added++; }
         });
-        save(); renderRifleLibrary();
-        note.textContent = 'Imported: ' + added + ' new, ' + merged +
-          ' updated by name.';
-        note.classList.remove('warn');
+        save(); renderRifleList(); renderNav();
+        rifleNote('Imported: ' + added + ' new, ' + merged +
+                  ' updated by name.');
       } catch (e) {
-        note.textContent = 'Could not import that file: ' + e.message + '.';
-        note.classList.add('warn');
+        rifleNote('Could not import that file: ' + e.message + '.', true);
       }
     };
     reader.onerror = function () {
-      $('rifle-note').textContent = 'Could not read that file.';
+      rifleNote('Could not read that file.', true);
     };
     reader.readAsText(file);
   }
@@ -7825,8 +8611,7 @@ var PBOnline = (function () {
       save(); refreshInputs(); scheduleSolve(0);
       onlineNote('Position set: ' + p.lat.toFixed(4) + '°, ' +
                  p.lon.toFixed(4) + '° (±' + Math.round(p.accuracy) + ' m)' +
-                 altNote + '. Latitude feeds the Coriolis term; set the ' +
-                 'azimuth of fire yourself.');
+                 altNote + '. Set the azimuth of fire yourself.');
     }).catch(function (e) {
       onlineNote('Could not get your position: ' + e.message + '.', 'warn');
     }).then(function () { btn.disabled = false; });
@@ -7881,8 +8666,7 @@ var PBOnline = (function () {
       }
       save(); refreshInputs(); renderRose(); scheduleSolve(0);
       onlineNote('Applied: ' + got.join(', ') +
-                 '. Wind is the 10 m forecast value — it is not what your ' +
-                 'flags are doing at the firing line, so treat it as a ' +
+                 '. The wind is the 10 m forecast, not your flags — a ' +
                  'starting point.' +
                  (w.time ? ' Observation ' + w.time + '.' : ''));
     }).catch(function (e) {
@@ -8155,15 +8939,16 @@ var PBOnline = (function () {
         (S.atmo.pressure / 100).toFixed(1) + ' hPa, ' + S.atmo.humidity +
         ' %RH, ' + S.atmo.altitude + ' m',
       '# wind: ' + S.wind.speed + ' m/s from ' + S.wind.dir + ' deg — ' +
-        (S.windInDope ? 'INCLUDED in corrections'
-                      : 'NOT included, hold for it'),
+        'drift column is the whole deflection, wind and spin, ' +
+        (S.windInDope ? 'DIALLED on the windage turret'
+                      : 'HELD in the reticle, windage turret untouched'),
       '# geometry: shot angle ' + S.geom.los + ' deg, latitude ' +
         S.geom.lat + ' deg, azimuth ' + S.geom.az + ' deg',
       '# solved scope angle: ' + (resPhys.scope_angle * 60).toFixed(4) + ' MOA',
       '# each row interpolated linearly from a ' +
-        buildConfig(true).diag.card_step_m + ' m card grid',
+        buildConfig().diag.card_step_m + ' m card grid',
       ['distance_' + U.label('distance'), 'elev_' + cu,
-       (S.windInDope ? 'wind_' : 'hold_') + cu,
+       'wind_' + cu,
        'drop_' + U.label('drop'),
        'drift_' + U.label('drop'),
        'vel_' + U.label('velocity'),
@@ -8213,7 +8998,7 @@ var PBOnline = (function () {
     bindPresets();
     bindUnitChips();
     refreshInputs();
-    renderRifleLibrary();
+    renderRifleList();
     rebuildTable();
     renderRose();
     renderLogPanel();
@@ -8222,9 +9007,9 @@ var PBOnline = (function () {
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.5.3',
+      version: '1.6.0',
       solve: function (cfgOverrides) {
-        var cfg = buildConfig(true), k, sub;
+        var cfg = buildConfig(), k, sub;
         for (k in (cfgOverrides || {})) {
           if (!Object.prototype.hasOwnProperty.call(cfgOverrides, k)) continue;
           if (cfg[k] && typeof cfg[k] === 'object') {

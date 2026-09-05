@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  ff8bd17ebbb4c7db8acdeadc26a241dd31fdde0ac19189ddb93001fa145cc610
-bytes   1206898
-stamp   1.5.3 · 2026-08-24 18:24 UTC   (shown in the page footer)
+sha256  c4c7d1c6eff4e3b8e66eee1766f11477ff870ca6d182e6f325eb12064b2cff32
+bytes   1243321
+stamp   1.6.0 · 2026-09-05 03:22 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -39,6 +39,18 @@ crosswind, always to the same side — and the log pre-filled `dialled_wind` wit
 that drift instead of zero. Records with `wind_in_dope = false` from earlier
 builds carry the bias and mean something different by that column. Filter on
 `build` before pooling them.
+
+**1.6.0 is a second boundary, and a wider one.** Until it, the app solved the
+shot twice — once through the wind and once through still air — and the wind
+toggle chose which of the two filled the table, so with `wind_in_dope = false`
+the `pred_*` columns described a flight that never happened and `dialled_elev`
+was pre-filled from it. From 1.6.0 there is one trajectory, the physical one,
+and `pred_*` is always that. The horizontal difference is the whole point and
+is large; the vertical one is small but not zero — a pure crosswind moves the
+drop by under a hundredth of a MIL, while 15 m/s straight down or up the range
+at 800 m moves it by about a quarter of one. `wind_in_dope` keeps its name and
+its meaning: whether the correction was dialled or held. Filter on `build`
+before pooling across it.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
@@ -67,6 +79,14 @@ changes nothing in the solver and everything in the data:
 `wind_in_dope = false` becomes the common case, and those records read as
 enormous windage errors unless they are filtered, because the correction was
 meant to be held on the reticle rather than dialled.
+
+From 1.6.0 that toggle no longer changes a displayed figure. The column is
+Drift in both modes and always carries the whole deflection, wind and spin
+drift together; the switch — now in the top right of the reticle rather than
+the readout — decides only where the correction goes, on the windage turret or
+held in the reticle. It moves the aim dot, and it still sets `wind_in_dope`,
+which keeps its name and its meaning for every record written before and
+after.
 
 Both require the page to be served over **HTTPS**: geolocation is blocked on
 insecure origins, and an `https` call from an `http` page is blocked as mixed
