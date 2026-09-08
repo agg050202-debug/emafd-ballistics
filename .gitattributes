@@ -9,6 +9,12 @@
 
 /index.html -text
 
+# Studio is a second self-contained bundle under /studio/, built by its own
+# project and identified the same way. The rule above is anchored to the root,
+# so this one needs saying separately or git would normalise it and the served
+# bytes would stop matching the hash the build reported.
+/studio/index.html -text
+
 *.md   text eol=lf
 *.txt  text eol=lf
 404.html text eol=lf

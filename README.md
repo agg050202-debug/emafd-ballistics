@@ -3,10 +3,14 @@
 The public build of the emafd external-ballistics solver, served at
 **[ballistics.emafd.com](https://ballistics.emafd.com/)**.
 
-This repository holds the deployed artefact and nothing else. `index.html` is
+This repository holds the deployed artefacts and nothing else. `index.html` is
 the entire application in one self-contained file: no build step, no framework,
 no CDN. It solves entirely in the browser and runs from `file://`, so a copy on
 a phone or a USB stick works where there is no signal.
+
+`studio/index.html` is a second bundle of the same kind — an experimental
+interface served at **/studio/**, described at the end of this file. It is
+additional; it does not replace what is at the root.
 
 ## This build
 
@@ -153,11 +157,50 @@ write, and only the function's service role reaches it. Treat the contents as
 untrusted input rather than as a guarantee that every row came from a real
 shot.
 
+## Studio — the experimental interface
+
+**<https://ballistics.emafd.com/studio/>** serves a second, independent
+interface over the same solver. It is offered alongside Field rather than
+instead of it: the root is untouched by anything under `/studio/`.
+
+```
+studio/index.html
+sha256  17f0ffa157d77bc8d848ad060840c724442d6c42e9897546c0f59ef370350388
+bytes   1293379
+stamp   1.7.0-studio.1 · 2026-09-08 22:34 UTC   (shown in the page footer)
+```
+
+The version reads `1.7.0-studio.1` because it is Field 1.7.0's engine wearing a
+different interface, not a release of Field. **The 16 engine and data files are
+byte-identical to the ones Field ships**, verified by hash rather than assumed,
+so the numbers are the same numbers: the same 22 of 22 cross-validation cases,
+the same worst cell of 6.19e-10, the same canonical M852 at −1357.3097 cm, and
+0 ULP against SciPy. Only the interface layer differs.
+
+**It sends nothing anywhere.** Both endpoints are compiled in empty, so no shot
+and no preset leaves the device — Studio neither uploads to the shot log nor
+publishes to the shared preset list, and it does not read Field's presets.
+
+**It cannot disturb Field's data either.** The two are served from the same
+origin, so they share one `localStorage`; Studio therefore keeps every key
+under its own `superior-ballistics-studio-*` namespace — session, presets, shot
+log and appearance alike — and touches none of Field's.
+
+One inherited warning travels with it, and is worth stating rather than
+discovering: the inertia estimator flags M118 173 gr in red, a transverse error
+of −2.94 % against a ±2.9 % threshold. The identical row appears in Field's own
+bundle. It is not a Studio regression and the engine was not adjusted to hide
+it, so the primitives suite should not be described as entirely green.
+
+Studio has been checked in desktop Chrome at widths from 320 to 1920 px and in
+emulated mobile sizes. **It has not been tried on a real iPhone or Safari.**
+
 ## Validation
 
 The engine is a port of the Python solver it was derived from, and is checked
-against it rather than trusted. Both suites were re-run against this exact
-build before it was published:
+against it rather than trusted. Both suites were re-run against each of the two
+bundles above, each stamped with the build it was run against, before either
+was published:
 
 - **22 of 22** cross-validation cases pass per cell across the whole range
   card. The canonical 7.62 mm M852 168 gr reference reads −1357.3097 cm of drop
