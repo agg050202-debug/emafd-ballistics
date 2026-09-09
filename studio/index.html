@@ -1126,7 +1126,7 @@
 .sb-app.studio .nav-ico {width:28px;height:28px;color:var(--sb-accent);opacity:.8;}
 .sb-app.studio .studio-setup-icon {display:flex;align-items:center;justify-content:center;flex-shrink:0;width:44px;height:44px;border-radius:13px;background:color-mix(in srgb,var(--sb-accent) 11%,var(--sb-bg-2));color:var(--sb-accent);}
 .sb-app.studio .studio-setup-icon svg {width:24px;height:24px;}
-.sb-app.studio .studio-overview-grid {display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px;align-items:stretch;}
+.sb-app.studio .studio-overview-grid {display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:stretch;}
 .sb-app.studio .readout {grid-template-columns:minmax(0,1fr);padding:28px;gap:22px;align-content:start;align-items:stretch;border-radius:22px;border:1px solid color-mix(in srgb,var(--sb-accent) 16%,var(--sb-line));background:linear-gradient(145deg,color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg-2)),var(--sb-bg-2) 70%);box-shadow:var(--sb-shadow);}
 .sb-app.studio .studio-card-head {display:flex;justify-content:space-between;gap:16px;align-items:center;}
 .sb-app.studio .studio-card-head h2 {margin:0;font-size:15px;letter-spacing:-.2px;font-weight:600;}
@@ -1193,6 +1193,8 @@
 .sb-app.studio .page-head h2 {font-size:28px;letter-spacing:-.8px;text-align:left;font-weight:600;}
 .sb-app.studio .page-head .head-spacer {display:none;}
 .sb-app.studio button.back {width:auto;background:var(--sb-bg-2);border:1px solid var(--sb-line);color:var(--sb-fg-dim);border-radius:11px;font-size:12px;}
+.sb-app.studio :is(#screen-equipment,#screen-environment,#screen-output) button.back {border-color:var(--sb-hold);color:var(--sb-hold);}
+.sb-app.studio :is(#screen-equipment,#screen-environment,#screen-output) button.back:hover {background:color-mix(in srgb,var(--sb-hold) 8%,var(--sb-bg-2));}
 .sb-app.studio .page-body {max-width:840px;gap:20px;}
 .sb-app.studio .studio-form-group {padding:26px;border:1px solid var(--sb-line);border-radius:20px;background:var(--sb-bg-2);box-shadow:var(--sb-shadow);display:flex;flex-direction:column;gap:17px;}
 .sb-app.studio h3.section {font:600 17px var(--sb-sans);letter-spacing:-.3px;text-transform:none;color:var(--sb-fg);padding:0 0 4px;border:0;margin:0;}
@@ -1280,10 +1282,16 @@
   .sb-app.studio[data-sb-theme]{--sb-sidebar:0px;padding-bottom:80px;}
   .sb-app.studio .studio-sidebar{display:none;}
   .sb-app.studio .topbar{padding:12px 24px;min-height:68px;}
-  .sb-app.studio .studio-mobile-nav{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;justify-content:space-around;gap:6px;width:min(440px,calc(100% - 28px));padding:7px 10px calc(7px + env(safe-area-inset-bottom,0px));background:var(--sb-nav-bg);backdrop-filter:blur(30px) saturate(1.6);-webkit-backdrop-filter:blur(30px) saturate(1.6);border:1px solid var(--sb-nav-line);box-shadow:var(--sb-nav-shadow);border-radius:24px;z-index:50;}
-  .sb-app.studio .studio-mobile-nav button{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:48px;flex:1;background:transparent;padding:5px 4px;color:var(--sb-fg-dim);font-size:9px;border-radius:15px;}
+  .sb-app.studio .studio-mobile-nav{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:min(440px,calc(100% - 28px));padding:7px 10px calc(7px + env(safe-area-inset-bottom,0px));background:var(--sb-nav-bg);backdrop-filter:blur(30px) saturate(1.6);-webkit-backdrop-filter:blur(30px) saturate(1.6);border:1px solid var(--sb-nav-line);box-shadow:var(--sb-nav-shadow);border-radius:24px;z-index:50;}
+  /* A single shared highlight travels underneath the four fixed icons. */
+  .sb-app.studio .studio-mobile-nav::before{content:"";position:absolute;top:7px;left:10px;width:calc((100% - 38px)/4);height:48px;border-radius:15px;background:var(--sb-nav-active);box-shadow:0 3px 10px rgba(0,80,160,.16);pointer-events:none;transform:translateX(calc(var(--sb-nav-index,0) * (100% + 6px)));transition:transform 420ms var(--sb-ease);}
+  .sb-app.studio .studio-mobile-nav button{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:48px;min-width:0;background:transparent;padding:5px 4px;color:var(--sb-fg-dim);font-size:9px;border-radius:15px;transition:color 300ms var(--sb-ease);}
   .sb-app.studio .studio-mobile-nav svg{width:20px;height:20px;}
-  .sb-app.studio .studio-mobile-nav button.is-active{background:var(--sb-nav-active);color:var(--sb-nav-active-fg);box-shadow:0 3px 10px rgba(0,80,160,.16);}
+  .sb-app.studio .studio-mobile-nav button.is-active{background:transparent;color:var(--sb-nav-active-fg);box-shadow:none;}
+}
+@media(min-width:1001px){
+  .sb-app.studio #readout{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+  .sb-app.studio #readout :is(.studio-card-head,.readout-side,.studio-solution-foot){grid-column:1/-1;}
 }
 @media(max-width:650px){
   .sb-app.studio .topbar{padding:12px 16px;gap:8px;flex-wrap:wrap;}
@@ -2011,7 +2019,7 @@ body { background: #101317; }
 </section>
 
 <footer class="sb-footer">
-  <p>Build <b id="build-stamp">1.7.0-studio.2 · 2026-09-09 04:12 UTC</b> &mdash; quote this when
+  <p>Build <b id="build-stamp">1.7.0-studio.3 · 2026-09-09 04:31 UTC</b> &mdash; quote this when
   reporting anything, so a fixed bug is not reported twice.
   <button type="button" class="info" aria-expanded="false"
           aria-controls="info-credits" aria-label="About this solver">i</button></p>
@@ -6014,7 +6022,7 @@ var PBOnline = (function () {
   grid.append(readout);
   var viz = main.querySelectorAll('.viz.single');
   viz[0].classList.add('studio-sight');
-  grid.append(viz[0]);
+  /* Keep the sight after the range card, in DOM and visual reading order. */
   viz[1].classList.add('studio-trajectory');
   var tableWrap = main.querySelector('.card-wrap');
   var tableActions = main.querySelector('.table-actions');
@@ -6026,6 +6034,7 @@ var PBOnline = (function () {
   tableHead.className = 'studio-table-heading';
   tableHead.innerHTML = '<div><p class="studio-eyebrow">YOUR DISTANCES</p><h2>Range card</h2></div><span class="studio-table-tip">Select a row to explore</span>';
   tablePanel.append(tableHead, tableWrap, tableActions, tableHint);
+  tablePanel.after(viz[0]);
   $('range-warning').before(grid);
   main.querySelector('.navgrid.bottom').hidden = true;
 
@@ -6128,6 +6137,8 @@ var PBOnline = (function () {
       var id=current.id;
       $('studio-crumb').textContent=titles[id]||'Workspace';
       var parent=['screen-rifle','screen-projectile','screen-sight'].indexOf(id)>=0?'screen-equipment':id==='screen-shot'?'screen-main':id;
+      var navIndex=navItems.findIndex(function(n){return n[0]===parent;});
+      mobileNav.style.setProperty('--sb-nav-index',String(Math.max(0,navIndex)));
       app.querySelectorAll('[data-studio-nav]').forEach(function (b) {
         var selected=b.dataset.studioNav===parent;
         b.classList.toggle('is-active',selected);
@@ -9687,7 +9698,7 @@ var PBOnline = (function () {
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.7.0-studio.2',
+      version: '1.7.0-studio.3',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(), k, sub;
         for (k in (cfgOverrides || {})) {

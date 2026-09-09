@@ -165,12 +165,12 @@ instead of it: the root is untouched by anything under `/studio/`.
 
 ```
 studio/index.html
-sha256  98135b7b7fe9d9753553f934f09b3d79086a4b9ecc983caf8ebb35be7c6299db
-bytes   1294938
-stamp   1.7.0-studio.2 · 2026-09-09 04:12 UTC   (shown in the page footer)
+sha256  42dc17e00f1ad22c3101bc47bd6e72c47628d07d5f9605d2edb73c13c55ab5b5
+bytes   1296157
+stamp   1.7.0-studio.3 · 2026-09-09 04:31 UTC   (shown in the page footer)
 ```
 
-The version reads `1.7.0-studio.2` because it is Field 1.7.0's engine wearing a
+The version reads `1.7.0-studio.3` because it is Field 1.7.0's engine wearing a
 different interface, not a release of Field: the trailing number is Studio's
 own revision, and it rises on its own without touching Field's. **The 16 engine
 and data files are byte-identical to the ones Field ships**, verified by hash
