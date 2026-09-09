@@ -165,17 +165,19 @@ instead of it: the root is untouched by anything under `/studio/`.
 
 ```
 studio/index.html
-sha256  17f0ffa157d77bc8d848ad060840c724442d6c42e9897546c0f59ef370350388
-bytes   1293379
-stamp   1.7.0-studio.1 · 2026-09-08 22:34 UTC   (shown in the page footer)
+sha256  98135b7b7fe9d9753553f934f09b3d79086a4b9ecc983caf8ebb35be7c6299db
+bytes   1294938
+stamp   1.7.0-studio.2 · 2026-09-09 04:12 UTC   (shown in the page footer)
 ```
 
-The version reads `1.7.0-studio.1` because it is Field 1.7.0's engine wearing a
-different interface, not a release of Field. **The 16 engine and data files are
-byte-identical to the ones Field ships**, verified by hash rather than assumed,
-so the numbers are the same numbers: the same 22 of 22 cross-validation cases,
-the same worst cell of 6.19e-10, the same canonical M852 at −1357.3097 cm, and
-0 ULP against SciPy. Only the interface layer differs.
+The version reads `1.7.0-studio.2` because it is Field 1.7.0's engine wearing a
+different interface, not a release of Field: the trailing number is Studio's
+own revision, and it rises on its own without touching Field's. **The 16 engine
+and data files are byte-identical to the ones Field ships**, verified by hash
+rather than assumed, so the numbers are the same numbers: the same 22 of 22
+cross-validation cases, the same worst cell of 6.19e-10, the same canonical
+M852 at −1357.3097 cm, and 0 ULP against SciPy. Only the interface layer
+differs.
 
 **It sends nothing anywhere.** Both endpoints are compiled in empty, so no shot
 and no preset leaves the device — Studio neither uploads to the shot log nor
