@@ -15,9 +15,9 @@ additional; it does not replace what is at the root.
 ## This build
 
 ```
-sha256  f1db6d2426f07929c2924b45b6d7e6038e406f1cbec32fd9405a958f82ffda42
-bytes   1247358
-stamp   1.7.0 · 2026-09-05 06:35 UTC   (shown in the page footer)
+sha256  2fc5148c8d75b5ac1bc978158e6c270ed520171895dba46d2a6fd9a1b6dbe8a8
+bytes   1275532
+stamp   1.8.0 · 2026-09-13 21:31 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -61,6 +61,20 @@ above train you to look for one. It changes what a preset `kind` means, not
 what any shot-log column holds. Nothing in the data moved; do not go hunting
 for a step at that stamp.
 
+**1.8.0 is a boundary again, and the worst kind: one no column reveals.**
+Before it, a wind fetched from Open-Meteo was converted from a true bearing to
+a relative one at the azimuth of that moment, and never again. Set the azimuth
+afterwards and `wind_dir_rel_deg` stayed where the old azimuth had put it. A
+west wind fetched while facing north and then fired east — a tailwind — was
+recorded and solved as a full crosswind from the left: for the M852 at 800 m in
+5 m/s, 2.55 MIL of wrong drift, 204 cm, measured on the build that fixes it.
+The azimuth persists between sessions, and typing only the speed afterwards
+relabelled the source as `typed`, so nothing in an old row says whether it was
+hit. Treat every pre-1.8.0 row with wind in it as horizontally suspect wherever
+the weather was ever fetched. From 1.8.0 the JSON record carries
+`provenance.windFromTrue`, the bearing as fetched; it is not a CSV column, so
+the column count did not change.
+
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
 already been fixed.
@@ -72,17 +86,24 @@ invalidate the hash above.
 
 ## Network access
 
-The solver needs no connection. Two optional buttons on the Environment screen
-are the only things that ever leave the device, and neither fires unless it is
-pressed:
+The solver needs no connection. From 1.8.0 one button on the Environment screen
+reaches the network, and only when pressed:
 
-- **Use my location** — the browser's geolocation API.
-- **Fetch live weather** — a request to `api.open-meteo.com` carrying the
-  coordinates.
+- **Get my position and weather** — the browser's geolocation API, then a
+  request to `api.open-meteo.com` carrying the coordinates, for the air and the
+  height of the ground there.
+
+Until 1.8.0 those were two buttons, **Use my location** and **Fetch live
+weather**. When the browser refuses a position the button says what the browser
+can tell about why and fetches for coordinates already typed in. There is no
+IP-address fallback, on purpose: it puts a phone in the wrong city often enough
+to feed a wrong station pressure into the drop. The shot log and the shared
+presets, described below, are the other two things that leave the device.
 
 Since 1.4.1 the wind toggle starts on **HOLD YOURSELF** rather than the mode
-now labelled WIND DRIFT INCLUDED — called WIND IN DOPE before 1.5.1, where only
-the label changed and the `wind_in_dope` column kept its name. Saved sessions
+now labelled DRIFT INCLUDED — WIND DRIFT INCLUDED from 1.5.1 to 1.7.0 and WIND
+IN DOPE before that. Only the label changed each time, and the `wind_in_dope`
+column kept its name. Saved sessions
 keep whatever the shooter chose; only a fresh visitor sees the new default. It
 changes nothing in the solver and everything in the data:
 `wind_in_dope = false` becomes the common case, and those records read as
@@ -97,13 +118,13 @@ held in the reticle. It moves the aim dot, and it still sets `wind_in_dope`,
 which keeps its name and its meaning for every record written before and
 after.
 
-Both require the page to be served over **HTTPS**: geolocation is blocked on
-insecure origins, and an `https` call from an `http` page is blocked as mixed
-content. This deployment enforces HTTPS, so both work. Everything else keeps
-working regardless.
+The position needs the page served over **HTTPS**: every browser refuses
+geolocation to an insecure origin, and on plain http the button can only fetch
+the weather for typed coordinates. This deployment enforces HTTPS, so both
+halves work. Everything else keeps working regardless.
 
 From the 1.2.0 build the app **uploads each logged shot as it is saved**, to a
-Supabase edge function. It is the third and last thing that leaves the device:
+Supabase edge function. It is the second thing that leaves the device:
 
 - **Upload the shot log** — a POST to the project's `shot` function.
 

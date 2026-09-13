@@ -193,6 +193,45 @@
   border-color: var(--sb-hold); color: var(--sb-hold);
 }
 .sb-app button.back:hover { border-color: var(--sb-hold); }
+/* Home: the screens under Equipment are two and three levels deep, so
+   they carry a way straight back to the main screen as well as Back.
+   Same red as Back -- both leave the screen -- but square and iconic so
+   the two are told apart at a glance, and it sits on the far left so
+   the familiar Back keeps its place beside the title.
+
+   On a phone the title is NOT centred on these screens: centring it
+   would need a right spacer as wide as the home-and-back pair, which
+   leaves a 360 px phone about 30 px for the rifle's name. The spacer
+   shrinks to one square instead and the title sits about 50 px right of
+   centre with room to read. From 600 px there is room for both, and the
+   spacer grows to match the pair so the title centres again. */
+.sb-app button.home {
+  width: 44px; flex: none; padding: 0;
+  /* The same height as Back, from the same numbers: the base button's
+     9 px of padding either side, one 1.3 line of its 13 px text, and
+     the 1 px borders. With padding 0 and only an icon inside, it
+     otherwise shrinks to the icon and sits half as tall as Back. */
+  height: calc(18px + 1.3em + 2px);
+  display: inline-flex; align-items: center; justify-content: center;
+  border-color: var(--sb-hold); color: var(--sb-hold);
+}
+.sb-app .page-head.nested { gap: 8px; }
+.sb-app .page-head.nested .head-spacer { width: 44px; }
+@media (min-width: 600px) {
+  /* home 44 + gap 8 + back 92 */
+  .sb-app .page-head.nested .head-spacer { width: 144px; }
+}
+/* The base hover turns borders accent blue; Back overrides it, and Home
+   has to as well or it shows a blue frame round a red icon. */
+.sb-app button.home:hover { border-color: var(--sb-hold); }
+/* A square icon button beside a field, for a second way to set it. */
+.sb-app button.icon-btn {
+  width: 40px; min-width: 40px; flex: none; padding: 0;
+  align-self: stretch;          /* as tall as the field beside it */
+  display: inline-flex; align-items: center; justify-content: center;
+  border-color: var(--sb-accent); color: var(--sb-accent);
+}
+.sb-app button.icon-btn:hover { background: var(--sb-accent); color: #fff; }
 .sb-app .page-body {
   display: flex; flex-direction: column; gap: 14px;
   max-width: 720px; width: 100%; margin: 0 auto;
@@ -787,6 +826,17 @@
 }
 .sb-app .rose-sub { fill: var(--sb-fg-dim); font: 11px var(--sb-mono); }
 
+/* ---------------- azimuth compass ----------------
+   Shares the wind dial's face, ticks, line of fire and bullet, so the
+   two read as one instrument. Only the card letters and the rim mark
+   are its own. North is red, as on a real card: it is the letter the
+   eye goes looking for when the card has been turned. */
+.sb-app .compass-card {
+  fill: var(--sb-fg); font: 700 15px var(--sb-mono);
+}
+.sb-app .compass-card.compass-north { fill: var(--sb-hold); }
+.sb-app .compass-lubber { fill: var(--sb-accent); }
+
 /* ---------------- visualisations ---------------- */
 .sb-app .viz {
   display: grid; grid-template-columns: minmax(0,1.35fr) minmax(0,1fr);
@@ -1160,7 +1210,7 @@ body { background: #101317; }
                 aria-controls="ladder-note"
                 aria-label="About the marks on the reticle">i</button>
         <button type="button" id="wind-badge" class="badge"
-                aria-label="Wind drift: dialled on the turret, or held in the reticle"
+                aria-label="Drift: dialled on the turret, or held in the reticle"
                 aria-pressed="false">HOLD YOURSELF</button>
       </div>
       <svg id="reticle" class="reticle" role="img"
@@ -1245,7 +1295,7 @@ body { background: #101317; }
         <!-- The same switch as the main screen. Both buttons are the
              same state; render() writes them together. -->
         <button type="button" id="shot-wind-badge" class="badge"
-                aria-label="Wind drift: dialled on the turret, or held in the reticle"
+                aria-label="Drift: dialled on the turret, or held in the reticle"
                 aria-pressed="false">HOLD YOURSELF</button>
       </div>
       <svg id="shot-ret" class="reticle" role="img"
@@ -1341,8 +1391,21 @@ body { background: #101317; }
 </section>
 
 <!-- ====== RIFLE: one rifle -- its bullet, its sight, its zero ====== -->
+<!-- The screens under Equipment are two and three levels deep, so
+     besides Back each carries a way straight home: the house, to the
+     left of Back, goes to the main screen in one tap. Both are red,
+     because both leave the screen. -->
 <section class="screen" id="screen-rifle" aria-label="Rifle">
-  <div class="page-head">
+  <div class="page-head nested">
+    <button type="button" class="home" data-goto="screen-main"
+            aria-label="Main screen" title="Main screen">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"
+           fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11.5 12 4l9 7.5"/>
+        <path d="M5.5 9.5V20h13V9.5"/>
+        <path d="M10 20v-5.5h4V20"/>
+      </svg></button>
     <button type="button" class="back" data-goto="screen-equipment">&larr; Back</button>
     <h2 id="rifle-title">Rifle</h2><span class="head-spacer"></span>
   </div>
@@ -1423,7 +1486,16 @@ body { background: #101317; }
 
 <!-- ============ SIGHT: how you are looking through it ============ -->
 <section class="screen" id="screen-sight" aria-label="Sight">
-  <div class="page-head">
+  <div class="page-head nested">
+    <button type="button" class="home" data-goto="screen-main"
+            aria-label="Main screen" title="Main screen">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"
+           fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11.5 12 4l9 7.5"/>
+        <path d="M5.5 9.5V20h13V9.5"/>
+        <path d="M10 20v-5.5h4V20"/>
+      </svg></button>
     <button type="button" class="back" data-goto="screen-rifle">&larr; Back</button>
     <h2>Sight</h2><span class="head-spacer"></span>
   </div>
@@ -1457,7 +1529,16 @@ body { background: #101317; }
 
 <!-- ========== PROJECTILE: the bullet, and the load driving it ========== -->
 <section class="screen" id="screen-projectile" aria-label="Projectile">
-  <div class="page-head">
+  <div class="page-head nested">
+    <button type="button" class="home" data-goto="screen-main"
+            aria-label="Main screen" title="Main screen">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"
+           fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11.5 12 4l9 7.5"/>
+        <path d="M5.5 9.5V20h13V9.5"/>
+        <path d="M10 20v-5.5h4V20"/>
+      </svg></button>
     <button type="button" class="back" data-goto="screen-rifle">&larr; Back</button>
     <h2>Projectile</h2><span class="head-spacer"></span>
   </div>
@@ -1543,22 +1624,40 @@ body { background: #101317; }
         <input type="text" inputmode="decimal" id="in-lon"></div>
       <div class="field"><label for="in-alt">Altitude <u data-u="altitude"></u></label>
         <input type="text" inputmode="decimal" id="in-alt"></div>
+      <!-- Typed, or turned on a compass. The button opens a card that
+           turns under a fixed bullet, the same frame as the wind dial. -->
       <div class="field"><label for="in-az">Azimuth of fire (deg)</label>
-        <input type="text" inputmode="decimal" id="in-az"></div>
+        <div class="with-info">
+          <input type="text" inputmode="decimal" id="in-az">
+          <button type="button" class="icon-btn" id="btn-az-compass"
+                  aria-label="Set the azimuth on a compass"
+                  title="Set it on a compass">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="m15.5 8.5-2 5-5 2 2-5z"/>
+            </svg></button>
+        </div></div>
     </div>
+    <!-- One button, not two. Asking for the position and then, as a
+         separate step, for the weather at it was two taps for one
+         intent -- and the weather button was useless until the first
+         one had worked. -->
     <div class="actions">
-      <button type="button" id="btn-locate">Use my location</button>
-      <button type="button" id="btn-weather">Fetch live weather</button>
+      <button type="button" id="btn-position-weather">Get my position and weather</button>
       <button type="button" class="info" aria-expanded="false"
               aria-controls="info-online"
-              aria-label="What these two buttons send">i</button>
+              aria-label="What this button sends">i</button>
     </div>
-    <p class="hint info-text" id="info-online" hidden>Both of these leave
-    the device. “Use my location” asks the browser for your coordinates;
-    “Fetch live weather” sends those coordinates to the Open-Meteo public
-    API and fills in temperature, pressure, humidity and wind. Nothing
-    else on this page ever contacts the network, and neither runs unless
-    you press it.</p>
+    <p class="hint info-text" id="info-online" hidden>It runs only when
+    pressed. It asks the browser for your position, then sends those
+    coordinates to the Open-Meteo public API, which returns temperature,
+    station pressure, humidity, wind and the height of the ground there.
+    If the browser cannot give a position, the latitude and longitude
+    already in the fields are used instead, so typing them in is always a
+    way through. The wind is a 10 m forecast for the area, not what your
+    flags are doing.</p>
     <p class="hint" id="online-note"></p>
 
     <h3 class="section">Atmosphere
@@ -1661,7 +1760,7 @@ body { background: #101317; }
 </section>
 
 <footer class="sb-footer">
-  <p>Build <b id="build-stamp">1.7.0 · 2026-09-05 06:35 UTC</b> &mdash; quote this when
+  <p>Build <b id="build-stamp">1.8.0 · 2026-09-13 21:31 UTC</b> &mdash; quote this when
   reporting anything, so a fixed bug is not reported twice.
   <button type="button" class="info" aria-expanded="false"
           aria-controls="info-credits" aria-label="About this solver">i</button></p>
@@ -1761,6 +1860,38 @@ body { background: #101317; }
     </div>
     <div class="actions">
       <button type="button" id="wind-done">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- The azimuth, on a compass. The bullet stays pointing up at the
+     target and the card turns under it, so the bearing under the nose
+     is the azimuth -- the same frame as the wind dial, where the target
+     is also at the top. Bound to the same state as the Environment
+     field. -->
+<div class="sb-modal" id="az-modal" hidden role="dialog" aria-modal="true"
+     aria-labelledby="az-title">
+  <div class="sb-modal-card">
+    <h3 id="az-title">Azimuth of fire</h3>
+    <p class="hint">Turn the card until the target’s bearing sits under
+    the bullet’s nose.</p>
+    <div class="rose-wrap">
+      <div class="rose-box">
+        <svg id="az-compass" class="rose" role="slider" tabindex="0"
+             aria-label="Azimuth of fire, as a true bearing"
+             aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></svg>
+        <div class="rose-readout">
+          <b id="az-deg">0&deg;</b>
+          <span id="az-card">N</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="am-az">Azimuth (deg, true)</label>
+        <input type="text" inputmode="decimal" id="am-az"></div>
+    </div>
+    <div class="actions">
+      <button type="button" id="az-done">Done</button>
     </div>
   </div>
 </div>
@@ -5446,22 +5577,230 @@ var PBWindRose = (function () {
 
 </script>
 <script>
-/* The two things in this build that leave the device.
+/* Azimuth of fire: a compass card you turn, with the bullet fixed.
+ *
+ * Drawn from the shooter's eye, exactly like the wind dial: the target
+ * is at the top of the picture and the bullet at the centre points at
+ * it, always. What turns is the card underneath -- the way a map is
+ * turned to face the way you are walking -- so the bearing sitting under
+ * the bullet's nose, at the mark on the rim, IS the azimuth of fire.
+ *
+ * Holding the bullet still is deliberate. The wind dial beside it puts
+ * the target at the top too, and a shooter reads the two together: turn
+ * this card until the target's bearing is under the nose, and the wind
+ * dial's twelve o'clock is that same direction.
+ *
+ * Convention matches the solver: an azimuth is a true bearing, 0 = north,
+ * clockwise positive, the same frame as the wind's true bearing that
+ * Open-Meteo reports. runner.js subtracts one from the other.
+ */
+'use strict';
+
+var PBCompass = (function () {
+  var NS = 'http://www.w3.org/2000/svg';
+
+  function el(name, attrs, text) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) {
+      if (Object.prototype.hasOwnProperty.call(attrs, k)) {
+        n.setAttribute(k, attrs[k]);
+      }
+    }
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  function wrap(d) { return ((d % 360) + 360) % 360; }
+
+  /* Screen position of a screen angle: 0 deg is up, clockwise positive. */
+  function pt(cx, cy, r, deg) {
+    var a = (deg - 90) * Math.PI / 180;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  }
+
+  var POINTS16 = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+                  'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+  function cardinal(deg) {
+    return POINTS16[Math.round(wrap(deg) / 22.5) % 16];
+  }
+
+  function draw(svg, az, opts) {
+    var size = (opts && opts.size) || 260;
+    var cx = size / 2, cy = size / 2;
+    var R = size / 2 - 18;
+    az = wrap(az);
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size);
+
+    var g = el('g');
+    svg.appendChild(g);
+    g.appendChild(el('circle', { cx: cx, cy: cy, r: R, class: 'rose-face' }));
+
+    /* The card. Every bearing b sits at screen angle b - az, so the one
+     * equal to the azimuth lands at the top. Positions are computed
+     * rather than the whole card being rotated with a transform, so the
+     * letters stay upright however far it is turned: an upside-down S
+     * at the top of the dial is exactly the moment it has to be read. */
+    for (var b = 0; b < 360; b += 10) {
+      var major = b % 90 === 0, mid = b % 30 === 0;
+      var len = major ? 15 : mid ? 10 : 6;
+      var p1 = pt(cx, cy, R, b - az), p2 = pt(cx, cy, R - len, b - az);
+      g.appendChild(el('line', {
+        x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1],
+        class: major ? 'rose-tick major' : 'rose-tick'
+      }));
+    }
+    [['N', 0], ['E', 90], ['S', 180], ['W', 270]].forEach(function (c) {
+      var lp = pt(cx, cy, R - 30, c[1] - az);
+      g.appendChild(el('text', {
+        x: lp[0], y: lp[1] + 5, 'text-anchor': 'middle',
+        class: c[0] === 'N' ? 'compass-card compass-north' : 'compass-card'
+      }, c[0]));
+    });
+    [['NE', 45], ['SE', 135], ['SW', 225], ['NW', 315]].forEach(function (c) {
+      var lp = pt(cx, cy, R - 28, c[1] - az);
+      g.appendChild(el('text', {
+        x: lp[0], y: lp[1] + 4, 'text-anchor': 'middle',
+        class: 'rose-hour'
+      }, c[0]));
+    });
+
+    /* The fixed parts, drawn over the card: the line of fire from the
+     * bullet's nose to the rim, and the lubber mark on the rim that the
+     * azimuth is read against. */
+    var bulletH = Math.max(26, R * 0.30);
+    g.appendChild(el('line', { x1: cx, y1: cy - bulletH * 0.62,
+                               x2: cx, y2: cy - R + 18, class: 'rose-los' }));
+    g.appendChild(el('polygon', {
+      points: cx + ',' + (cy - R + 16) + ' ' +
+              (cx - 7) + ',' + (cy - R - 2) + ' ' +
+              (cx + 7) + ',' + (cy - R - 2),
+      class: 'compass-lubber'
+    }));
+
+    /* The bullet, pointing at the target. Same silhouette as the wind
+     * dial, authored in a 48-unit box with the nose at the top. */
+    var bs = bulletH / 36;
+    var bg = el('g', { transform: 'translate(' + (cx - 24 * bs) + ',' +
+                                  (cy - 23 * bs) + ') scale(' + bs + ')',
+                       class: 'rose-bullet' });
+    bg.appendChild(el('path', { d: 'M24 5c4 5 7 11 7 17v19H17V22c0-6 3-12 7-17z' }));
+    bg.appendChild(el('path', { d: 'M17 31h14', class: 'rose-bullet-line' }));
+    g.appendChild(bg);
+
+    svg.setAttribute('aria-valuenow', String(Math.round(az)));
+    svg.setAttribute('aria-valuetext', Math.round(az) + ' degrees, ' +
+                     cardinal(az));
+  }
+
+  /* Pointer position -> screen angle around the centre, or null when the
+   * pointer is so close to the centre that the angle is noise: a finger
+   * resting on the bullet would otherwise spin the card wildly. */
+  function angleAt(svg, clientX, clientY) {
+    var r = svg.getBoundingClientRect();
+    var dx = clientX - (r.left + r.width / 2);
+    var dy = clientY - (r.top + r.height / 2);
+    if (Math.hypot(dx, dy) < Math.min(r.width, r.height) * 0.08) return null;
+    return Math.atan2(dx, -dy) * 180 / Math.PI;
+  }
+
+  /* Turning, not pointing. The card follows the finger by however far
+   * the finger has turned since it went down, so a drag that starts
+   * anywhere on the dial behaves like grabbing a real compass card --
+   * and turning the card clockwise brings a SMALLER bearing to the top,
+   * which is why the change is subtracted. Accumulated move by move, so
+   * a drag that goes all the way round keeps going instead of snapping
+   * back at 180 degrees.
+   *
+   * onChange(deg) fires while turning; onCommit(deg) once, when the
+   * gesture ends, so a solve is not queued for every pixel. */
+  function attach(svg, getDeg, onChange, onCommit) {
+    var dragging = false, last = null, start = 0, turned = 0, id = null;
+
+    function norm(d) { d = wrap(d); return d > 180 ? d - 360 : d; }
+
+    svg.addEventListener('pointerdown', function (ev) {
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      dragging = true;
+      id = ev.pointerId;
+      last = angleAt(svg, ev.clientX, ev.clientY);
+      start = getDeg();
+      turned = 0;
+      try { svg.setPointerCapture(ev.pointerId); } catch (e) { /* none */ }
+      ev.preventDefault();
+    });
+    svg.addEventListener('pointermove', function (ev) {
+      if (!dragging || ev.pointerId !== id) return;
+      ev.preventDefault();
+      var a = angleAt(svg, ev.clientX, ev.clientY);
+      if (a === null) return;
+      if (last === null) { last = a; return; }
+      turned += norm(a - last);
+      last = a;
+      /* Round, THEN wrap: the other way round, 359.6 rounds to 360
+       * and a bearing of 360 reaches the fields and the log. */
+      onChange(wrap(Math.round(start - turned)));
+    });
+    function up(ev) {
+      if (!dragging || ev.pointerId !== id) return;
+      dragging = false;
+      try {
+        if (svg.hasPointerCapture(ev.pointerId)) svg.releasePointerCapture(ev.pointerId);
+      } catch (e) { /* none */ }
+      onCommit(getDeg());
+    }
+    svg.addEventListener('pointerup', up);
+    svg.addEventListener('pointercancel', up);
+
+    /* One degree a press, ten with PageUp/PageDown, north with Home.
+     * Right and up turn the heading clockwise, the way the bullet's nose
+     * would swing if you turned to your right. */
+    svg.addEventListener('keydown', function (ev) {
+      var d = getDeg(), step = 0;
+      if (ev.key === 'ArrowRight' || ev.key === 'ArrowUp') step = 1;
+      else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowDown') step = -1;
+      else if (ev.key === 'PageUp') step = 10;
+      else if (ev.key === 'PageDown') step = -10;
+      else if (ev.key === 'Home') { ev.preventDefault(); onChange(0); onCommit(0); return; }
+      else return;
+      ev.preventDefault();
+      var next = Math.round(wrap(d + step));
+      onChange(next);
+      onCommit(next);
+    });
+  }
+
+  return { draw: draw, attach: attach, cardinal: cardinal };
+})();
+
+</script>
+<script>
+/* The one button in this build that leaves the device.
  *
  * Everything else runs offline by construction, and that is a property
  * worth protecting: the app has to work at a range with no signal, and
  * a solver that silently phones home is not one you can vouch for in a
- * thesis. So both calls here are opt-in, both are isolated in this one
- * file, and both fail into a message rather than into a wrong number.
+ * thesis. So the calls here are opt-in, isolated in this one file, and
+ * they fail into a message rather than into a wrong number.
  *
- *   geolocate()  -- browser Geolocation API. Needs a secure context
- *                   (https, or localhost); on plain http it is blocked
- *                   by the browser, not by us.
+ *   geolocate()    -- browser Geolocation API. Needs a secure context
+ *                     (https, or localhost); on plain http it is blocked
+ *                     by the browser, not by us.
  *   fetchWeather() -- Open-Meteo's free public API, the same endpoint
- *                   the desktop build uses in _rf_fetch_weather.
+ *                     the desktop build uses in _rf_fetch_weather.
  *
  * No key, no account, no tracking parameters. The coordinates are the
  * only thing sent, and only when the user presses the button.
+ *
+ * WHY THERE IS NO IP-ADDRESS FALLBACK. When the browser refuses a
+ * position it would be easy to ask an IP-location service instead, and
+ * the button would "work". It was tried: three such services asked from
+ * the same machine answered with three cities hundreds of kilometres
+ * apart, and a Spanish mobile carrier routinely places every customer in
+ * Madrid. Weather for the wrong city is a wrong station pressure, which
+ * is a wrong drop -- recorded in the shot log as if it had been
+ * measured. That is the one failure this file exists to prevent, so a
+ * refused position becomes a precise message about how to allow it.
  */
 'use strict';
 
@@ -5471,17 +5810,90 @@ var PBOnline = (function () {
   var FIELDS = ['temperature_2m', 'surface_pressure', 'relative_humidity_2m',
                 'wind_speed_10m', 'wind_direction_10m'];
 
+  /* An Error that says which failure it is, so the caller can decide
+   * what to do next -- a refused position still leaves the weather
+   * available for coordinates the shooter typed. */
+  function geoError(kind, message) {
+    var e = new Error(message);
+    e.kind = kind;
+    return e;
+  }
+
+  /* Where a PERMISSION_DENIED came from. The API reports the same code
+   * for very different causes, and each has a different fix. Only what
+   * the browser can actually vouch for is stated as fact:
+   *   framed   -- the Permissions Policy says this frame may not ask:
+   *               an iframe without allow="geolocation".
+   *   site     -- the permission state is 'denied': this site is
+   *               blocked in this browser.
+   *   device   -- the state is 'granted', yet the position was refused:
+   *               the browser allows it and the device does not.
+   *   unknown  -- anything else. A prompt closed with its X leaves the
+   *               state at 'prompt', and Safari before 16 cannot be
+   *               asked at all, so the message names the likely fixes
+   *               instead of claiming one. unknownFramed adds the frame
+   *               as a possibility, for a cross-origin frame in a browser
+   *               that cannot say whether the frame is allowed. */
+  function deniedCause() {
+    /* Being in a frame is not enough to blame the frame: a same-origin
+     * iframe is allowed geolocation by default. What blocks it is the
+     * Permissions Policy, so that is asked when the browser can answer
+     * (Chromium). Where it cannot, only a CROSS-origin frame is blamed,
+     * since that is the case a missing allow="geolocation" breaks. */
+    var framed = false, crossOrigin = false;
+    try { framed = window.self !== window.top; } catch (e) { framed = true; }
+    if (framed) {
+      try { crossOrigin = window.top.location.origin !== window.location.origin; }
+      catch (e) { crossOrigin = true; }
+    }
+    var policy = document.permissionsPolicy || document.featurePolicy;
+    var policyKnown = !!(policy && typeof policy.allowsFeature === 'function');
+    if (policyKnown) {
+      var allowed = true;
+      try { allowed = policy.allowsFeature('geolocation'); } catch (e) { /* keep true */ }
+      if (!allowed) return Promise.resolve('framed');
+    }
+    var fallback = (!policyKnown && framed && crossOrigin) ? 'unknownFramed'
+                                                           : 'unknown';
+    if (!navigator.permissions || !navigator.permissions.query) {
+      return Promise.resolve(fallback);
+    }
+    return navigator.permissions.query({ name: 'geolocation' })
+      .then(function (st) {
+        return st.state === 'denied' ? 'site'
+             : st.state === 'granted' ? 'device' : fallback;
+      })
+      .catch(function () { return fallback; });
+  }
+
+  var UNKNOWN = 'location was refused — press again and choose Allow; ' +
+                'if nothing asks, turn on location for your browser in ' +
+                'the device settings, or open the link in Chrome or ' +
+                'Safari rather than inside another app';
+  var DENIED = {
+    framed: 'location is blocked because this page is shown inside ' +
+            'another site; open it directly at its own address',
+    site: 'location is blocked for this site — allow it in the site ' +
+          'settings beside the address bar, then press again',
+    device: 'the browser allows it, but the device refused — turn on ' +
+            'location for your browser in the device settings',
+    unknown: UNKNOWN,
+    unknownFramed: UNKNOWN + ' — or, if this page is shown inside ' +
+                   'another site, open it directly'
+  };
+
   function geolocate() {
     return new Promise(function (resolve, reject) {
       if (!navigator.geolocation) {
-        reject(new Error('this browser has no geolocation'));
+        reject(geoError('unsupported', 'this browser has no geolocation'));
         return;
       }
       if (!window.isSecureContext) {
-        /* Say which of the two it is: "permission denied" would send
+        /* Say which of the two it is: "permission refused" would send
          * someone hunting through browser settings for a problem that is
          * actually the page being served over http. */
-        reject(new Error('needs https (the page is not a secure context)'));
+        reject(geoError('insecure',
+                        'needs https (the page is not a secure context)'));
         return;
       }
       navigator.geolocation.getCurrentPosition(
@@ -5489,14 +5901,38 @@ var PBOnline = (function () {
           resolve({ lat: p.coords.latitude, lon: p.coords.longitude,
                     alt: Number.isFinite(p.coords.altitude)
                       ? p.coords.altitude : null,
-                    accuracy: p.coords.accuracy });
+                    accuracy: p.coords.accuracy,
+                    /* When the fix was TAKEN, which is not when the
+                     * button was pressed if the browser answered from
+                     * its cache. */
+                    timestamp: Number.isFinite(p.timestamp)
+                      ? p.timestamp : Date.now() });
         },
         function (err) {
-          reject(new Error(err.code === 1 ? 'permission refused'
-                           : err.code === 2 ? 'position unavailable'
-                           : 'timed out'));
+          if (err.code === 1) {
+            deniedCause().then(function (cause) {
+              reject(geoError('denied', DENIED[cause]));
+            });
+            return;
+          }
+          reject(err.code === 2
+            ? geoError('unavailable', 'location services are off, or ' +
+                       'this device cannot find itself')
+            : geoError('timeout', 'the browser found none within 15 s ' +
+                       '— try again with a clearer view of the sky'));
         },
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
+        /* Low accuracy on purpose. The position feeds two things: the
+         * weather lookup, which is a 1 km grid, and the Coriolis latitude,
+         * where a kilometre is a hundred-thousandth of the answer. GPS-
+         * grade accuracy buys nothing for either and costs a cold fix
+         * that times out indoors and on laptops. The altitude that
+         * high accuracy would add comes from Open-Meteo's terrain model
+         * instead, which is better than a GPS altitude anyway.
+         *
+         * A cached fix is accepted only up to a minute old: a shooter who
+         * drove from the car park to the firing point should not get the
+         * car park's weather because the browser remembered it. */
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 });
     });
   }
 
@@ -5541,6 +5977,11 @@ var PBOnline = (function () {
            * azimuth of fire to get the o'clock the shooter reads. */
           out.windFromTrue = cur.wind_direction_10m;
         }
+        /* The terrain height Open-Meteo downscaled to, from a 90 m
+         * elevation model at these exact coordinates. surface_pressure
+         * above is the pressure AT this height, so taking both keeps the
+         * altitude and the station pressure describing the same place. */
+        if (d && Number.isFinite(d.elevation)) out.elevation = d.elevation;
         out.time = cur.time || null;
         if (!out.got.length) throw new Error('no current conditions returned');
         return out;
@@ -5571,7 +6012,7 @@ var PBOnline = (function () {
  * State is held in SI; the display converts. Every edit schedules a
  * debounced solve of the physical trajectory -- the real wind, always.
  * The table, the readout and the shot detail print that one solution,
- * drop and drift both. The WIND DRIFT INCLUDED / HOLD YOURSELF switch
+ * drop and drift both. The DRIFT INCLUDED / HOLD YOURSELF switch
  * does not change a number: it says whether the drift goes on the
  * windage turret or is held in the reticle, which decides where the
  * aim dot is drawn and what the shot log records as dialled.
@@ -5640,6 +6081,14 @@ var PBOnline = (function () {
       provenance: {
         atmo: 'typed', atmoTs: null,
         wind: 'typed', windTs: null,
+        /* The TRUE bearing a fetched wind blows from. wind.dir is
+         * relative to the line of fire, so it is only right for the
+         * azimuth it was converted at; keeping the bearing lets a later
+         * change of azimuth turn the relative wind with it. Null once
+         * the wind's DIRECTION has been typed or dragged -- a direction
+         * the shooter set relative to their shot stays relative to their
+         * shot. Correcting only the speed keeps it. */
+        windFromTrue: null,
         location: 'typed', locationTs: null, locationAccuracy: null
       },
       reticleId: null,
@@ -6625,10 +7074,10 @@ var PBOnline = (function () {
        * difference between the number the solver produced and the number
        * the shooter can actually put on the rifle. */
       if (rem < 0.005) {
-        return 'Wind drift is dialled: dial both numbers and aim dead ' +
+        return 'Drift is dialled: dial both numbers and aim dead ' +
           'centre — this row falls on whole clicks exactly.';
       }
-      return 'Wind drift is dialled: dial both numbers, then aim with ' +
+      return 'Drift is dialled: dial both numbers, then aim with ' +
         'the dot (the ' + rem.toFixed(2) + ' MIL left after whole clicks).';
     }
     /* Even in dead calm there is something to hold: the windage turret
@@ -6849,7 +7298,9 @@ var PBOnline = (function () {
     renderReticle();
     if ($('screen-shot').classList.contains('on')) renderShot();
     renderShotWindButton();
-    var label = S.windInDope ? 'WIND DRIFT INCLUDED' : 'HOLD YOURSELF';
+    /* DRIFT, not WIND DRIFT: the figure is wind and spin drift
+     * together, and it is dialled or held as one number. */
+    var label = S.windInDope ? 'DRIFT INCLUDED' : 'HOLD YOURSELF';
     [$('wind-badge'), $('shot-wind-badge')].forEach(function (badge) {
       badge.textContent = label;
       badge.classList.toggle('hold', !S.windInDope);
@@ -6886,6 +7337,7 @@ var PBOnline = (function () {
     ['in-lat', 'geom', 'lat', 4],
     ['in-lon', 'geom', 'lon', 4],
     ['in-az', 'geom', 'az', 0],
+    ['am-az', 'geom', 'az', 0],
     ['in-turret', 'out', 'turret', 3],
     ['in-zwx-hum', 'zeroWx', 'humidity', 0]
   ];
@@ -6898,7 +7350,16 @@ var PBOnline = (function () {
    * shooter has since overwritten is no longer a fetched value. */
   function markTyped(group, id) {
     if (group === 'atmo') { S.provenance.atmo = 'typed'; S.provenance.atmoTs = null; }
-    else if (group === 'wind') { S.provenance.wind = 'typed'; S.provenance.windTs = null; }
+    else if (group === 'wind') {
+      S.provenance.wind = 'typed'; S.provenance.windTs = null;
+      /* Only a hand-set DIRECTION breaks the link to the fetched true
+       * bearing. A shooter who reads 4 m/s on their Kestrel and types
+       * it over the forecast 5 has not said anything about direction,
+       * and the direction must keep turning with the azimuth. */
+      if (id === 'in-wdir' || id === 'wm-wdir' || id === 'rose') {
+        S.provenance.windFromTrue = null;
+      }
+    }
     else if (group === 'geom' && (id === 'in-lat' || id === 'in-lon')) {
       S.provenance.location = 'typed';
       S.provenance.locationTs = null;
@@ -7086,12 +7547,14 @@ var PBOnline = (function () {
       (function (b) {
         var el = $(b[0]);
         var isDir = (b[1] === 'wind' && b[2] === 'dir');
+        var isAz = (b[1] === 'geom' && b[2] === 'az');
         el.addEventListener('input', function () {
           var v = parseNum(this.value);
           if (!Number.isFinite(v)) return;
           S[b[1]][b[2]] = v;
           if (isDir) { renderRose(); syncWindInputs(this); }
           markTyped(b[1], b[0]);
+          if (isAz) onAzimuthChanged(this);
           save(); scheduleSolve();
         });
         el.addEventListener('change', function () {
@@ -7101,6 +7564,7 @@ var PBOnline = (function () {
           S[b[1]][b[2]] = v;
           this.value = Number(v).toFixed(b[3]);
           if (isDir) { renderRose(); syncWindInputs(this); }
+          if (isAz) onAzimuthChanged(this);
           save(); scheduleSolve(0);
         });
       })(PLAIN[i]);
@@ -7202,6 +7666,27 @@ var PBOnline = (function () {
     $('wind-modal').addEventListener('mousedown', function (ev) {
       if (ev.target === this) closeWind();     /* click the backdrop */
     });
+
+    /* The azimuth compass, from the Environment screen. Drawn on open,
+     * for the same reason as the wind dial. */
+    $('btn-az-compass').addEventListener('click', function () {
+      $('az-modal').hidden = false;
+      syncAzInputs(null);
+      renderCompass();
+      try { $('az-compass').focus({ preventScroll: true }); }
+      catch (e) { /* older browsers */ }
+    });
+    $('az-done').addEventListener('click', closeAz);
+    $('az-modal').addEventListener('mousedown', function (ev) {
+      if (ev.target === this) closeAz();       /* click the backdrop */
+    });
+    PBCompass.attach($('az-compass'),
+      function () { return clamp('geom.az', S.geom.az); },
+      function (deg) {
+        S.geom.az = deg;
+        onAzimuthChanged(null);
+      },
+      function () { save(); scheduleSolve(0); });
 
     /* Change the distance from the readout or from the shot detail, not
      * only from the table. A distance typed here that is not on the
@@ -7317,6 +7802,13 @@ var PBOnline = (function () {
       if (ev.target === this) closeLog();      /* click the backdrop */
     });
     document.addEventListener('keydown', function (ev) {
+      if (!$('az-modal').hidden) {
+        if (ev.key === 'Escape') { ev.preventDefault(); closeAz(); }
+        else if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') {
+          ev.preventDefault(); ev.target.blur();   /* commit the field */
+        }
+        return;
+      }
       if (!$('wind-modal').hidden) {
         if (ev.key === 'Escape') { ev.preventDefault(); closeWind(); }
         else if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') {
@@ -7351,8 +7843,7 @@ var PBOnline = (function () {
       openLog(S.shotRange);
     });
 
-    $('btn-locate').addEventListener('click', doLocate);
-    $('btn-weather').addEventListener('click', doWeather);
+    $('btn-position-weather').addEventListener('click', doPositionAndWeather);
 
     $('btn-rifle-new').addEventListener('click', addRifle);
     $('btn-reorder-done').addEventListener('click', function () {
@@ -7383,7 +7874,7 @@ var PBOnline = (function () {
         function (deg) {
           S.wind.dir = deg;
           syncWindInputs(null);
-          markTyped('wind');
+          markTyped('wind', 'rose');
           renderRose();
         },
         function () { save(); scheduleSolve(0); });
@@ -7420,6 +7911,7 @@ var PBOnline = (function () {
       if (rt) clearTimeout(rt);
       rt = setTimeout(function () {
         renderChart(); renderReticle(); renderRose();
+        if (!$('az-modal').hidden) renderCompass();
         if ($('screen-shot').classList.contains('on')) renderShot();
       }, 120);
     });
@@ -7439,6 +7931,65 @@ var PBOnline = (function () {
     });
   }
 
+  /* The azimuth lives in two fields -- the Environment screen's and the
+   * compass dialog's. Same rule as the wind: whichever was typed into
+   * keeps its keystrokes. */
+  function syncAzInputs(except) {
+    var az = Number(clamp('geom.az', S.geom.az)).toFixed(0);
+    ['in-az', 'am-az'].forEach(function (id) {
+      var el = $(id);
+      if (el && el !== except) el.value = az;
+    });
+  }
+
+  function renderCompass() {
+    var svg = $('az-compass');
+    if (!svg) return;
+    var az = clamp('geom.az', S.geom.az);
+    PBCompass.draw(svg, az, { size: svg.clientWidth || 300 });
+    $('az-deg').textContent = Math.round(az) + '\u00b0';
+    $('az-card').textContent = PBCompass.cardinal(az);
+  }
+
+  /* Everything that follows from a new azimuth, from wherever it came.
+   *
+   * The one that matters is the wind. Open-Meteo reports a TRUE bearing
+   * and the app stores the wind RELATIVE to the shot, converted at the
+   * azimuth of the moment. Before 1.8.0, turning to face the target after
+   * fetching the weather left the relative wind pointing where the old
+   * azimuth said: fetch with the azimuth still at 0, then set 90, and a
+   * west wind that is now a tailwind stayed a crosswind from the left.
+   * With one button that fetches everything, fetching before the azimuth
+   * is set is the normal order, so it is re-derived here. A wind the
+   * shooter typed or dragged is theirs, and is left alone. */
+  function onAzimuthChanged(except) {
+    syncAzInputs(except);
+    if (!$('az-modal').hidden) renderCompass();
+    /* Keyed on the bearing alone, not on the wind's source: a typed
+     * speed demotes the source to 'typed' but leaves a fetched direction
+     * in place, and that direction still has to turn. */
+    var from = S.provenance.windFromTrue;
+    if (Number.isFinite(from)) {
+      S.wind.dir = ((from - clamp('geom.az', S.geom.az)) % 360 + 360) % 360;
+      syncWindInputs(null);
+      renderRose();
+    }
+  }
+
+  function closeAz() {
+    var m = $('az-modal');
+    if (m.hidden) return;
+    if (document.activeElement && m.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    m.hidden = true;
+    /* Back to the button that opened it, so a keyboard user carries on
+     * from the azimuth row instead of from the top of the page. */
+    try { $('btn-az-compass').focus({ preventScroll: true }); }
+    catch (e) { /* older browsers */ }
+    save(); scheduleSolve(0);
+  }
+
   function closeWind() {
     var m = $('wind-modal');
     if (m.hidden) return;
@@ -7447,6 +7998,8 @@ var PBOnline = (function () {
       document.activeElement.blur();
     }
     m.hidden = true;
+    try { $('btn-shot-wind').focus({ preventScroll: true }); }
+    catch (e) { /* older browsers */ }
   }
 
   /* One place that turns a typed display value into the stored SI
@@ -8642,7 +9195,7 @@ var PBOnline = (function () {
 
 
   // ------------------------------------------------------------------
-  // the two online helpers
+  // position and weather: one button
   // ------------------------------------------------------------------
   function onlineNote(msg, kind) {
     var el = $('online-note');
@@ -8650,89 +9203,129 @@ var PBOnline = (function () {
     el.classList.toggle('warn', kind === 'warn');
   }
 
-  function doLocate() {
-    var btn = $('btn-locate');
+  /* One button for one intent: where am I, and what is the air doing
+   * here. It used to be two, and the second was useless until the first
+   * had worked.
+   *
+   * A refused position is not the end of it. The browser can refuse for
+   * reasons this page cannot fix -- location off for the browser on the
+   * phone, the link opened inside WhatsApp, the page shown inside another
+   * site -- and the weather needs coordinates, not GPS. So when the
+   * browser says no and the fields already hold a latitude and
+   * longitude, the weather is fetched for those, and the note says both
+   * things: why there is no fix, and that the weather is for the typed
+   * place. With nothing typed there is nowhere to look up, and the note
+   * says how to get a position and that typing one is the other way. */
+  function doPositionAndWeather() {
+    var btn = $('btn-position-weather');
     btn.disabled = true;
     onlineNote('Asking the browser for your position…');
+
+    function done() { btn.disabled = false; }
+
     PBOnline.geolocate().then(function (p) {
-      S.geom.lat = p.lat;
-      S.geom.lon = p.lon;
-      /* GPS altitude is frequently absent and, when present, is often
-       * tens of metres out; take it only when the fix actually carries
-       * one and say where it came from. */
-      var altNote = '';
-      if (p.alt !== null) {
-        S.atmo.altitude = p.alt;
-        altNote = ', altitude ' + p.alt.toFixed(0) + ' m (from GPS — check it)';
+      return { ok: true, p: p };
+    }, function (e) {
+      return { ok: false, error: e };
+    }).then(function (fix) {
+      var where;
+      if (fix.ok) {
+        S.geom.lat = fix.p.lat;
+        S.geom.lon = fix.p.lon;
+        S.provenance.location = 'device';
+        S.provenance.locationTs = new Date(fix.p.timestamp).toISOString();
+        S.provenance.locationAccuracy = fix.p.accuracy;
+        save(); refreshInputs(); scheduleSolve(0);
+        where = 'Position ' + fix.p.lat.toFixed(4) + '°, ' +
+          fix.p.lon.toFixed(4) + '° (±' +
+          Math.round(fix.p.accuracy) + ' m).';
+      } else {
+        var lat = clamp('geom.lat', S.geom.lat);
+        var lon = clamp('geom.lon', S.geom.lon);
+        if (!lat && !lon) {
+          onlineNote('No position: ' + fix.error.message + '. Or type ' +
+                     'your latitude and longitude above and press again ' +
+                     '— the weather needs only those.', 'warn');
+          return;
+        }
+        where = 'No position (' + fix.error.message + '), so the weather ' +
+          'is for the coordinates already in the fields.';
       }
-      S.provenance.location = 'device';
-      S.provenance.locationTs = new Date().toISOString();
-      S.provenance.locationAccuracy = p.accuracy;
-      save(); refreshInputs(); scheduleSolve(0);
-      onlineNote('Position set: ' + p.lat.toFixed(4) + '°, ' +
-                 p.lon.toFixed(4) + '° (±' + Math.round(p.accuracy) + ' m)' +
-                 altNote + '. Set the azimuth of fire yourself.');
-    }).catch(function (e) {
-      onlineNote('Could not get your position: ' + e.message + '.', 'warn');
-    }).then(function () { btn.disabled = false; });
+      onlineNote(where + ' Fetching the weather…',
+                 fix.ok ? '' : 'warn');
+      return PBOnline.fetchWeather(clamp('geom.lat', S.geom.lat),
+                                   clamp('geom.lon', S.geom.lon))
+        .then(function (w) { applyWeather(w, fix, where); })
+        .catch(function (e) {
+          onlineNote(where + ' Weather lookup failed: ' + e.message +
+                     '. Everything else still works offline — type ' +
+                     'the conditions in.', 'warn');
+        });
+    }).then(done, done);
   }
 
-  function doWeather() {
-    var btn = $('btn-weather');
-    var lat = clamp('geom.lat', S.geom.lat), lon = clamp('geom.lon', S.geom.lon);
-    if (!lat && !lon) {
-      onlineNote('Set a latitude and longitude first, or press “Use my ' +
-                 'location”. Open-Meteo needs somewhere to look up.', 'warn');
-      return;
+  function applyWeather(w, fix, where) {
+    var got = [];
+    if (w.temp !== undefined) {
+      S.atmo.temp = w.temp;
+      got.push(w.temp.toFixed(1) + ' °C');
     }
-    btn.disabled = true;
-    onlineNote('Fetching current conditions from Open-Meteo…');
-    PBOnline.fetchWeather(lat, lon).then(function (w) {
-      var got = [];
-      if (w.temp !== undefined) {
-        S.atmo.temp = w.temp;
-        got.push(w.temp.toFixed(1) + ' °C');
-      }
-      if (w.pressure !== undefined) {
-        S.atmo.pressure = w.pressure;
-        got.push((w.pressure / 100).toFixed(0) + ' hPa');
-      }
-      if (w.humidity !== undefined) {
-        S.atmo.humidity = w.humidity;
-        got.push(w.humidity.toFixed(0) + ' %RH');
-      }
-      if (w.windSpeed !== undefined) {
-        S.wind.speed = w.windSpeed;
-        got.push(w.windSpeed.toFixed(1) + ' m/s wind');
-      }
-      if (w.windFromTrue !== undefined) {
-        /* Open-Meteo reports a true bearing; the dial is relative to the
-         * shot, so subtract the azimuth of fire -- the same conversion
-         * the desktop does in _rf_wx_done. */
-        S.wind.dir = ((w.windFromTrue - clamp('geom.az', S.geom.az)) % 360 +
-                      360) % 360;
-        got.push('from ' + w.windFromTrue.toFixed(0) + '° true (' +
-                 U.degToClock(S.wind.dir) + " o'clock for your azimuth)");
-      }
-      var now = new Date().toISOString();
-      if (w.temp !== undefined || w.pressure !== undefined ||
-          w.humidity !== undefined) {
-        S.provenance.atmo = 'open-meteo';
-        S.provenance.atmoTs = w.time || now;
-      }
-      if (w.windSpeed !== undefined || w.windFromTrue !== undefined) {
-        S.provenance.wind = 'open-meteo';
-        S.provenance.windTs = w.time || now;
-      }
-      save(); refreshInputs(); renderRose(); scheduleSolve(0);
-      onlineNote('Applied: ' + got.join(', ') +
-                 '. The wind is the 10 m forecast, not your flags — a ' +
-                 'starting point.' +
-                 (w.time ? ' Observation ' + w.time + '.' : ''));
-    }).catch(function (e) {
-      onlineNote('Weather lookup failed: ' + e.message + '. Everything ' +
-                 'else still works offline — type the conditions in.', 'warn');
-    }).then(function () { btn.disabled = false; });
+    if (w.pressure !== undefined) {
+      S.atmo.pressure = w.pressure;
+      got.push((w.pressure / 100).toFixed(0) + ' hPa');
+    }
+    if (w.humidity !== undefined) {
+      S.atmo.humidity = w.humidity;
+      got.push(w.humidity.toFixed(0) + ' %RH');
+    }
+    if (w.windSpeed !== undefined) {
+      S.wind.speed = w.windSpeed;
+      got.push(w.windSpeed.toFixed(1) + ' m/s wind');
+    }
+    var az = clamp('geom.az', S.geom.az);
+    /* A fetch replaces the bearing whether or not it carries one, so a
+     * reply without a direction cannot leave the previous fetch's
+     * bearing turning a wind it no longer describes. */
+    S.provenance.windFromTrue = Number.isFinite(w.windFromTrue)
+      ? w.windFromTrue : null;
+    if (w.windFromTrue !== undefined) {
+      /* Open-Meteo reports a true bearing; the dial is relative to the
+       * shot, so subtract the azimuth of fire -- the same conversion the
+       * desktop does in _rf_wx_done. The true bearing is kept, so that
+       * setting the azimuth afterwards turns the wind with it. */
+      S.wind.dir = ((w.windFromTrue - az) % 360 + 360) % 360;
+      got.push('from ' + w.windFromTrue.toFixed(0) + '° true (' +
+               U.degToClock(S.wind.dir) + " o'clock at azimuth " +
+               Math.round(az) + '°)');
+    }
+    /* The altitude is Open-Meteo's terrain height at these coordinates,
+     * which is the height its surface pressure is for, so the two stay
+     * describing the same place. A GPS altitude only when that is
+     * missing: it is often tens of metres out, and ellipsoidal. */
+    var alt = Number.isFinite(w.elevation) ? w.elevation
+            : (fix.ok && fix.p.alt !== null ? fix.p.alt : null);
+    if (alt !== null) {
+      S.atmo.altitude = clamp('atmo.altitude', alt);
+      got.push('ground ' + alt.toFixed(0) + ' m');
+    }
+    var now = new Date().toISOString();
+    if (w.temp !== undefined || w.pressure !== undefined ||
+        w.humidity !== undefined) {
+      S.provenance.atmo = 'open-meteo';
+      S.provenance.atmoTs = w.time || now;
+    }
+    if (w.windSpeed !== undefined || w.windFromTrue !== undefined) {
+      S.provenance.wind = 'open-meteo';
+      S.provenance.windTs = w.time || now;
+    }
+    save(); refreshInputs(); renderRose(); scheduleSolve(0);
+    onlineNote(where + ' Applied: ' + got.join(', ') +
+               '. The wind is a 10 m forecast, not your flags' +
+               (w.windFromTrue !== undefined && !az
+                 ? '; set your azimuth of fire and it turns with it.'
+                 : '.') +
+               (w.time ? ' Observation ' + w.time + '.' : ''),
+               fix.ok ? '' : 'warn');
   }
 
   function applyProfileDefaults(id) {
@@ -9067,7 +9660,7 @@ var PBOnline = (function () {
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.7.0',
+      version: '1.8.0',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(), k, sub;
         for (k in (cfgOverrides || {})) {
