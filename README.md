@@ -15,9 +15,9 @@ additional; it does not replace what is at the root.
 ## This build
 
 ```
-sha256  2fc5148c8d75b5ac1bc978158e6c270ed520171895dba46d2a6fd9a1b6dbe8a8
-bytes   1275532
-stamp   1.8.0 · 2026-09-13 21:31 UTC   (shown in the page footer)
+sha256  6a38a5516ea312e05d76915f2c61fba97ac89b74961aecd36aed23b8ff1bb8b8
+bytes   2080484
+stamp   1.10.0 · 2026-10-16 21:50 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -75,6 +75,24 @@ the weather was ever fetched. From 1.8.0 the JSON record carries
 `provenance.windFromTrue`, the bearing as fetched; it is not a CSV column, so
 the column count did not change.
 
+**1.10.0 is a boundary, and it changes what the log can be used for.** It
+carries the changes of 1.9.0, which was built but never served, so no record
+is stamped 1.9.0. From this build a shot is logged in one tap or from the table
+row, and either way it is a hit: no miss, no impact, no note. A new 66th CSV
+column, `entry`, says which way it came in. Rows from 1.10.0 on therefore
+measure nothing about the model; only rows from 1.8.0 and earlier carry an
+impact. Three other changes move predictions without a column to show it. The
+built-in Sellier & Bellot 6.5 Creedmoor goes from G7 0.24831 to 0.247 and from
+813.8 to 810 m/s, which adds 0.22 MIL of drop at 1000 m — 22 cm — for the Tikka
+starting rifle; `bc` and `mv_mps` show which numbers a row used. Catalogue
+bullets now borrow the lift and spin curves of the nearest built-in profile
+instead of always the M852's, so most bullets under 6 mm fly with the M855's:
+a Sierra MatchKing 77 gr loses 0.07 MIL of spin drift at 1000 m, and its drop
+moves by less than 0.005 MIL. And thirteen catalogue bullets had the wrong
+calibre, which earlier rows still carry in `calibre_m`. The azimuth can now
+come from the phone's compass, so it may be a few degrees off where it used to
+be typed. Filter on `build` before pooling across this stamp.
+
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
 already been fixed.
@@ -99,6 +117,11 @@ can tell about why and fetches for coordinates already typed in. There is no
 IP-address fallback, on purpose: it puts a phone in the wrong city often enough
 to feed a wrong station pressure into the drop. The shot log and the shared
 presets, described below, are the other two things that leave the device.
+
+From 1.10.0 the azimuth can also be read from the phone's compass. That uses
+the device's own sensors and NOAA's World Magnetic Model 2025, which is
+compiled into the page; nothing is sent. The factory-ammunition list is part
+of the page too, so choosing a load fetches nothing.
 
 Since 1.4.1 the wind toggle starts on **HOLD YOURSELF** rather than the mode
 now labelled DRIFT INCLUDED — WIND DRIFT INCLUDED from 1.5.1 to 1.7.0 and WIND
@@ -193,12 +216,20 @@ stamp   1.7.0-studio.3 · 2026-09-09 04:31 UTC   (shown in the page footer)
 
 The version reads `1.7.0-studio.3` because it is Field 1.7.0's engine wearing a
 different interface, not a release of Field: the trailing number is Studio's
-own revision, and it rises on its own without touching Field's. **The 16 engine
-and data files are byte-identical to the ones Field ships**, verified by hash
-rather than assumed, so the numbers are the same numbers: the same 22 of 22
-cross-validation cases, the same worst cell of 6.19e-10, the same canonical
-M852 at −1357.3097 cm, and 0 ULP against SciPy. Only the interface layer
-differs.
+own revision, and it rises on its own without touching Field's. **Its 16 engine
+and data files are byte-identical to the ones Field 1.7.0 shipped**, verified
+by hash rather than assumed, so the numbers are that build's numbers: the same
+22 of 22 cross-validation cases, the same worst cell of 6.19e-10, the same
+canonical M852 at −1357.3097 cm, and 0 ULP against SciPy. Only the interface
+layer differs.
+
+**Field has moved on since, and for a few bullets the two no longer agree.**
+The engine is still identical, but Field 1.10.0 changed three of the data
+files: the Sellier & Bellot 6.5 Creedmoor profile and the rifle it starts
+with, and thirteen catalogue calibres. For those bullets Studio still gives
+1.7.0's numbers — about 0.22 MIL less drop at 1000 m for the Tikka starting
+rifle — and it lends every catalogue bullet the M852's curves, as Field did
+before 1.10.0.
 
 **It sends nothing anywhere.** Both endpoints are compiled in empty, so no shot
 and no preset leaves the device — Studio neither uploads to the shot log nor
@@ -221,15 +252,18 @@ emulated mobile sizes. **It has not been tried on a real iPhone or Safari.**
 ## Validation
 
 The engine is a port of the Python solver it was derived from, and is checked
-against it rather than trusted. Both suites were re-run against each of the two
+against it rather than trusted. The suites were re-run against each of the two
 bundles above, each stamped with the build it was run against, before either
-was published:
+was published — three for Field 1.10.0, the first two for Studio:
 
 - **22 of 22** cross-validation cases pass per cell across the whole range
   card. The canonical 7.62 mm M852 168 gr reference reads −1357.3097 cm of drop
   at 1000 m, a deviation of 1.72e-5 cm against a 0.02 cm tripwire.
 - Numeric primitives — every drag table and spline — are **bit-identical to
   SciPy**, 0 ULP.
+- From 1.10.0, the magnetic declination behind the compass agrees with all
+  **12** of NOAA's published WMM2025 test values, the worst field component
+  within 0.049 nT.
 
 ## Releasing a new build
 
@@ -245,9 +279,11 @@ git push
 ```
 
 Update the hash, size and stamp in this file at the same time. GitHub Pages
-redeploys within about a minute. If `src/engine/` was touched, re-run both test
+redeploys within about a minute. If `src/engine/` was touched, re-run the test
 pages first — they are the only thing separating a plausible number from a
-correct one.
+correct one. If the push is refused as non-fast-forward, `git pull --rebase`:
+never force it, because GitHub keeps its own commit of `CNAME` here and a
+forced push would delete it and take the domain down without an error.
 
 ## Scope
 
