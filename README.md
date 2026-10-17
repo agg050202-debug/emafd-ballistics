@@ -8,10 +8,6 @@ the entire application in one self-contained file: no build step, no framework,
 no CDN. It solves entirely in the browser and runs from `file://`, so a copy on
 a phone or a USB stick works where there is no signal.
 
-`studio/index.html` is a second bundle of the same kind — an experimental
-interface served at **/studio/**, described at the end of this file. It is
-additional; it does not replace what is at the root.
-
 ## This build
 
 ```
@@ -201,60 +197,30 @@ write, and only the function's service role reaches it. Treat the contents as
 untrusted input rather than as a guarantee that every row came from a real
 shot.
 
-## Studio — the experimental interface
+## Studio — withdrawn
 
-**<https://ballistics.emafd.com/studio/>** serves a second, independent
-interface over the same solver. It is offered alongside Field rather than
-instead of it: the root is untouched by anything under `/studio/`.
+An experimental second interface over the same engine was served at
+`/studio/` from 2026-09-08 and withdrawn on 2026-10-17; that address now
+answers with this site's 404 page. Its last build is recorded here so that a
+report quoting it can still be matched:
 
 ```
-studio/index.html
+studio/index.html   (withdrawn)
 sha256  42dc17e00f1ad22c3101bc47bd6e72c47628d07d5f9605d2edb73c13c55ab5b5
 bytes   1296157
-stamp   1.7.0-studio.3 · 2026-09-09 04:31 UTC   (shown in the page footer)
+stamp   1.7.0-studio.3 · 2026-09-09 04:31 UTC
 ```
 
-The version reads `1.7.0-studio.3` because it is Field 1.7.0's engine wearing a
-different interface, not a release of Field: the trailing number is Studio's
-own revision, and it rises on its own without touching Field's. **Its 16 engine
-and data files are byte-identical to the ones Field 1.7.0 shipped**, verified
-by hash rather than assumed, so the numbers are that build's numbers: the same
-22 of 22 cross-validation cases, the same worst cell of 6.19e-10, the same
-canonical M852 at −1357.3097 cm, and 0 ULP against SciPy. Only the interface
-layer differs.
-
-**Field has moved on since, and for a few bullets the two no longer agree.**
-The engine is still identical, but Field 1.10.0 changed three of the data
-files: the Sellier & Bellot 6.5 Creedmoor profile and the rifle it starts
-with, and thirteen catalogue calibres. For those bullets Studio still gives
-1.7.0's numbers — about 0.22 MIL less drop at 1000 m for the Tikka starting
-rifle — and it lends every catalogue bullet the M852's curves, as Field did
-before 1.10.0.
-
-**It sends nothing anywhere.** Both endpoints are compiled in empty, so no shot
-and no preset leaves the device — Studio neither uploads to the shot log nor
-publishes to the shared preset list, and it does not read Field's presets.
-
-**It cannot disturb Field's data either.** The two are served from the same
-origin, so they share one `localStorage`; Studio therefore keeps every key
-under its own `superior-ballistics-studio-*` namespace — session, presets, shot
-log and appearance alike — and touches none of Field's.
-
-One inherited warning travels with it, and is worth stating rather than
-discovering: the inertia estimator flags M118 173 gr in red, a transverse error
-of −2.94 % against a ±2.9 % threshold. The identical row appears in Field's own
-bundle. It is not a Studio regression and the engine was not adjusted to hide
-it, so the primitives suite should not be described as entirely green.
-
-Studio has been checked in desktop Chrome at widths from 320 to 1920 px and in
-emulated mobile sizes. **It has not been tried on a real iPhone or Safari.**
+It ran Field 1.7.0's engine and data, sent nothing anywhere — no shot, no
+preset — and kept its browser storage under its own
+`superior-ballistics-studio-*` keys, which Field never reads. Those keys may
+linger in the browsers of people who tried it; they are harmless.
 
 ## Validation
 
 The engine is a port of the Python solver it was derived from, and is checked
-against it rather than trusted. The suites were re-run against each of the two
-bundles above, each stamped with the build it was run against, before either
-was published — three for Field 1.10.0, the first two for Studio:
+against it rather than trusted. The suites were re-run against the bundle
+above, stamped with the build they were run against, before it was published:
 
 - **22 of 22** cross-validation cases pass per cell across the whole range
   card. The canonical 7.62 mm M852 168 gr reference reads −1357.3097 cm of drop
