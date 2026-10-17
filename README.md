@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  6a38a5516ea312e05d76915f2c61fba97ac89b74961aecd36aed23b8ff1bb8b8
-bytes   2080484
-stamp   1.10.0 · 2026-10-16 21:50 UTC   (shown in the page footer)
+sha256  1f15f75e4f65fe577937fab52db48552d557e08935190615367015cf4339c62e
+bytes   2160535
+stamp   1.11.0 · 2026-10-17 23:37 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -89,6 +89,13 @@ calibre, which earlier rows still carry in `calibre_m`. The azimuth can now
 come from the phone's compass, so it may be a few degrees off where it used to
 be typed. Filter on `build` before pooling across this stamp.
 
+**1.11.0 changes what one flag means.** From this build the shooter can type a
+bullet's inertias, and typing either one sets `inertia_estimated` to `false`.
+Before it, `false` meant a built-in profile's measured pair; now it can also
+mean typed, and a pair with only one value typed still says `false` while the
+other is an estimate. Nothing else in the log changed: still 66 columns, and
+the new bullet drawing and rifle photo record nothing.
+
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
 already been fixed.
@@ -118,6 +125,11 @@ From 1.10.0 the azimuth can also be read from the phone's compass. That uses
 the device's own sensors and NOAA's World Magnetic Model 2025, which is
 compiled into the page; nothing is sent. The factory-ammunition list is part
 of the page too, so choosing a load fetches nothing.
+
+From 1.11.0 a rifle can carry a photo. It is stored only in the browser
+(IndexedDB, redrawn at most 1000 px across, which also drops the location a
+phone camera writes into the file), never uploaded, and leaves the device only
+inside a rifle-library file the shooter exports themselves.
 
 Since 1.4.1 the wind toggle starts on **HOLD YOURSELF** rather than the mode
 now labelled DRIFT INCLUDED — WIND DRIFT INCLUDED from 1.5.1 to 1.7.0 and WIND

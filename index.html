@@ -206,9 +206,11 @@
 .sb-app button.back:hover { border-color: var(--sb-hold); }
 /* Home: the screens under Equipment are two and three levels deep, so
    they carry a way straight back to the main screen as well as Back.
-   Same red as Back -- both leave the screen -- but square and iconic so
-   the two are told apart at a glance, and it sits on the far left so
-   the familiar Back keeps its place beside the title.
+   Square and iconic so the two are told apart at a glance, and on the
+   far left so the familiar Back keeps its place beside the title. It
+   was red like Back, and two red buttons side by side read as an alarm
+   on every nested screen: Back keeps the red, the house takes the
+   accent blue the rest of the page uses for its controls.
 
    On a phone the title is NOT centred on these screens: centring it
    would need a right spacer as wide as the home-and-back pair, which
@@ -224,7 +226,7 @@
      otherwise shrinks to the icon and sits half as tall as Back. */
   height: calc(18px + 1.3em + 2px);
   display: inline-flex; align-items: center; justify-content: center;
-  border-color: var(--sb-hold); color: var(--sb-hold);
+  border-color: var(--sb-accent); color: var(--sb-accent);
 }
 .sb-app .page-head.nested { gap: 8px; }
 .sb-app .page-head.nested .head-spacer { width: 44px; }
@@ -232,9 +234,9 @@
   /* home 44 + gap 8 + back 92 */
   .sb-app .page-head.nested .head-spacer { width: 144px; }
 }
-/* The base hover turns borders accent blue; Back overrides it, and Home
-   has to as well or it shows a blue frame round a red icon. */
-.sb-app button.home:hover { border-color: var(--sb-hold); }
+/* The base hover only turns a border accent blue, which Home already
+   is; it fills instead, as the icon buttons do. */
+.sb-app button.home:hover { background: var(--sb-accent); color: var(--sb-bg); }
 /* A square icon button beside a field, for a second way to set it. */
 .sb-app button.icon-btn {
   width: 40px; min-width: 40px; flex: none; padding: 0;
@@ -317,6 +319,21 @@
   white-space: pre-line; line-height: 1.4; overflow-wrap: anywhere;
 }
 .sb-app .rifle-card .v .mod { color: var(--sb-warn); }
+/* A card with a photo: the photo is a square on the left, the size of
+   the three-dot square on the right, and the name and summary centre in
+   what is left. Cards without one keep the plain centred layout. */
+.sb-app .rifle-card .rifle-open.has-photo {
+  display: grid; grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-rows: auto auto; align-content: center;
+  column-gap: 12px; row-gap: 4px; padding: 6px 16px 6px 6px;
+}
+.sb-app .rifle-open.has-photo .thumb {
+  grid-column: 1; grid-row: 1 / span 2; align-self: center;
+  width: 56px; height: 56px; object-fit: cover; display: block;
+  border-radius: 6px; background: var(--sb-bg-3);
+}
+.sb-app .rifle-open.has-photo .t { grid-column: 2; align-self: end; }
+.sb-app .rifle-open.has-photo .v { grid-column: 2; align-self: start; }
 /* A square, as in the sketch, centred on the card however many lines
    the name takes. */
 .sb-app .rifle-card .rifle-more {
@@ -371,6 +388,73 @@
 .sb-app .lib-actions button:disabled {
   opacity: .45; cursor: default; border-color: var(--sb-line);
 }
+
+/* ---------------- the rifle's photo ----------------
+   One box at the top of the rifle screen, wide like a rifle and like a
+   phone photo held sideways (3:2), and capped in height so a desktop
+   window does not turn it into a poster. Empty, the box is a dashed
+   button, the same dashed + as "Add the current setup as a rifle";
+   set, the photo fills it and Change / Remove sit on its corner. */
+.sb-app .rifle-photo {
+  position: relative; width: 100%; aspect-ratio: 3 / 2; max-height: 360px;
+  border-radius: var(--sb-radius); overflow: hidden;
+}
+/* Browsers without aspect-ratio still get a box rather than a sliver. */
+@supports not (aspect-ratio: 1) {
+  .sb-app .rifle-photo { height: 220px; }
+}
+.sb-app .photo-add, .sb-app .photo-none {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 6px;
+  border-radius: var(--sb-radius); background: var(--sb-bg-2);
+}
+.sb-app .photo-add {
+  border: 1px dashed var(--sb-accent); color: var(--sb-accent);
+  font-size: 14px; font-weight: 600;
+}
+.sb-app .photo-add .plus { font-size: 34px; line-height: 1; font-weight: 400; }
+.sb-app .photo-add:hover { background: var(--sb-bg-3); }
+.sb-app .photo-add:focus-visible {
+  outline: 2px solid var(--sb-accent); outline-offset: -4px;
+}
+.sb-app .photo-add:disabled { cursor: progress; opacity: .7; }
+.sb-app .rifle-photo.drop .photo-add,
+.sb-app .rifle-photo.drop .photo-shown { box-shadow: inset 0 0 0 3px var(--sb-accent); }
+/* The unsaved setup: a short note in the box's place rather than a
+   button, and not a whole photo's height of empty dashes. */
+.sb-app .rifle-photo.none { aspect-ratio: auto; height: auto; max-height: none; }
+.sb-app .photo-none {
+  border: 1px dashed var(--sb-line); color: var(--sb-fg-dim);
+  font-size: 13px; text-align: center; padding: 16px 28px;
+}
+.sb-app .rifle-photo.none .photo-none { position: static; height: auto; }
+.sb-app .photo-shown {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  border-radius: var(--sb-radius);
+  background: var(--sb-bg-3); border: 1px solid var(--sb-line);
+}
+.sb-app .photo-shown img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+}
+/* Over a photo, whatever its colours: dark glass in both themes. */
+.sb-app .photo-tools {
+  position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px;
+}
+.sb-app .photo-tools button {
+  min-height: 40px; padding: 8px 14px; font-size: 13px; font-weight: 600;
+  color: #eef2f7; background: rgba(12, 15, 19, .66);
+  border-color: rgba(255, 255, 255, .28);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.sb-app .photo-tools button:hover { border-color: #fff; }
+.sb-app .photo-tools button:focus-visible {
+  outline: 2px solid #fff; outline-offset: 1px;
+}
+.sb-app .photo-tools button:disabled { opacity: .5; cursor: progress; }
+/* The note under the box is a live region, so it stays in the page when
+   empty; it just gives back the gap it would otherwise add. */
+.sb-app #photo-note:empty { margin-top: -14px; }
 
 /* ---------------- the square nav tiles ---------------- */
 .sb-app .navgrid {
@@ -488,11 +572,14 @@
   font: 13px var(--sb-mono); color: var(--sb-accent); overflow-wrap: anywhere;
 }
 .sb-app .cur-src { font-size: 12px; color: var(--sb-fg-dim); }
-/* The silhouette sits in the card without a frame of its own. */
+/* The drawing sits in the card without a frame of its own. It takes the
+   wider column, where the sight's thumbnail keeps 170px: it carries its
+   own dimensions, and at 170px the figures would be too small to read.
+   Its height follows from its width (see bullet.js). */
 .sb-app .cur-card .bullet-pic {
-  background: transparent; border: 0; padding: 0; gap: 2px; min-width: 0;
+  background: transparent; border: 0; padding: 0; gap: 4px; min-width: 0;
 }
-.sb-app .cur-card #bullet-svg { height: 96px; }
+.sb-app .bullet-card { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
 .sb-app .cur-card #bullet-caption { text-align: center; }
 .sb-app .cur-thumb {
   width: 96px; height: 96px; justify-self: center;
@@ -511,6 +598,8 @@
 .sb-app details.advanced {
   border: 1px solid var(--sb-line); border-radius: var(--sb-radius);
   background: var(--sb-bg-2);
+  /* "see Advanced" scrolls it to the top, clear of the sticky heads. */
+  scroll-margin-top: calc(var(--sb-topbar-h) + 64px);
 }
 .sb-app details.advanced > summary {
   cursor: pointer; padding: 12px 14px; min-height: 44px;
@@ -525,6 +614,42 @@
 .sb-app .advanced-body {
   display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px;
 }
+/* "estimated" beside a field's label in Advanced, and the unit in
+   brackets beside a label that has no unit menu: neither is shouted in
+   capitals like the label itself -- g·cm² is not G·CM². */
+.sb-app label .unit { text-transform: none; letter-spacing: 0; }
+.sb-app .est-tag {
+  display: inline-block; vertical-align: 1px; margin-left: 4px;
+  padding: 0 6px; border-radius: 999px;
+  font: 600 10px var(--sb-sans); letter-spacing: .04em; text-transform: lowercase;
+  background: var(--sb-bg-3); color: var(--sb-fg); border: 1px solid var(--sb-line);
+}
+
+/* Under the bullet card, once a bullet is chosen: what is estimated
+   about it, in one line, with the way to the detail and a cross. Quiet
+   on purpose -- it is information, not a warning. */
+.sb-app .est-note {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 8px 8px 12px; background: var(--sb-bg-2);
+  border: 1px solid var(--sb-line); border-left: 3px solid var(--sb-accent);
+  border-radius: var(--sb-radius);
+}
+.sb-app .est-note-text {
+  flex: 1 1 auto; margin: 0; padding-top: 3px;
+  font-size: 13px; line-height: 1.45; color: var(--sb-fg);
+}
+.sb-app .est-note-open {
+  padding: 0 2px; border: 0; background: transparent; border-radius: 3px;
+  font: inherit; color: var(--sb-accent); text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.sb-app .est-note-open:hover { color: var(--sb-fg); }
+.sb-app .est-note-x {
+  flex: none; width: 32px; height: 32px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; color: var(--sb-fg-dim);
+}
+.sb-app .est-note-x:hover { color: var(--sb-fg); background: var(--sb-bg-3); }
 
 /* ---------------- saved bullets, sights and rifles ----------------
    A row like a rifle card: the whole row chooses it, the square ⋯
@@ -998,32 +1123,73 @@
   .sb-app .dope td.rowdel { display: none; }
 }
 
-/* ---------------- projectile silhouette ---------------- */
+/* ---------------- projectile drawing ----------------
+   Line art in Field's own tokens, so it follows the theme: the outline
+   in an ink between the text and the dim grey (where V3's --line-art
+   sits), construction lines fainter still, on a darker drafting ground
+   with a dot grid. Two colours only: the accent for the flight arrow,
+   and the warning colour for what is not measured or not to scale. The
+   strokes are in px because bullet.js draws in px. */
 .sb-app .bullet-pic {
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
   border-radius: var(--sb-radius); padding: 12px 14px 10px;
   display: flex; flex-direction: column; gap: 6px;
+  --sb-bullet-ink: color-mix(in srgb, var(--sb-fg) 45%, var(--sb-fg-dim));
+  --sb-bullet-faint: color-mix(in srgb, var(--sb-fg-dim) 72%, var(--sb-bg));
+  --sb-bullet-cg: color-mix(in srgb, var(--sb-warn) 70%, var(--sb-fg-dim));
 }
-.sb-app #bullet-svg { width: 100%; height: 132px; display: block; }
-.sb-app .bullet-body {
-  fill: color-mix(in srgb, var(--sb-accent) 26%, transparent);
-  stroke: var(--sb-accent); stroke-width: .2; stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
+.sb-app #bullet-svg { width: 100%; height: auto; display: block; }
+.sb-app .bullet-plot { fill: var(--sb-bg); }
+.sb-app .bullet-grid { opacity: .55; }
+.sb-app .bullet-dot { fill: var(--sb-line); }
 .sb-app .bullet-axis {
-  stroke: var(--sb-fg-dim); stroke-width: .1; stroke-dasharray: 1.2 .9;
-  opacity: .55; vector-effect: non-scaling-stroke;
+  stroke: var(--sb-bullet-faint); stroke-width: .8;
+  stroke-dasharray: 14 4 2 4; opacity: .7;
 }
-.sb-app .bullet-dim {
-  stroke: var(--sb-fg-dim); stroke-width: .1;
-  vector-effect: non-scaling-stroke;
+.sb-app .bullet-fill { fill: var(--sb-fg); fill-opacity: .035; }
+.sb-app .bullet-hatch {
+  stroke: var(--sb-bullet-faint); stroke-width: .8; opacity: .7;
 }
-.sb-app .bullet-label {
-  fill: var(--sb-fg-dim); font: 1.5px var(--sb-mono);
+.sb-app .bullet-joint {
+  stroke: var(--sb-bullet-faint); stroke-width: .9; stroke-dasharray: 3 3;
 }
-.sb-app .bullet-note {
-  fill: var(--sb-warn); font: italic 1.3px var(--sb-sans);
+.sb-app .bullet-inner {
+  fill: none; stroke: var(--sb-bullet-faint); stroke-width: .7; opacity: .55;
 }
+.sb-app .bullet-groove {
+  fill: none; stroke: var(--sb-bullet-ink); stroke-width: .9; opacity: .8;
+}
+.sb-app .bullet-base { fill: none; stroke: var(--sb-bullet-ink); stroke-width: 1; }
+.sb-app .bullet-line {
+  fill: none; stroke: var(--sb-bullet-ink); stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+/* An estimated length: the outline and the L dimension go dashed. */
+.sb-app .bullet-line.est { stroke-dasharray: 6 3.5; }
+.sb-app .bullet-flight {
+  fill: none; stroke: var(--sb-accent); stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.sb-app .bullet-cg { fill: var(--sb-bg); stroke: var(--sb-bullet-cg); stroke-width: 1.3; }
+.sb-app .bullet-cg-q { fill: var(--sb-bullet-cg); }
+.sb-app .bullet-gap { fill: var(--sb-bg); }
+.sb-app .bullet-break { fill: none; stroke: var(--sb-fg-dim); stroke-width: 1.3; }
+.sb-app .bullet-bracket { fill: none; stroke: var(--sb-line); }
+.sb-app .bullet-sect {
+  fill: var(--sb-bullet-faint); font-family: var(--sb-sans); letter-spacing: 1.2px;
+}
+.sb-app .bullet-ext { fill: none; stroke: var(--sb-fg-dim); stroke-width: .8; }
+.sb-app .bullet-ext.dash { stroke-dasharray: 3 2; }
+.sb-app .bullet-dim { stroke: var(--sb-fg-dim); stroke-width: 1.1; }
+.sb-app .bullet-dim.est { stroke-dasharray: 5 3; }
+.sb-app .bullet-arrow { fill: var(--sb-fg-dim); }
+.sb-app .bullet-pill { fill: var(--sb-bg-2); stroke: var(--sb-line); }
+.sb-app .bullet-pill.est { stroke: var(--sb-warn); stroke-dasharray: 4 3; }
+.sb-app .bullet-val {
+  fill: var(--sb-fg); font-family: var(--sb-mono); font-weight: 650;
+}
+.sb-app .bullet-est { fill: var(--sb-warn); }
+.sb-app #bullet-caption .warn { color: var(--sb-warn); }
 
 /* ---------------- wind rose readout, outside the dial ---------------- */
 .sb-app .rose-box { position: relative; display: inline-block; }
@@ -1288,23 +1454,71 @@
   background: color-mix(in srgb, var(--sb-bg) 25%, transparent); color: inherit;
 }
 .sb-app .lib-filters {
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 15rem); gap: 8px;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 17rem); gap: 8px;
 }
-/* The cartridge filter joins on the factory tab: the search takes a row
-   of its own until there is room for all three. */
-.sb-app .lib-filters:has(#lib-cartridge:not([hidden])) {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+.sb-app #lib-search, .sb-app #presets-search,
+.sb-app #libfilter-search { font-size: 16px; padding: 9px 12px; }
+.sb-app #lib-search, .sb-app #presets-search,
+.sb-app #libfilter-search { font-family: var(--sb-sans); }
+/* The filter: a button as tall as the search beside it, saying what it
+   is set to, with a cross to clear it once it is set. Set, it takes the
+   accent border, so a filtered list never passes for the whole one. */
+.sb-app .lib-filter { display: flex; gap: 6px; min-width: 0; }
+.sb-app .lib-filter-btn {
+  flex: 1 1 auto; min-width: 0; min-height: 44px;
+  display: flex; align-items: center; gap: 8px; text-align: left;
+  padding: 6px 10px 6px 12px; background: var(--sb-bg-3);
 }
-.sb-app .lib-filters:has(#lib-cartridge:not([hidden])) #lib-search { grid-column: 1 / -1; }
-@media (min-width: 900px) {
-  .sb-app .lib-filters:has(#lib-cartridge:not([hidden])) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 13rem) minmax(0, 13rem);
-  }
-  .sb-app .lib-filters:has(#lib-cartridge:not([hidden])) #lib-search { grid-column: auto; }
+.sb-app .lib-filter-k {
+  flex: none; font: 600 10.5px var(--sb-sans); letter-spacing: .07em;
+  text-transform: uppercase; color: var(--sb-fg-dim);
 }
-.sb-app #lib-search, .sb-app #lib-calibre, .sb-app #lib-cartridge,
-.sb-app #presets-search { font-size: 16px; padding: 9px 12px; }
-.sb-app #lib-search, .sb-app #presets-search { font-family: var(--sb-sans); }
+.sb-app .lib-filter-v {
+  flex: 1 1 auto; min-width: 0; font-size: 15px; color: var(--sb-fg);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-app .lib-filter-btn svg { flex: none; color: var(--sb-fg-dim); }
+.sb-app .lib-filter-btn.on { border-color: var(--sb-accent); }
+.sb-app .lib-filter-btn.on .lib-filter-v { color: var(--sb-accent); font-weight: 600; }
+.sb-app .lib-filter-clear {
+  flex: none; width: 44px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--sb-fg-dim);
+}
+.sb-app .lib-filter-clear:hover { color: var(--sb-fg); }
+
+/* The filter's own screen: one list, the chosen row marked like the
+   bullet in use. Rows scroll clear of the sticky heads when the arrow
+   keys walk down them. */
+.sb-app .libfilter-list {
+  display: flex; flex-direction: column;
+  background: var(--sb-bg-2); border: 1px solid var(--sb-line);
+  border-radius: var(--sb-radius); overflow: hidden;
+}
+.sb-app .lf-sec {
+  margin: 0; padding: 12px 12px 6px;
+  font: 600 10.5px var(--sb-sans); letter-spacing: .07em; text-transform: uppercase;
+  color: var(--sb-fg-dim); border-bottom: 1px solid var(--sb-line);
+}
+.sb-app .lf-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto 18px; gap: 10px;
+  align-items: center; width: 100%; min-height: 48px; padding: 8px 12px;
+  text-align: left; background: transparent;
+  border: 0; border-bottom: 1px solid var(--sb-line); border-radius: 0;
+  scroll-margin-top: calc(var(--sb-topbar-h) + 72px); scroll-margin-bottom: 16px;
+}
+.sb-app .lf-row:last-child { border-bottom: 0; }
+.sb-app .lf-row:hover { background: var(--sb-bg-3); border-color: var(--sb-line); }
+.sb-app .lf-row:focus-visible { outline: 2px solid var(--sb-accent); outline-offset: -2px; }
+.sb-app .lf-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sb-app .lf-name { font: 600 14.5px var(--sb-sans); color: var(--sb-fg); overflow-wrap: anywhere; }
+.sb-app .lf-sub { font-size: 12px; color: var(--sb-fg-dim); overflow-wrap: anywhere; }
+.sb-app .lf-n {
+  font: 11.5px var(--sb-mono); color: var(--sb-fg-dim);
+  font-variant-numeric: tabular-nums;
+}
+.sb-app .lf-tick { font-weight: 700; color: var(--sb-accent-2); text-align: center; }
+.sb-app .lf-row.on { box-shadow: inset 4px 0 0 var(--sb-accent-2); }
 .sb-app .lib-cols {
   display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 8px;
   height: calc(100vh - var(--sb-topbar-h) - 250px); min-height: 320px;
@@ -1313,8 +1527,7 @@
   .sb-app .lib-cols { height: calc(100dvh - var(--sb-topbar-h) - 250px); }
 }
 @media (max-width: 560px) {
-  .sb-app .lib-filters,
-  .sb-app .lib-filters:has(#lib-cartridge:not([hidden])) { grid-template-columns: 1fr; }
+  .sb-app .lib-filters { grid-template-columns: 1fr; }
   .sb-app .lib-tabs button { font-size: 12.5px; }
   .sb-app .lib-cols {
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 6px;
@@ -1734,8 +1947,8 @@ body { background: #101317; }
 <!-- ====== RIFLE: one rifle -- its bullet, its sight, its zero ====== -->
 <!-- The screens under Equipment are two and three levels deep, so
      besides Back each carries a way straight home: the house, to the
-     left of Back, goes to the main screen in one tap. Both are red,
-     because both leave the screen. -->
+     left of Back, goes to the main screen in one tap. Back is red; the
+     house is the accent blue, so the head is not two red buttons. -->
 <section class="screen" id="screen-rifle" aria-label="Rifle">
   <div class="page-head nested">
     <button type="button" class="home" data-goto="screen-main"
@@ -1751,6 +1964,28 @@ body { background: #101317; }
     <h2 id="rifle-title">Rifle</h2><span class="head-spacer"></span>
   </div>
   <div class="page-body">
+    <!-- The rifle's photo, first: it says which rifle this is before a
+         word is read. Empty, the box is the button that adds one; set,
+         the photo fills it and Change and Remove sit on its corner. The
+         unsaved setup has no id to keep a photo under, so it says how to
+         get one. Kept in IndexedDB by photo.js, never in the app state,
+         so it never reaches a preset or the shot log. -->
+    <div class="rifle-photo" id="rifle-photo">
+      <button type="button" class="photo-add" id="btn-photo-add"
+              aria-describedby="photo-note"><span class="plus"
+        aria-hidden="true">+</span><span>Add photo</span></button>
+      <div class="photo-shown" id="photo-shown" hidden>
+        <img id="photo-img" alt="">
+        <div class="photo-tools">
+          <button type="button" id="btn-photo-change">Change</button>
+          <button type="button" id="btn-photo-remove">Remove</button>
+        </div>
+      </div>
+      <p class="photo-none" id="photo-none" hidden>Save this setup as a
+      rifle to add a photo.</p>
+      <input type="file" id="photo-file" accept="image/*" hidden>
+    </div>
+    <p class="hint" id="photo-note" aria-live="polite"></p>
     <p class="hint" id="rifle-status"></p>
 
     <!-- The rifle's own numbers first: the barrel it has and the zero it
@@ -1917,6 +2152,20 @@ body { background: #101317; }
         <button type="button" id="btn-bullet-save">Save as my bullet</button>
       </div>
     </div>
+    <!-- Said once, right after a bullet is chosen, and only when some of
+         what it flies with is estimated: the chooser's rows stay short,
+         and the detail is in Advanced. app.js::renderEstNote. -->
+    <div class="est-note" id="est-note" role="status" hidden>
+      <p class="est-note-text"><span id="est-note-text"></span>
+        <button type="button" class="est-note-open" id="est-note-open">see Advanced</button></p>
+      <button type="button" class="est-note-x" id="est-note-x"
+              aria-label="Dismiss" title="Dismiss">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"
+             fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round">
+          <path d="M6 6l12 12M18 6 6 18"/>
+        </svg></button>
+    </div>
     <p class="hint warn" id="mv-box-note" hidden></p>
     <p class="hint" id="preset-bullet-note" aria-live="polite"></p>
 
@@ -1945,10 +2194,11 @@ body { background: #101317; }
          drives the spin drift, and provenance is load-bearing for a
          thesis tool (INTEGRATION.md). -->
     <details class="advanced" id="bullet-advanced">
-      <summary>Advanced &mdash; length and aerodynamics</summary>
+      <summary>Advanced &mdash; length, inertias and aerodynamics</summary>
       <div class="advanced-body">
         <div class="grid2">
-          <div class="field"><label for="in-len">Length <u data-u="length"></u></label>
+          <div class="field"><label for="in-len">Length <u data-u="length"></u>
+            <span class="est-tag" id="len-est" hidden>estimated</span></label>
             <input type="text" inputmode="decimal" id="in-len"></div>
           <!-- No "Aero coefficients" choice: nobody could say which other
                bullet's lift, overturning and damping curves to borrow, so
@@ -1956,6 +2206,20 @@ body { background: #101317; }
                the note below says which and why. -->
         </div>
         <p class="hint" id="len-note"></p>
+        <!-- The moments of inertia the spin drift is flown with. In g·cm²
+             whatever the unit system: see app.js::inertiaText. One flag
+             covers the pair, so either one typed marks both as known. -->
+        <div class="grid2">
+          <div class="field"><label for="in-ip">Axial inertia
+            <span class="unit">(g·cm²)</span>
+            <span class="est-tag" id="ip-est" hidden>estimated</span></label>
+            <input type="text" inputmode="decimal" id="in-ip"></div>
+          <div class="field"><label for="in-it">Transverse inertia
+            <span class="unit">(g·cm²)</span>
+            <span class="est-tag" id="it-est" hidden>estimated</span></label>
+            <input type="text" inputmode="decimal" id="in-it"></div>
+        </div>
+        <p class="hint" id="inertia-note"></p>
         <p class="hint" id="coef-provenance"></p>
       </div>
     </details>
@@ -1991,16 +2255,32 @@ body { background: #101317; }
       <button type="button" role="tab" id="lib-tab-comp" data-tab="comp"
               aria-controls="lib-panel">Bullets (components)<span class="tab-n" id="lib-n-comp"></span></button>
     </div>
+    <!-- The calibre (or, on Factory ammo, the cartridge) is a button
+         showing what it is set to, not a <select>: the select held ninety
+         diameters and a hundred and eighty cartridges with no way to type
+         one. It opens screen-libfilter, which has a search of its own.
+         The cross beside it clears the filter in one tap. -->
     <div class="lib-filters">
       <input type="search" id="lib-search" autocomplete="off"
              placeholder="Search &mdash; e.g. 6.5 creedmoor 140 eld, 308 win 175"
              aria-label="Search by maker, bullet, weight, calibre or cartridge">
-      <select id="lib-calibre" aria-label="Calibre">
-        <option value="">All calibres</option>
-      </select>
-      <select id="lib-cartridge" aria-label="Cartridge" hidden>
-        <option value="">All cartridges</option>
-      </select>
+      <div class="lib-filter">
+        <button type="button" class="lib-filter-btn" id="lib-filter-btn">
+          <span class="lib-filter-k" id="lib-filter-k">Calibre</span>
+          <span class="lib-filter-v" id="lib-filter-v">All calibres</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 6l6 6-6 6"/>
+          </svg></button>
+        <button type="button" class="lib-filter-clear" id="lib-filter-clear"
+                aria-label="Clear the calibre filter" hidden>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round">
+            <path d="M6 6l12 12M18 6 6 18"/>
+          </svg></button>
+      </div>
     </div>
     <p class="hint" id="lib-count" aria-live="polite"></p>
     <div id="lib-panel" role="tabpanel">
@@ -2014,6 +2294,35 @@ body { background: #101317; }
     </div>
     <p class="hint" id="lib-note" aria-live="polite"></p>
     <div class="shared-slot" id="lib-shared-slot"></div>
+  </div>
+</section>
+
+<!-- ====== LIBRARY FILTER: one calibre, or one cartridge ====== -->
+<!-- Opened by the filter button above the chooser's lists: calibres for
+     the bullets, cartridges for factory ammunition. The common ones
+     first, the rest after; a search of its own, and Enter takes the top
+     match. Back (or Escape) returns to the chooser where it was. Rows are
+     built by renderLibFilter(). -->
+<section class="screen" id="screen-libfilter" aria-label="Calibre filter">
+  <div class="page-head nested">
+    <button type="button" class="home" data-goto="screen-main"
+            aria-label="Main screen" title="Main screen">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"
+           fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11.5 12 4l9 7.5"/>
+        <path d="M5.5 9.5V20h13V9.5"/>
+        <path d="M10 20v-5.5h4V20"/>
+      </svg></button>
+    <button type="button" class="back" id="libfilter-back">&larr; Back</button>
+    <h2 id="libfilter-title">Calibre</h2><span class="head-spacer"></span>
+  </div>
+  <div class="page-body">
+    <input type="search" id="libfilter-search" autocomplete="off"
+           enterkeyhint="go" aria-controls="libfilter-list"
+           placeholder="Search &mdash; e.g. 6.5, creedmoor, 308, 8x57">
+    <p class="hint" id="libfilter-count" aria-live="polite"></p>
+    <div class="libfilter-list" id="libfilter-list" role="group"></div>
   </div>
 </section>
 
@@ -2219,7 +2528,7 @@ body { background: #101317; }
 </section>
 
 <footer class="sb-footer">
-  <p>Build <b id="build-stamp">1.10.0 · 2026-10-16 21:50 UTC</b> &mdash; quote this when
+  <p>Build <b id="build-stamp">1.11.0 · 2026-10-17 23:37 UTC</b> &mdash; quote this when
   reporting anything, so a fixed bug is not reported twice.
   <button type="button" class="info" aria-expanded="false"
           aria-controls="info-credits" aria-label="About this solver">i</button></p>
@@ -7260,24 +7569,42 @@ var PBUnitMenu = (function () {
 
 </script>
 <script>
-/* The projectile silhouette, as SVG.
+/* The projectile drawing, as SVG.
  *
- * Port of app.py::_paint_bullet: a tangent ogive with a small meplat, a
- * cylindrical bearing surface and a boattail, all driven by the two
- * dimensions the shooter typed. Same constants, so the web build draws
- * the same bullet as the desktop.
+ * Port of PyBallistics V3's bulletSvg (src/widgets/bullet.js), itself the
+ * successor of app.py::_paint_bullet: a parametric drawing built from the
+ * two dimensions on the profile -- boat tail, bearing surface with
+ * cannelure, tangent ogive and meplat -- as line art, with engineering
+ * dimensions OUTSIDE the body (Ø at the base, L underneath). Same
+ * proportions and the same drawing language as V3, so both builds draw
+ * the same bullet. V3's header (name, weight, BC) is left out: the card
+ * beside the picture already prints those.
  *
- * The aspect ratio is clamped to 2.0-6.5 calibres for DRAWING only, as it
- * is there: an absurd length would otherwise render a sliver or a blob.
- * The dimension labels always carry the real numbers, and a caption says
- * when the shape has been clamped -- a picture that quietly lies about
- * the proportions of what you are about to shoot is worse than no
- * picture.
+ * It is drawn in pixels, at the width it is shown at, rather than in
+ * millimetres scaled to fit: the figures must stay readable on a phone,
+ * and text that scales with the bullet came out at 7 px in the card. The
+ * caller passes the width; a hidden screen measures 0, so it is redrawn
+ * when it is shown.
+ *
+ * The length-to-diameter ratio is clamped to 2.0-6.5 for DRAWING only,
+ * as it is in V3: an absurd length would otherwise render a sliver or a
+ * blob. The figures always carry the real numbers, break marks cut the
+ * body when the drawing is shorter than the bullet, and draw() says what
+ * it did so the caption can say it too -- a picture that quietly lies
+ * about the proportions of what you are about to shoot is worse than no
+ * picture. For the same reason an estimated length is drawn as one: a
+ * dashed outline and "L ≈ … est.", never a solid line and a bare figure.
  */
 'use strict';
 
 var PBBullet = (function () {
   var NS = 'http://www.w3.org/2000/svg';
+  var MIN_LD = 2.0, MAX_LD = 6.5;
+  /* Font sizes, px. They live here and not in style.css because the
+   * pills and the section labels are sized from them: a figure that
+   * outgrew its pill would run over the dimension line. */
+  var FIG = 11.5, SECT = 9.5;
+  var seq = 0;
 
   function el(name, attrs, text) {
     var n = document.createElementNS(NS, name);
@@ -7290,88 +7617,295 @@ var PBBullet = (function () {
     return n;
   }
 
-  /* opts: {d_mm, L_mm, name, dText, LText} -- the two *Text strings are
-   * pre-formatted in whatever unit the user is working in. */
+  function f(v) { return Number(v).toFixed(1); }
+  function clamp(v, lo, hi) { return Math.min(Math.max(v, lo), hi); }
+
+  /* Without measuring: a hidden screen has no layout to measure in. A
+   * monospace figure is about 0.6 em a character; the uppercase section
+   * labels carry letter-spacing on top of their own width. */
+  function figWidth(s) { return s.length * FIG * 0.62; }
+  function sectWidth(s) { return s.length * (SECT * 0.66 + 1.2); }
+
+  /* Body outline as top-half points [x, y], in mm, from the base (x = 0)
+   * to the meplat. Ogive and boat tail take typical fractions of the
+   * length, kept inside limits in calibres; the ogive is tangent, and is
+   * cut flat where it narrows to the meplat. */
+  function outline(L, d) {
+    var r = d / 2, rb = 0.41 * d, rm = 0.07 * d;
+    var Lb = clamp(0.13 * L, 0.35 * d, 0.8 * d);
+    var Ln = Math.min(clamp(0.44 * L, 1.1 * d, 2.7 * d), L - Lb - 0.35 * d);
+    var xo = L - Ln, rho = (Ln * Ln + r * r) / (2 * r);  /* ogive radius */
+    var pts = [[0, rb], [Lb, r], [xo, r]];
+    for (var i = 1; i <= 60; i++) {
+      var x = xo + Ln * i / 60;
+      var y = Math.sqrt(Math.max(rho * rho - (x - xo) * (x - xo), 0)) -
+              (rho - r);
+      if (y <= rm) { pts.push([x, rm]); break; }
+      pts.push([x, y]);
+    }
+    return { pts: pts, r: r, rb: rb, rm: rm, Lb: Lb, Ln: Ln, xo: xo,
+             tip: pts[pts.length - 1][0] };
+  }
+
+  /* opts: {d_mm, L_mm, dText, LText, width, estimated, annotate}. The
+   * two *Text strings arrive formatted in whatever unit the user is
+   * working in; width is the drawing's on-screen width in px. Returns
+   * what the caption needs -- {ratio, shortened, widened} -- or null
+   * when there is nothing to draw. */
   function draw(svg, opts) {
     while (svg.firstChild) svg.removeChild(svg.firstChild);
     var dReal = opts.d_mm, LReal = opts.L_mm;
-    if (!(dReal > 0) || !(LReal > 0)) return;
+    if (!(dReal > 0) || !(LReal > 0)) return null;
 
-    var d = dReal;
-    var ratio = LReal / dReal;
-    var ratioDraw = Math.min(Math.max(ratio, 2.0), 6.5);
-    var L = ratioDraw * d;
-    var r = d / 2.0;
+    var annotate = opts.annotate !== false, est = !!opts.estimated;
+    var id = 'pbb' + (++seq);
+    var ratio = LReal / dReal, ratioDraw = clamp(ratio, MIN_LD, MAX_LD);
+    var shortened = ratio > MAX_LD, widened = ratio < MIN_LD;
+    var d = dReal, g = outline(ratioDraw * d, d);
+    var W = Math.max(Math.round(opts.width) || 0, 240);
 
-    var Ln = Math.min(0.46 * L, 2.4 * d);     /* ogive length */
-    var Lb = 0.13 * L;                        /* boattail length */
-    var rb = 0.41 * d;                        /* boattail base radius */
-    var rho = (Ln * Ln + r * r) / (2.0 * r);  /* tangent-ogive radius */
-
-    var N = 80, xs = [], ys = [], i;
-    for (i = 0; i < N; i++) {
-      var x = Ln * i / (N - 1);
-      var v = rho * rho - (Ln - x) * (Ln - x);
-      ys.push(Math.sqrt(Math.max(v, 0)) - (rho - r));
-      xs.push(x);
+    /* Pixel frame: room on the left for the Ø dimension, below for L,
+     * above for the section brackets, and on the right for the flight
+     * arrow. The Ø pill is as wide as its figure, so the frame is too. */
+    var dTxt = 'Ø ' + opts.dText;
+    var lTxt = (est ? 'L ≈ ' : 'L ') + opts.LText;
+    var dw = figWidth(dTxt) + 16;
+    var lw = figWidth(lTxt + (est ? ' est.' : '')) + 18;
+    var gapD = clamp(W * 0.05, 16, 34);         /* base to the Ø line */
+    var padL = annotate ? gapD + 10 + dw + 6 : 16;
+    var padR = 38;
+    var padT = annotate ? 34 : 12, padB = annotate ? 48 : 12;
+    var span = W - padL - padR;
+    /* Scale from the width, but never taller than about a quarter of
+     * it: a stubby pistol bullet would otherwise fill the card. */
+    var s = Math.min(span / g.tip, clamp(W * 0.26, 56, 92) / d);
+    var bodyH = d * s;
+    var H = Math.round(padT + bodyH + padB);
+    var bx = padL + (span - g.tip * s) / 2, cy = padT + bodyH / 2;
+    function X(x) { return bx + x * s; }
+    function Y(y) { return cy - y * s; }
+    function pt(p, sign) { return f(X(p[0])) + ',' + f(Y(sign * p[1])); }
+    function ring(pts) {
+      var top = [], bot = [], i;
+      for (i = 0; i < pts.length; i++) top.push(pt(pts[i], 1));
+      for (i = pts.length - 1; i >= 0; i--) bot.push(pt(pts[i], -1));
+      return 'M' + top.join(' L') + ' L' + bot.join(' L') + ' Z';
     }
-    ys[0] = Math.max(ys[1] * 0.5, 0.04 * d);  /* tiny meplat */
-    xs.push(L - Lb); ys.push(r);
-    xs.push(L); ys.push(rb);
+    function half(x0, x1) {
+      var seg = [];
+      for (var i = 0; i < g.pts.length; i++) {
+        var x = g.pts[i][0];
+        if (x >= x0 - 1e-9 && x <= x1 + 1e-9) seg.push(g.pts[i]);
+      }
+      return ring(seg);
+    }
+    var body = ring(g.pts), bearing = g.xo - g.Lb;
 
-    /* Viewport: the drawing plus room for the dimension arrows below. */
-    var padX = 0.08 * L, padY = r * 1.15;
-    var vw = L + 2 * padX;
-    var vh = r * 2 + padY * 2 + (opts.annotate === false ? 0 : r * 1.9);
-    svg.setAttribute('viewBox',
-      (-padX) + ' ' + (-(r + padY)) + ' ' + vw + ' ' + vh);
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    svg.setAttribute('aria-label', 'Bullet drawing: ' + dTxt + ', ' +
+      'L ' + opts.LText + (est ? ' (estimated)' : '') +
+      (shortened ? ', drawn shorter than it is' : '') +
+      (widened ? ', drawn longer than it is' : ''));
+    svg.appendChild(el('title', {},
+      'Schematic profile: Ø and L are this bullet’s' +
+      (est ? ' (L estimated, not measured)' : '') +
+      '; the ogive and boat tail are drawn to typical proportions.'));
 
-    var pts = [];
-    for (i = 0; i < xs.length; i++) pts.push(xs[i] + ',' + (-ys[i]));
-    for (i = xs.length - 1; i >= 0; i--) pts.push(xs[i] + ',' + ys[i]);
+    /* The ids carry a sequence number: two drawings on one page must
+     * not share a clip path or an arrowhead. */
+    var defs = el('defs');
+    var dots = el('pattern', { id: id + '-dots', width: 16, height: 16,
+                               patternUnits: 'userSpaceOnUse' });
+    dots.appendChild(el('circle', { cx: 1, cy: 1, r: 0.8,
+                                    class: 'bullet-dot' }));
+    defs.appendChild(dots);
+    [['-ae', 8, 'M0,0.5 L8,4.5 L0,8.5 Z'],
+     ['-as', 1, 'M9,0.5 L1,4.5 L9,8.5 Z']].forEach(function (m) {
+      var mk = el('marker', { id: id + m[0], markerWidth: 9, markerHeight: 9,
+                              refX: m[1], refY: 4.5, orient: 'auto' });
+      mk.appendChild(el('path', { d: m[2], class: 'bullet-arrow' }));
+      defs.appendChild(mk);
+    });
+    function dimLine(x1, y1, x2, y2, cls) {
+      var n = el('line', { x1: f(x1), y1: f(y1), x2: f(x2), y2: f(y2),
+                           class: cls });
+      n.setAttribute('marker-start', 'url(#' + id + '-as)');
+      n.setAttribute('marker-end', 'url(#' + id + '-ae)');
+      return n;
+    }
+    var clip = el('clipPath', { id: id + '-bt' });
+    clip.appendChild(el('path', { d: half(0, g.Lb) }));
+    defs.appendChild(clip);
+    svg.appendChild(defs);
 
-    var g = el('g');
-    svg.appendChild(g);
+    /* drafting background and centre line */
+    svg.appendChild(el('rect', { width: W, height: H, rx: 10,
+                                 class: 'bullet-plot' }));
+    svg.appendChild(el('rect', { width: W, height: H, rx: 10,
+                                 fill: 'url(#' + id + '-dots)',
+                                 class: 'bullet-grid' }));
+    svg.appendChild(el('line', { x1: f(X(0) - 30), y1: f(cy),
+                                 x2: f(X(g.tip) + 26), y2: f(cy),
+                                 class: 'bullet-axis' }));
 
-    /* centreline */
-    g.appendChild(el('line', {
-      x1: -padX * 0.5, y1: 0, x2: L + padX * 0.5, y2: 0,
-      class: 'bullet-axis'
-    }));
-    g.appendChild(el('polygon', { points: pts.join(' '), class: 'bullet-body' }));
-
-    if (opts.annotate !== false) {
-      var yArrow = r * 1.75;
-      g.appendChild(el('line', { x1: 0, y1: yArrow, x2: L, y2: yArrow,
-                                 class: 'bullet-dim' }));
-      g.appendChild(el('line', { x1: 0, y1: yArrow - r * 0.16, x2: 0,
-                                 y2: yArrow + r * 0.16, class: 'bullet-dim' }));
-      g.appendChild(el('line', { x1: L, y1: yArrow - r * 0.16, x2: L,
-                                 y2: yArrow + r * 0.16, class: 'bullet-dim' }));
-      var lt = el('text', { x: L / 2, y: yArrow + r * 0.78,
-                            'text-anchor': 'middle', class: 'bullet-label' });
-      lt.textContent = 'L ' + opts.LText;
-      g.appendChild(lt);
-
-      var xd = L * 0.70;
-      g.appendChild(el('line', { x1: xd, y1: -r, x2: xd, y2: r,
-                                 class: 'bullet-dim' }));
-      var dt = el('text', { x: xd + L * 0.03, y: r * 0.28,
-                            class: 'bullet-label' });
-      dt.textContent = 'd ' + opts.dText;
-      g.appendChild(dt);
+    /* Line-art body, the same language as the other illustrations:
+     * light outline, a barely-there fill, construction lines, one
+     * accent arrow. */
+    svg.appendChild(el('path', { d: body, class: 'bullet-fill' }));
+    /* boat tail: sparse 45° hatch, clipped to its section */
+    var hatch = el('g', { 'clip-path': 'url(#' + id + '-bt)',
+                          class: 'bullet-hatch' });
+    var nh = Math.ceil((g.Lb + 2 * g.r) * s / 7) + 2, i;
+    for (i = 0; i < nh; i++) {
+      var hx = X(0) - g.r * s + i * 7;
+      hatch.appendChild(el('line', { x1: f(hx), y1: f(Y(g.r)),
+                                     x2: f(hx + 2 * g.r * s), y2: f(Y(-g.r)) }));
+    }
+    svg.appendChild(hatch);
+    /* section joints and the bearing surface's inner contour */
+    [g.Lb, g.xo].forEach(function (x) {
+      svg.appendChild(el('line', { x1: f(X(x)), y1: f(Y(g.r)),
+                                   x2: f(X(x)), y2: f(Y(-g.r)),
+                                   class: 'bullet-joint' }));
+    });
+    svg.appendChild(el('path', {
+      d: 'M' + f(X(g.Lb)) + ',' + f(Y(g.r * 0.62)) + ' H' + f(X(g.xo)) +
+         ' M' + f(X(g.Lb)) + ',' + f(Y(-g.r * 0.62)) + ' H' + f(X(g.xo)),
+      class: 'bullet-inner' }));
+    if (bearing > 0.8 * d) {                    /* cannelure: two grooves */
+      var xc = X(g.Lb + bearing * (shortened ? 0.85 : 0.74));
+      var w = Math.max(3, 0.06 * d * s);
+      svg.appendChild(el('path', {
+        d: 'M' + f(xc - w / 2) + ',' + f(Y(g.r)) + ' V' + f(Y(-g.r)) +
+           ' M' + f(xc + w / 2) + ',' + f(Y(g.r)) + ' V' + f(Y(-g.r)),
+        class: 'bullet-groove' }));
+    }
+    svg.appendChild(el('ellipse', { cx: f(X(0)), cy: f(cy),
+                                    rx: f(Math.max(1.5, g.rb * s * 0.16)),
+                                    ry: f(g.rb * s), class: 'bullet-base' }));
+    /* Meplat and outline: dashed when the length is an estimate, the
+     * drafting sign for a line that is not where it was measured. */
+    var lineCls = 'bullet-line' + (est ? ' est' : '');
+    svg.appendChild(el('line', { x1: f(X(g.tip)), y1: f(Y(g.rm)),
+                                 x2: f(X(g.tip)), y2: f(Y(-g.rm)),
+                                 class: lineCls }));
+    svg.appendChild(el('path', { d: body, class: lineCls }));
+    /* flight direction, the one accent */
+    svg.appendChild(el('path', {
+      d: 'M' + f(X(g.tip) + 10) + ',' + f(cy) + ' H' + f(X(g.tip) + 30) +
+         ' m-7,-5 l7,5 l-7,5',
+      class: 'bullet-flight' }));
+    /* centre of gravity, schematic: ~58 % of the length from the tip */
+    if (!shortened) {
+      var xg = X(g.tip * 0.42);
+      svg.appendChild(el('circle', { cx: f(xg), cy: f(cy), r: 5,
+                                     class: 'bullet-cg' }));
+      svg.appendChild(el('path', {
+        d: 'M' + f(xg) + ',' + f(cy - 5) + ' A5 5 0 0 1 ' + f(xg + 5) + ',' +
+           f(cy) + ' L' + f(xg) + ',' + f(cy) + ' Z M' + f(xg) + ',' +
+           f(cy + 5) + ' A5 5 0 0 1 ' + f(xg - 5) + ',' + f(cy) + ' L' +
+           f(xg) + ',' + f(cy) + ' Z',
+        class: 'bullet-cg-q' }));
+    }
+    /* break marks: the drawing is shorter than the bullet */
+    if (shortened && bearing > 0.6 * d) {
+      var xm = X(g.Lb + bearing * 0.4), hh = g.r * s + 8, z = 5;
+      var zig = function (dx) {
+        return 'M' + f(xm + dx - z) + ',' + f(cy - hh) +
+               ' L' + f(xm + dx + z) + ',' + f(cy - hh / 3) +
+               ' L' + f(xm + dx - z) + ',' + f(cy + hh / 3) +
+               ' L' + f(xm + dx + z) + ',' + f(cy + hh);
+      };
+      svg.appendChild(el('path', {
+        d: zig(-5) + ' L' + f(xm + 5 + z) + ',' + f(cy + hh) +
+           ' L' + f(xm + 5 - z) + ',' + f(cy + hh / 3) +
+           ' L' + f(xm + 5 + z) + ',' + f(cy - hh / 3) +
+           ' L' + f(xm + 5 - z) + ',' + f(cy - hh) + ' Z',
+        class: 'bullet-gap' }));
+      svg.appendChild(el('path', { d: zig(-5), class: 'bullet-break' }));
+      svg.appendChild(el('path', { d: zig(5), class: 'bullet-break' }));
     }
 
-    if (Math.abs(ratio - ratioDraw) > 1e-9) {
-      var note = el('text', { x: L, y: -(r + padY * 0.35),
-                              'text-anchor': 'end', class: 'bullet-note' });
-      note.textContent = 'schematic (aspect clamped)';
-      g.appendChild(note);
+    if (annotate) {
+      /* Section brackets above the body, each only where its label
+       * fits. A label may overhang its own section, and slide sideways
+       * to clear one already placed, but its centre stays over its own
+       * section, and it never covers another label or leaves the
+       * drawing. Bearing surface and ogive first: on a phone there is
+       * rarely room for all three. */
+      var taken = [];
+      var hits = function (c, tw) {
+        for (var k = 0; k < taken.length; k++) {
+          if (c - tw / 2 < taken[k][1] && c + tw / 2 > taken[k][0]) {
+            return taken[k];
+          }
+        }
+        return null;
+      };
+      var bracket = function (x0, x1, label) {
+        var a = X(x0) + 2, b = X(x1) - 2;
+        var tw = sectWidth(label) + 8, c = (a + b) / 2;
+        if (b - a < 0.55 * (tw - 8)) return;
+        var o = hits(c, tw);
+        /* half a pixel clear, or rounding leaves the edges touching */
+        if (o) c = c < (o[0] + o[1]) / 2 ? o[0] - tw / 2 - 0.5
+                                         : o[1] + tw / 2 + 0.5;
+        if (c < a || c > b || c - tw / 2 < 4 || c + tw / 2 > W - 4 ||
+            hits(c, tw)) return;
+        taken.push([c - tw / 2, c + tw / 2]);
+        var y = Y(g.r) - 16;
+        svg.appendChild(el('path', {
+          d: 'M' + f(a) + ',' + f(y + 5) + ' V' + f(y) + ' H' + f(b) +
+             ' V' + f(y + 5),
+          class: 'bullet-bracket' }));
+        svg.appendChild(el('text', { x: f(c), y: f(y - 6), 'font-size': SECT,
+                                     'text-anchor': 'middle',
+                                     class: 'bullet-sect' }, label));
+      };
+      bracket(g.Lb, g.xo, 'BEARING SURFACE');
+      bracket(g.xo, g.tip, 'OGIVE');
+      bracket(0, g.Lb, 'BOAT TAIL');
+
+      /* L: extension lines down from base and meplat, dimension line
+       * underneath. Dashed, and "≈ … est.", when the length is not a
+       * measured one. */
+      var yL = Y(-g.r) + 30, xD = X(0) - gapD;
+      svg.appendChild(el('path', {
+        d: 'M' + f(X(0)) + ',' + f(Y(-g.rb) + 4) + ' V' + f(yL + 6) +
+           ' M' + f(X(g.tip)) + ',' + f(Y(-g.rm) + 4) + ' V' + f(yL + 6),
+        class: 'bullet-ext' }));
+      svg.appendChild(dimLine(X(0), yL, X(g.tip), yL,
+                              'bullet-dim' + (est ? ' est' : '')));
+      var lx = X(g.tip / 2);
+      svg.appendChild(el('rect', {
+        x: f(lx - lw / 2), y: f(yL - 10), width: f(lw), height: 20, rx: 10,
+        class: 'bullet-pill' + (est ? ' est' : '') }));
+      var lt = el('text', { x: f(lx), y: f(yL + 4), 'font-size': FIG,
+                            'text-anchor': 'middle', class: 'bullet-val' },
+                  lTxt);
+      if (est) lt.appendChild(el('tspan', { class: 'bullet-est' }, ' est.'));
+      svg.appendChild(lt);
+
+      /* Ø: extension lines out from the bearing surface's edges, past
+       * the boat tail, to a vertical dimension line before the base. */
+      svg.appendChild(el('path', {
+        d: 'M' + f(X(g.Lb) - 4) + ',' + f(Y(g.r)) + ' H' + f(xD - 6) +
+           ' M' + f(X(g.Lb) - 4) + ',' + f(Y(-g.r)) + ' H' + f(xD - 6),
+        class: 'bullet-ext dash' }));
+      svg.appendChild(dimLine(xD, Y(g.r), xD, Y(-g.r), 'bullet-dim'));
+      svg.appendChild(el('rect', { x: f(xD - 10 - dw), y: f(cy - 10),
+                                   width: f(dw), height: 20, rx: 10,
+                                   class: 'bullet-pill' }));
+      svg.appendChild(el('text', { x: f(xD - 10 - dw / 2), y: f(cy + 4),
+                                   'font-size': FIG, 'text-anchor': 'middle',
+                                   class: 'bullet-val' }, dTxt));
     }
+
+    return { ratio: ratio, shortened: shortened, widened: widened };
   }
 
-  return { draw: draw };
+  return { draw: draw, MIN_LD: MIN_LD, MAX_LD: MAX_LD };
 })();
 
 </script>
@@ -8155,6 +8689,382 @@ var PBPresets = (function () {
     unsent: unsent, retryUnsent: retryUnsent,
     author: author, setAuthor: setAuthor,
     toJSON: toJSON
+  };
+})();
+
+</script>
+<script>
+/* Superior Ballistics -- Field. One photo per rifle.
+ *
+ * Not in the app state, on purpose. The whole state lives in one
+ * localStorage key that browsers cap at about 5 MB, and one photo
+ * straight off a phone is 3-5 MB on its own: kept there, the first
+ * photo would make every later save() fail silently and the shooter's
+ * edits would stop being kept. So a photo is
+ *
+ *   - downscaled here first, to MAX_SIDE on its longest side, as a JPEG
+ *     at QUALITY: about 100-250 kB, sharp enough to tell rifles apart;
+ *   - kept in IndexedDB, keyed by the rifle's id, which is made for
+ *     blobs and has room for them;
+ *   - held in memory as an object URL once read, so the rifle cards,
+ *     which are rebuilt after every solve, never wait on storage.
+ *
+ * Drawing it through a canvas also drops the camera's metadata. A phone
+ * writes where the photo was taken into the file; a rifle photo that
+ * travels inside an exported library should not carry the shooter's
+ * home with it. The EXIF orientation is applied by the browser when the
+ * <img> is drawn, so what is kept is upright and needs no tag.
+ *
+ * Private: nothing here touches the network. The shared presets and the
+ * shot log are both built from the app state, which never holds a photo.
+ * Only exportLibrary carries one, as a data URL, because moving a rifle
+ * to another phone should move its photo too.
+ *
+ * Without IndexedDB (some private windows refuse it) a photo still
+ * shows until the page is closed, and set() tells the caller it was not
+ * kept so the page can say so. Nothing here throws at the caller.
+ */
+var PBPhoto = (function () {
+  'use strict';
+
+  var DB_NAME = 'superior-ballistics-field-photos';
+  var STORE = 'photos';
+  var MAX_SIDE = 1000;
+  var QUALITY = 0.8;
+  /* An imported picture this small, in a format every browser shows, is
+   * kept byte for byte: it is what an export from this page wrote, and
+   * encoding a JPEG again on every move between phones would soften it
+   * a little more each time. */
+  var KEEP_BYTES = 600 * 1024;
+  /* A browser that neither opens nor refuses the database must not leave
+   * the photos waiting for ever. Some iOS releases hang the first open
+   * after an update and answer a second one, so a first timeout is not
+   * taken as a refusal: the next call tries again. A second one is, or
+   * every photo of an import would wait its own four seconds. An answer
+   * that turns up late is still used either way. */
+  var OPEN_TIMEOUT_MS = 4000;
+  var OPEN_TRIES = 2;
+
+  var db = null;
+  var dbState = 'closed';          /* closed | opening | open | none */
+  var waiting = [];
+  var cache = {};                  /* rifle id -> { blob, url } */
+  var lateInit = null;             /* an init() that ran before a late open */
+  var timeouts = 0;
+
+  function settle(d, st) {
+    db = d;
+    dbState = st;
+    var list = waiting;
+    waiting = [];
+    list.forEach(function (f) { f(d); });
+  }
+
+  function withDb(cb) {
+    if (dbState === 'open') { cb(db); return; }
+    if (dbState === 'none') { cb(null); return; }
+    waiting.push(cb);
+    if (dbState === 'opening') return;
+    dbState = 'opening';
+    var req;
+    try {
+      req = window.indexedDB && window.indexedDB.open(DB_NAME, 1);
+    } catch (e) { req = null; }
+    if (!req) { settle(null, 'none'); return; }
+    var timer = setTimeout(function () {
+      if (dbState !== 'opening') return;
+      timeouts++;
+      settle(null, timeouts >= OPEN_TRIES ? 'none' : 'closed');
+    }, OPEN_TIMEOUT_MS);
+    req.onupgradeneeded = function () {
+      /* Out-of-line keys: the key is the rifle id, the value the photo. */
+      try { req.result.createObjectStore(STORE); } catch (e) { /* aborts the open */ }
+    };
+    req.onsuccess = function () {
+      clearTimeout(timer);
+      var d = req.result;
+      if (dbState === 'open') { try { d.close(); } catch (e) { /* none */ } return; }
+      /* Another tab upgrading the database: step aside rather than
+       * block it. The next call opens it again. */
+      d.onversionchange = function () {
+        try { d.close(); } catch (e) { /* none */ }
+        if (db === d) { db = null; dbState = 'closed'; }
+      };
+      settle(d, 'open');
+      if (lateInit) {
+        var li = lateInit;
+        lateInit = null;
+        init(li.ids, li.done);
+      }
+    };
+    req.onerror = function (ev) {
+      clearTimeout(timer);
+      /* Handled here; without this Firefox also reports it as an
+       * uncaught error. */
+      if (ev && ev.preventDefault) ev.preventDefault();
+      if (dbState === 'opening') settle(null, 'none');
+    };
+  }
+
+  /* One request in its own transaction. done(ok, result) runs once, and
+   * only after the transaction has committed: a put that "succeeded" can
+   * still be rolled back when the disk turns out to be full. */
+  function run(mode, work, done) {
+    withDb(function (d) {
+      if (!d) { done(false); return; }
+      var tx, req, out, finished = false;
+      function end(ok) {
+        if (finished) return;
+        finished = true;
+        done(ok, out);
+      }
+      try {
+        tx = d.transaction(STORE, mode);
+        req = work(tx.objectStore(STORE));
+      } catch (e) { end(false); return; }
+      if (req) req.onsuccess = function () { out = req.result; };
+      tx.oncomplete = function () { end(true); };
+      tx.onerror = function (ev) {
+        if (ev && ev.preventDefault) ev.preventDefault();
+        end(false);
+      };
+      tx.onabort = function () { end(false); };
+    });
+  }
+
+  function remember(id, blob) {
+    forget(id);
+    var url = '';
+    try { url = URL.createObjectURL(blob); } catch (e) { return; }
+    cache[id] = { blob: blob, url: url };
+  }
+
+  function forget(id) {
+    var c = cache[id];
+    if (!c) return;
+    try { URL.revokeObjectURL(c.url); } catch (e) { /* none */ }
+    delete cache[id];
+  }
+
+  /* Read every kept photo into memory, and drop the ones whose rifle no
+   * longer exists -- a rifle deleted while storage was failing, or a
+   * library reset. ids: the rifle ids the app holds. done() runs once,
+   * with or without storage. */
+  function init(ids, done) {
+    var keep = {};
+    (ids || []).forEach(function (id) { if (id) keep[id] = true; });
+    var found = [], stale = [];
+    run('readonly', function (store) {
+      var req = store.openCursor();
+      req.onsuccess = function () {
+        var cur = req.result;
+        if (!cur) return;
+        var id = String(cur.key), v = cur.value;
+        if (!keep[id]) stale.push(cur.key);
+        else if (v && v.blob instanceof Blob) found.push([id, v.blob]);
+        cur['continue']();
+      };
+      return null;
+    }, function (ok) {
+      /* Timed out rather than refused: run it again when the database
+       * does answer, and the page redraws with the photos then. */
+      if (!ok && timeouts > 0) lateInit = { ids: ids, done: done };
+      found.forEach(function (f) { if (!cache[f[0]]) remember(f[0], f[1]); });
+      stale.forEach(function (k) { run('readwrite', function (s) { return s['delete'](k); }, function () {}); });
+      if (done) done();
+    });
+  }
+
+  function url(id) { return (id && cache[id]) ? cache[id].url : ''; }
+  function has(id) { return !!(id && cache[id]); }
+
+  /* done(kept): the photo shows either way; kept says whether it will
+   * still be there after a reload. */
+  function set(id, blob, done) {
+    done = done || function () {};
+    if (!id || !blob) { done(false); return; }
+    remember(id, blob);
+    run('readwrite', function (store) {
+      return store.put({ blob: blob, at: new Date().toISOString() }, id);
+    }, function (ok) { done(ok); });
+  }
+
+  function remove(id, done) {
+    done = done || function () {};
+    if (!id) { done(); return; }
+    forget(id);
+    run('readwrite', function (store) { return store['delete'](id); },
+        function () { done(); });
+  }
+
+  /* After a reset: every photo whose rifle is not in ids goes. */
+  function prune(ids) {
+    var keep = {};
+    (ids || []).forEach(function (id) { if (id) keep[id] = true; });
+    Object.keys(cache).forEach(function (id) { if (!keep[id]) forget(id); });
+    init(ids);
+  }
+
+  /* The picture at cw x ch, scaled off the main thread where the browser
+   * can: createImageBitmap decodes and resizes on its own threads, and a
+   * 24-megapixel photo then costs the page a few tens of milliseconds
+   * instead of the third of a second a scaled drawImage blocks it for.
+   * done(bitmap) or done(null) when it cannot, and the caller draws the
+   * <img> itself.
+   *
+   * The orientation must come out as the <img> shows it. 'from-image' is
+   * asked for by name; a browser that does not know the value refuses it
+   * and falls back. Only the width is given, so the height is the
+   * bitmap's own: if it does not come out as the <img>'s, the browser
+   * has turned the picture differently, and the <img> is drawn instead. */
+  function scaledBitmap(file, cw, ch, done) {
+    if (typeof createImageBitmap !== 'function') { done(null); return; }
+    var p;
+    try {
+      p = createImageBitmap(file, { imageOrientation: 'from-image',
+                                    resizeWidth: cw, resizeQuality: 'high' });
+    } catch (e) { done(null); return; }
+    if (!p || typeof p.then !== 'function') { done(null); return; }
+    p.then(function (bm) {
+      if (bm.width !== cw || Math.abs(bm.height - ch) > 1) {
+        if (bm.close) bm.close();
+        done(null);
+        return;
+      }
+      done(bm);
+    }, function () { done(null); });
+  }
+
+  /* A picked file, made into what is kept. done(error, blob): error is a
+   * short sentence fragment for the page to show, blob the JPEG.
+   *
+   * The <img> only measures it: its size is known once it loads, before
+   * any decoding. The decode and the resize are then the browser's, off
+   * the main thread (scaledBitmap, or img.decode() where that is all
+   * there is); only the encode (toBlob, itself asynchronous) is left. */
+  function prepare(file, done, keepIfSmall) {
+    if (!file || typeof file.size !== 'number') { done('no file'); return; }
+    /* An empty type is let through to the decoder: some pickers do not
+     * name what they hand over. A named type that is not an image is
+     * refused before a byte is read. */
+    if (file.type && !/^image\//i.test(file.type)) {
+      done('it is not a picture'); return;
+    }
+    var src;
+    try { src = URL.createObjectURL(file); } catch (e) { done('it could not be opened'); return; }
+    var img = new Image();
+    var finished = false;
+    function finish(err, blob) {
+      if (finished) return;
+      finished = true;
+      img.onload = img.onerror = null;
+      try { URL.revokeObjectURL(src); } catch (e) { /* none */ }
+      done(err, blob);
+    }
+    function paint(source, cw, ch) {
+      var c = document.createElement('canvas');
+      c.width = cw; c.height = ch;
+      var g = c.getContext('2d');
+      if (!g) { finish('this browser cannot resize pictures'); return; }
+      /* A transparent PNG would turn black in a JPEG. */
+      g.fillStyle = '#ffffff';
+      g.fillRect(0, 0, cw, ch);
+      g.imageSmoothingEnabled = true;
+      g.imageSmoothingQuality = 'high';
+      try { g.drawImage(source, 0, 0, cw, ch); }
+      catch (e) { finish('it is not a picture this browser can read'); return; }
+      if (source.close) source.close();
+      function encoded(b) {
+        /* A phone holds on to a canvas's memory until it is resized. */
+        c.width = c.height = 0;
+        if (b && b.size) finish(null, b);
+        else finish('it could not be converted');
+      }
+      if (c.toBlob) {
+        try { c.toBlob(encoded, 'image/jpeg', QUALITY); return; } catch (e) { /* below */ }
+      }
+      try { encoded(blobFromDataURL(c.toDataURL('image/jpeg', QUALITY))); }
+      catch (e) { encoded(null); }
+    }
+    img.onload = function () {
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if (!(w > 0 && h > 0)) { finish('it is not a picture this browser can read'); return; }
+      if (keepIfSmall && Math.max(w, h) <= MAX_SIDE && file.size <= KEEP_BYTES &&
+          /^image\/(jpeg|png|webp)$/i.test(file.type || '')) {
+        finish(null, file); return;
+      }
+      var s = Math.min(1, MAX_SIDE / Math.max(w, h));
+      var cw = Math.max(1, Math.round(w * s)), ch = Math.max(1, Math.round(h * s));
+      scaledBitmap(file, cw, ch, function (bm) {
+        if (bm) { paint(bm, cw, ch); return; }
+        /* Decoded off the main thread first where the browser can; a
+         * refusal (some do for very large images) still leaves drawImage
+         * to decode it itself. */
+        function drawImg() { paint(img, cw, ch); }
+        if (typeof img.decode === 'function') img.decode().then(drawImg, drawImg);
+        else drawImg();
+      });
+    };
+    img.onerror = function () { finish('it is not a picture this browser can read'); };
+    img.decoding = 'async';
+    img.src = src;
+  }
+
+  function blobFromDataURL(str) {
+    var comma = str.indexOf(',');
+    if (str.slice(0, 5).toLowerCase() !== 'data:' || comma < 0) return null;
+    var head = str.slice(5, comma), body = str.slice(comma + 1);
+    var type = head.split(';')[0] || '';
+    var bytes;
+    if (/;base64$/i.test(head)) {
+      var bin = atob(body.replace(/\s+/g, ''));
+      bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    } else {
+      bytes = new TextEncoder().encode(decodeURIComponent(body));
+    }
+    return new Blob([bytes], { type: type });
+  }
+
+  /* For exportLibrary: the kept photo as a data URL, or '' when there is
+   * none. Asynchronous, as reading a blob always is. */
+  function toDataURL(id, done) {
+    var c = id && cache[id];
+    if (!c) { done(''); return; }
+    var r = new FileReader();
+    r.onload = function () { done(typeof r.result === 'string' ? r.result : ''); };
+    r.onerror = function () { done(''); };
+    try { r.readAsDataURL(c.blob); } catch (e) { done(''); }
+  }
+
+  /* For importLibrary: a data URL from an export, checked to be a picture
+   * this browser can show and brought within MAX_SIDE. done(error, blob). */
+  function fromDataURL(str, done) {
+    if (typeof str !== 'string' || !/^data:image\//i.test(str)) {
+      done('it is not a picture'); return;
+    }
+    var blob;
+    try { blob = blobFromDataURL(str); } catch (e) { blob = null; }
+    if (!blob || !blob.size) { done('it is damaged'); return; }
+    prepare(blob, done, true);
+  }
+
+  /* Whether photos survive a reload here. Unknown until storage has been
+   * tried once; init() at startup does that. */
+  function kept() { return dbState === 'open'; }
+
+  return {
+    init: init,
+    url: url,
+    has: has,
+    set: set,
+    remove: remove,
+    prune: prune,
+    prepare: prepare,
+    toDataURL: toDataURL,
+    fromDataURL: fromDataURL,
+    kept: kept,
+    MAX_SIDE: MAX_SIDE
   };
 })();
 
@@ -9710,6 +10620,9 @@ var PBOnline = (function () {
     'bullet.d': [1e-3, 0.05],
     'bullet.L': [2e-3, 0.25],
     'bullet.bc': [0.01, 2.0],
+    /* kg·m²: a 15 gr .17 to well past a .50 BMG, either way. */
+    'bullet.IP': [1e-10, 1e-4],
+    'bullet.IT': [1e-9, 1e-3],
     'rifle.mv': [50, 2000],
     'rifle.twist': [1, 200],
     'rifle.sightH': [0, 0.5],
@@ -9986,8 +10899,16 @@ var PBOnline = (function () {
     /* The cards print the click value and the reticle, which are set on
      * other screens too, so they are drawn fresh on the way in. */
     if (id === 'screen-sight') renderSightCard();
-    if (id === 'screen-projectile') renderBulletCard();
-    if (id === 'screen-library') { retryShared(); renderLibrary(true); }
+    if (id === 'screen-projectile') { renderBulletCard(); renderBulletPic(); }
+    else dropEstNote();
+    /* Back from the calibre filter is a return, not an opening: the tab
+     * and the maker stay where the shooter left them. */
+    if (id === 'screen-library') {
+      retryShared();
+      renderLibrary(!libFilterReturn);
+      libFilterReturn = false;
+    }
+    if (id === 'screen-libfilter') renderLibFilter();
     if (id === 'screen-presets') {
       retryShared();
       $('presets-shared-slot').appendChild($('shared-foot'));
@@ -11184,10 +12105,11 @@ var PBOnline = (function () {
     ['in-zwx-hum', 'zeroWx', 'humidity', 0]
   ];
 
-  /* Editing a physical dimension invalidates the inertias: IP and IT are
-   * properties of THIS bullet, and leaving the previous ones in place
-   * would fly the new dimensions with the old bullet's spin dynamics --
-   * wrong spin drift, silently. */
+  /* Editing a physical dimension invalidates ESTIMATED inertias: IP and
+   * IT are properties of THIS bullet, and leaving the previous estimate
+   * in place would fly the new dimensions with the old bullet's spin
+   * dynamics -- wrong spin drift, silently. Typed ones are kept; see
+   * inertiasKnown(). */
   /* A hand edit demotes that group back to 'typed': a fetched value the
    * shooter has since overwritten is no longer a fetched value. */
   function markTyped(group, id) {
@@ -11212,6 +12134,10 @@ var PBOnline = (function () {
     else if (group === 'zeroWx') S.zeroWx.at = new Date().toISOString();
   }
 
+  /* A new bullet, or new numbers for one whose inertias are estimated:
+   * estimated again, from these numbers. Picking a bullet always comes
+   * through here -- the previous bullet's inertias, typed or not, are
+   * not this one's. */
   function onBulletGeometryChanged() {
     var b = S.bullet;
     var inert = PBInertia.estimate(clamp('bullet.d', b.d),
@@ -11279,29 +12205,49 @@ var PBOnline = (function () {
     for (i = 0; i < cseg.length; i++) {
       cseg[i].classList.toggle('on', cseg[i].dataset.corr === S.out.corr);
     }
+    $('in-ip').value = inertiaText(S.bullet.IP);
+    $('in-it').value = inertiaText(S.bullet.IT);
     renderBulletCard();
     renderSightCard();
     renderLengthNote();
+    renderInertiaNote();
     renderProvenance();
+    renderEstNote();
     renderBulletPic();
     renderQuickFill();
   }
 
   /* The bullet, drawn from the two dimensions that were typed. */
   function renderBulletPic() {
-    var b = S.bullet;
+    var b = S.bullet, svg = $('bullet-svg');
+    if (!svg) return;
     var dq = U.unitOf('calibre'), lq = U.unitOf('length');
-    PBBullet.draw($('bullet-svg'), {
+    /* Drawn at the width it is shown at. A hidden screen measures 0:
+     * draw at a phone's width, and showScreen redraws it on the way in. */
+    var info = PBBullet.draw(svg, {
       d_mm: b.d * 1000, L_mm: b.L * 1000,
       dText: U.fromSI('calibre', b.d).toFixed(U.decimals('calibre')) + ' ' + dq,
-      LText: U.fromSI('length', b.L).toFixed(U.decimals('length')) + ' ' + lq
+      LText: U.fromSI('length', b.L).toFixed(U.decimals('length')) + ' ' + lq,
+      width: svg.clientWidth || 320,
+      estimated: b.lengthEstimated
     });
     /* The name and weight are on the card beside the picture; the
-     * caption says what the picture alone cannot -- how long, and
-     * whether that length was published or worked out. */
-    var ratio = b.L / b.d;
-    $('bullet-caption').textContent = ratio.toFixed(2) + ' calibres long' +
-      (b.lengthEstimated ? ' · length estimated' : '');
+     * caption says what the picture alone cannot -- how long, whether
+     * that length was published or worked out, and when the drawing is
+     * not to scale. The last two in the colour the drawing uses for
+     * them. */
+    var cap = $('bullet-caption');
+    cap.textContent = (b.L / b.d).toFixed(2) + ' calibres long';
+    function flag(text) {
+      var s = document.createElement('span');
+      s.className = 'warn';
+      s.textContent = text;
+      cap.appendChild(document.createTextNode(' · '));
+      cap.appendChild(s);
+    }
+    if (b.lengthEstimated) flag('length estimated');
+    if (info && info.shortened) flag('drawing shortened to fit');
+    if (info && info.widened) flag('drawing proportions limited');
   }
 
   /* The Advanced section's own line about the length: what it is now,
@@ -11309,6 +12255,7 @@ var PBOnline = (function () {
   function renderLengthNote() {
     var b = S.bullet, el = $('len-note');
     if (!el) return;
+    $('len-est').hidden = !b.lengthEstimated;
     el.textContent = (b.lengthEstimated
       ? 'Now ESTIMATED: this bullet’s length is not published, so it is ' +
         'worked out from the weight and calibre and recalculated when ' +
@@ -11319,15 +12266,114 @@ var PBOnline = (function () {
       'records which it was.';
   }
 
+  /* The moments of inertia are shown in g·cm², whatever the unit system.
+   * Nobody converts them -- a shooter has no more feel for lb·in² than
+   * for kg·m² -- and in g·cm² every rifle bullet's pair reads as a plain
+   * number, from about 0.02 for a .17 to a few hundred for a .50's
+   * transverse one, where kg·m² is 7.22e-8. It is kg·m² × 10⁷ exactly,
+   * so a figure from a paper converts by moving the point. Four
+   * significant figures: what a measurement carries, so a typed value
+   * reads back as typed. */
+  var KGM2_PER_GCM2 = 1e-7;
+
+  function inertiaText(kgm2) {
+    if (!Number.isFinite(kgm2)) return '';
+    return String(Number((kgm2 / KGM2_PER_GCM2).toPrecision(4)));
+  }
+
+  /* Whether a geometry edit leaves the inertias alone. Estimated ones
+   * are only a function of the length, calibre and weight, so they are
+   * worked out again from the new numbers. Typed ones are the bullet the
+   * shooter measured and stay -- typing over the weight does not change
+   * what was on the balance. A built-in profile's measured pair is the
+   * exception: it belongs to that profile's dimensions, and once the
+   * bullet is no longer that profile keeping it would log a different
+   * bullet's spin drift as measured. */
+  function inertiasKnown(b) {
+    if (b.inertiaEstimated) return false;
+    var p = b.vendor === 'built-in' ? profileById(b.profileId) : null;
+    if (p && sameValue(b.IP, p.physical.IP_kgm2) &&
+        sameValue(b.IT, p.physical.IT_kgm2)) {
+      return isOwnProfile(b, p);
+    }
+    return true;
+  }
+
+  /* The two inertia fields' marks and the line under them. One flag
+   * covers the pair -- the shot log's inertia_estimated -- so either one
+   * typed marks both as known, and the line says to type both. */
+  function renderInertiaNote() {
+    var b = S.bullet, el = $('inertia-note');
+    if (!el) return;
+    var est = !!b.inertiaEstimated;
+    $('ip-est').hidden = !est;
+    $('it-est').hidden = !est;
+    var p = b.vendor === 'built-in' ? profileById(b.profileId) : null;
+    var own = !est && p && isOwnProfile(b, p) &&
+      sameValue(b.IP, p.physical.IP_kgm2) && sameValue(b.IT, p.physical.IT_kgm2);
+    el.textContent = est
+      ? 'Moments of inertia ESTIMATED from the length, calibre and weight ' +
+        '(solid-of-revolution model, ±2.9 % against McCoy ADA205633), and ' +
+        'worked out again when any of them changes. They set the spin ' +
+        'drift. Measured values typed here replace them; type both, as the ' +
+        'shot log has one flag for the pair.'
+      : own
+        ? 'Moments of inertia measured for this profile. Change its length, ' +
+          'calibre or weight and it is another bullet, and they are ' +
+          'estimated again.'
+        : 'Moments of inertia typed or published: kept when the length, ' +
+          'calibre or weight changes, and logged as not estimated.';
+  }
+
+  /* What the bullet just chosen flies with that is not its own, for the
+   * one notice under its card. The curves count for every bullet but a
+   * built-in profile flying its own: everything else borrows a profile's
+   * lift and moment curves (autoProfileId), and the S&B 6.5's own record
+   * says its curves are the M852's. */
+  function estimatedParts(b) {
+    var parts = [];
+    if (b.lengthEstimated) parts.push('length');
+    if (b.inertiaEstimated) parts.push('inertias');
+    var p = profileById(b.profileId);
+    if (!p || !isOwnProfile(b, p) || profileEstimates(p).coefficients) {
+      parts.push('aerodynamic curves');
+    }
+    return parts;
+  }
+
+  /* The notice belongs to the moment of choosing: armed by a pick from
+   * the chooser, gone when dismissed, when Advanced is opened from it,
+   * or when the shooter leaves the screen. While it is up it follows the
+   * fields -- a length typed in Advanced takes "length" out of it. */
+  var estNoteOn = false;
+
+  function armEstNote() {
+    estNoteOn = true;
+    renderEstNote();
+  }
+
+  function renderEstNote() {
+    var el = $('est-note');
+    if (!el) return;
+    var parts = estNoteOn ? estimatedParts(S.bullet) : [];
+    if (!parts.length) { el.hidden = true; return; }
+    var list = parts.length === 1 ? parts[0]
+      : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+    $('est-note-text').textContent = list.charAt(0).toUpperCase() +
+      list.slice(1) + (parts.length === 1 && parts[0] === 'length'
+        ? ' is' : ' are') + ' estimated —';
+    el.hidden = false;
+  }
+
+  function dropEstNote() {
+    estNoteOn = false;
+    if ($('est-note')) $('est-note').hidden = true;
+  }
+
   function renderProvenance() {
     var b = S.bullet, notes = [];
-    if (!b.inertiaEstimated) {
-      notes.push('Moments of inertia are the profile’s own (measured / ' +
-                 'published).');
-    } else {
-      notes.push('Moments of inertia ESTIMATED from dimensions ' +
-                 '(solid-of-revolution model, ±2.9% against McCoy ADA205633).');
-    }
+    /* The inertias have their own line now, beside their fields
+     * (renderInertiaNote). */
     notes.push(curvesNote(b));
     var prof = b.vendor === 'built-in' ? profileById(b.profileId) : null;
     var pe = prof ? profileEstimates(prof) : null;
@@ -11383,7 +12429,9 @@ var PBOnline = (function () {
    * estimate. A typed weight or calibre on a bullet whose length WAS
    * estimated re-estimates it from the new numbers: the Length field is
    * folded away under Advanced now, and an estimate left over from the
-   * previous weight would fly silently with the new one. */
+   * previous weight would fly silently with the new one. The inertias
+   * follow the same rule: re-estimated while they are estimates, kept
+   * once they have been typed (inertiasKnown). */
   function onGeometryTyped(id) {
     var b = S.bullet;
     if (id === 'in-len') {
@@ -11392,7 +12440,35 @@ var PBOnline = (function () {
       b.L = PBInertia.estimateLength(clamp('bullet.d', b.d),
                                      clamp('bullet.mass', b.mass));
     }
-    onBulletGeometryChanged();
+    if (inertiasKnown(b)) b.profileId = autoProfileId(b);
+    else onBulletGeometryChanged();
+  }
+
+  /* The two inertia fields, in g·cm² (inertiaText). Typing either one is
+   * saying the pair is known: inertia_estimated goes false for this
+   * bullet, and a later change of its length, calibre or weight keeps
+   * them. Clamped on commit, like every other field. */
+  function bindInertiaFields() {
+    [['in-ip', 'IP'], ['in-it', 'IT']].forEach(function (f) {
+      var el = $(f[0]);
+      el.addEventListener('input', function () {
+        var v = parseNum(this.value);
+        if (!(v > 0)) return;
+        S.bullet[f[1]] = v * KGM2_PER_GCM2;
+        S.bullet.inertiaEstimated = false;
+        renderInertiaNote(); renderEstNote();
+        save(); scheduleSolve();
+      });
+      el.addEventListener('change', function () {
+        var v = parseNum(this.value);
+        if (v > 0) {
+          S.bullet[f[1]] = v * KGM2_PER_GCM2;
+          S.bullet.inertiaEstimated = false;
+        }
+        S.bullet[f[1]] = clamp('bullet.' + f[1], S.bullet[f[1]]);
+        save(); refreshInputs(); scheduleSolve(0);
+      });
+    });
   }
 
   /* A unit change touches every surface that prints a number, but no
@@ -11438,7 +12514,10 @@ var PBOnline = (function () {
           var v = parseNum(this.value);
           if (!Number.isFinite(v)) return;
           S[b[1]][b[2]] = U.toSI(b[3], v);
-          if (GEOMETRY_KEYS[b[0]]) onGeometryTyped(b[0]);
+          /* The drawing follows the keystrokes, not the commit: it sits
+           * above the fields being typed into. A weight changes it only
+           * through an estimated length. */
+          if (GEOMETRY_KEYS[b[0]]) { onGeometryTyped(b[0]); renderBulletPic(); }
           if (b[1] === 'wind') syncWindInputs(this);
           markTyped(b[1]);
           save(); scheduleSolve();
@@ -11717,7 +12796,8 @@ var PBOnline = (function () {
     $('btn-reset').addEventListener('click', function () {
       askYes('Reset everything?',
              'Every input goes back to the built-in M852 reference, and ' +
-             'your saved rifles are replaced by the three starting ones.',
+             'your saved rifles, photos included, are replaced by the ' +
+             'three starting ones.',
              'Reset', true, resetEverything);
     });
     function resetEverything() {
@@ -11731,6 +12811,8 @@ var PBOnline = (function () {
       /* The starting rifles come back too: an Equipment page with an
        * empty list after "reset everything" looked broken, not reset. */
       seedRifles();
+      /* The old rifles' photos go with them: the new ids match none. */
+      PBPhoto.prune(S.rifles.map(function (r) { return r.id; }));
       save(); populateSelects(); refreshInputs(); rebuildTable();
       showScreen('screen-main'); scheduleSolve(0);
     }
@@ -11851,6 +12933,7 @@ var PBOnline = (function () {
       if (this.files && this.files[0]) importLibrary(this.files[0]);
       this.value = '';                 /* so the same file can be re-picked */
     });
+    bindPhoto();
 
     /* screen navigation */
     var nav = document.querySelectorAll('.sb-app [data-goto]');
@@ -11907,6 +12990,7 @@ var PBOnline = (function () {
         renderChart(); renderReticle(); renderRose();
         if (!$('az-modal').hidden) renderCompass();
         if ($('screen-shot').classList.contains('on')) renderShot();
+        if ($('screen-projectile').classList.contains('on')) renderBulletPic();
       }, 120);
     });
   }
@@ -12224,7 +13308,7 @@ var PBOnline = (function () {
     }
     var a = ammoFor(b);
     if (a) {
-      return 'Factory load · ' + a.brand + (a.cartridge ? ' · ' + a.cartridge : '') +
+      return 'Factory load · ' + a.brand + (a.cartridge ? ' · ' + cartName(a.cartridge) : '') +
         (ammoGone(a) ? ' · ' + ammoStatusText(a) : '');
     }
     if (b.vendor === 'built-in') return 'Built-in reference profile';
@@ -12361,7 +13445,7 @@ var PBOnline = (function () {
     var date = (p.ts || '').slice(0, 10);
     open.appendChild(libBody(p.name, sp.spec,
                              presetOwner(p) + (date ? ' · ' + date : ''), tag));
-    open.setAttribute('aria-label', p.name + ', ' + sp.spec + ', ' +
+    open.setAttribute('aria-label', p.name + ', ' + spoken(sp.spec) + ', ' +
                       presetOwner(p) + (tag ? ', ' + tag : ''));
     open.addEventListener('click', function () { choosePreset(kind, p); });
     row.appendChild(open);
@@ -12502,6 +13586,7 @@ var PBOnline = (function () {
       return;
     }
     showScreen(kind === 'bullet' ? 'screen-projectile' : 'screen-sight');
+    if (kind === 'bullet') armEstNote();
     refocus($(kind === 'bullet' ? 'btn-bullet-change' : 'btn-sight-change'));
   }
 
@@ -13556,6 +14641,20 @@ var PBOnline = (function () {
       m.textContent = ' · modified';
       v.appendChild(m);
     }
+    /* The rifle's photo as a square on the card's left, the same size as
+     * the ⋯ square on its right. From photo.js's memory, never from
+     * storage: this card is rebuilt after every solve. Decorative to a
+     * screen reader -- the button's label already names the rifle. */
+    var pic = r ? PBPhoto.url(r.id) : '';
+    if (pic) {
+      var th = document.createElement('img');
+      th.className = 'thumb';
+      th.alt = '';
+      th.decoding = 'async';
+      th.src = pic;
+      open.classList.add('has-photo');
+      open.appendChild(th);
+    }
     open.appendChild(t);
     open.appendChild(v);
     open.setAttribute('aria-label',
@@ -13910,6 +15009,155 @@ var PBOnline = (function () {
         'keeps this setup under a name.';
       status.classList.remove('warn');
     }
+    renderPhotoBox(r);
+  }
+
+  // ---- the rifle's photo (kept by photo.js, never in S) ---------------
+
+  /* The rifle whose picture is being prepared, so its box says so and a
+   * second pick cannot start on top of the first; and the rifle the
+   * picker was opened for, which is where the picture goes even if the
+   * shooter has moved to another rifle by the time it is ready. */
+  var photoBusy = null, photoFor = null, photoBoxFor;
+
+  function photoNote(text, warn) {
+    var n = $('photo-note');
+    if (!n) return;
+    n.textContent = text || '';
+    n.classList.toggle('warn', !!warn);
+  }
+
+  /* Called after every solve through renderRifleScreen, so it touches
+   * the DOM only where something changed: resetting the img's src would
+   * make the photo blink. */
+  function renderPhotoBox(r) {
+    var box = $('rifle-photo');
+    if (!box) return;
+    var id = r && r.id ? r.id : null;
+    var url = id ? PBPhoto.url(id) : '';
+    var img = $('photo-img'), add = $('btn-photo-add');
+    var busy = !!id && photoBusy === id;
+    add.hidden = !id || !!url;
+    $('photo-shown').hidden = !url;
+    $('photo-none').hidden = !!id;
+    box.classList.toggle('none', !id);
+    if (url && img.getAttribute('src') !== url) img.src = url;
+    if (!url && img.getAttribute('src')) img.removeAttribute('src');
+    img.alt = r ? 'Photo of ' + r.name : '';
+    add.disabled = busy;
+    add.setAttribute('aria-busy', busy ? 'true' : 'false');
+    add.lastChild.textContent = busy ? 'Preparing photo…' : 'Add photo';
+    $('btn-photo-change').disabled = busy;
+    $('btn-photo-remove').disabled = busy;
+    /* A note about one rifle's picture is not left under another's. */
+    if (id !== photoBoxFor) {
+      photoBoxFor = id;
+      if (!photoBusy) photoNote('');
+    }
+  }
+
+  /* A photo arrived or went: the card's thumbnail and the rifle screen
+   * follow. Not under an open menu or a drag, as after a solve. */
+  function photosChanged() {
+    if ($('screen-equipment').classList.contains('on')) {
+      if (rifleMenu || dragging) rifleListStale = true;
+      else renderRifleList();
+    }
+    renderRifleScreen();
+  }
+
+  function pickPhoto() {
+    var r = activeRifle();
+    if (!r || !r.id || photoBusy) return;
+    photoFor = r.id;
+    $('photo-file').click();
+  }
+
+  function setPhoto(id, file) {
+    if (!id || !file || photoBusy) return;
+    photoBusy = id;
+    photoNote('Preparing the photo…');
+    renderPhotoBox(activeRifle());
+    PBPhoto.prepare(file, function (err, blob) {
+      if (err) {
+        photoBusy = null;
+        renderPhotoBox(activeRifle());
+        photoNote('That file cannot be used as a photo: ' + err + '.', true);
+        return;
+      }
+      /* Deleted while its picture was being prepared: nothing to keep
+       * it under. */
+      if (!rifleById(id)) {
+        photoBusy = null;
+        photoNote('');
+        renderPhotoBox(activeRifle());
+        return;
+      }
+      /* Shown at once; storage answers when it answers, and only a
+       * refusal has anything to say. */
+      var had = document.activeElement;
+      photoBusy = null;
+      photoNote('');
+      PBPhoto.set(id, blob, function (kept) {
+        if (!kept) {
+          photoNote('This browser is not keeping photos (a private window, ' +
+                    'or storage full): it shows until the page is closed.', true);
+        }
+      });
+      photosChanged();
+      /* The add box was focused, and has just been hidden: a keyboard
+       * user lands on Change instead of the top of the page. */
+      if ((had === $('btn-photo-add') || had === document.body) &&
+          !$('photo-shown').hidden) {
+        try { $('btn-photo-change').focus({ preventScroll: true }); } catch (e) { /* none */ }
+      }
+    });
+  }
+
+  function removePhoto() {
+    var r = activeRifle();
+    if (!r || !PBPhoto.has(r.id)) return;
+    askYes('Remove the photo?',
+           'The photo of “' + r.name + '” is deleted from this browser. ' +
+           'The rifle itself stays.', 'Remove', true, function () {
+      PBPhoto.remove(r.id, function () {
+        photosChanged();
+        photoNote('');
+        var add = $('btn-photo-add');
+        if (!add.hidden) {
+          try { add.focus({ preventScroll: true }); } catch (e) { /* none */ }
+        }
+      });
+    });
+  }
+
+  function bindPhoto() {
+    $('btn-photo-add').addEventListener('click', pickPhoto);
+    $('btn-photo-change').addEventListener('click', pickPhoto);
+    $('btn-photo-remove').addEventListener('click', removePhoto);
+    $('photo-file').addEventListener('change', function () {
+      var f = this.files && this.files[0];
+      this.value = '';                 /* so the same file can be re-picked */
+      if (f && photoFor) setPhoto(photoFor, f);
+    });
+    /* On a desktop a picture can be dropped on the box as well. The
+     * browser's own default is taken every time, even when the drop is
+     * refused: left alone, it opens the dropped file in place of the
+     * page. */
+    var box = $('rifle-photo');
+    box.addEventListener('dragover', function (ev) {
+      ev.preventDefault();
+      var r = activeRifle();
+      box.classList.toggle('drop', !!(r && r.id && !photoBusy));
+    });
+    box.addEventListener('dragleave', function () { box.classList.remove('drop'); });
+    box.addEventListener('drop', function (ev) {
+      ev.preventDefault();
+      box.classList.remove('drop');
+      var r = activeRifle();
+      var f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+      if (r && r.id && f) setPhoto(r.id, f);
+    });
   }
 
   /* + : a new rifle from whatever is being shot right now. */
@@ -13988,9 +15236,12 @@ var PBOnline = (function () {
 
   function deleteRifle(r) {
     askYes('Delete “' + r.name + '”?',
-           'It is removed from the rifle list. The setup you are shooting ' +
-           'stays as it is.', 'Delete', true, function () {
+           'It is removed from the rifle list' +
+           (PBPhoto.has(r.id) ? ', with its photo' : '') +
+           '. The setup you are shooting stays as it is.',
+           'Delete', true, function () {
       S.rifles = S.rifles.filter(function (x) { return x.id !== r.id; });
+      PBPhoto.remove(r.id);
       /* The setup being shot stays as it is; it is just no longer a
        * saved rifle, and the list says so with the dashed card. */
       if (S.activeRifle === r.id) S.activeRifle = null;
@@ -14179,17 +15430,38 @@ var PBOnline = (function () {
 
   /* The library lives in localStorage, which is per-browser and vanishes
    * with the site data. Export is the only way to move a setup to a
-   * phone or keep it after clearing the cache. */
+   * phone or keep it after clearing the cache.
+   *
+   * Each rifle with a photo carries it as `photo`, a data URL, so the
+   * photo moves with the rifle. The format name stays: an older copy of
+   * this page reading the file ignores the field and imports the rest. */
   function exportLibrary() {
-    var doc = { format: LIB_FORMAT, exported: new Date().toISOString(),
-                rifles: S.rifles };
-    var blob = new Blob([JSON.stringify(doc, null, 1)],
-                        { type: 'application/json' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'rifles.json';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    var rifles = S.rifles.map(function (r) {
+      var o = {};
+      for (var k in r) {
+        if (Object.prototype.hasOwnProperty.call(r, k)) o[k] = r[k];
+      }
+      return o;
+    });
+    var left = rifles.length;
+    function write() {
+      var doc = { format: LIB_FORMAT, exported: new Date().toISOString(),
+                  rifles: rifles };
+      var blob = new Blob([JSON.stringify(doc, null, 1)],
+                          { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'rifles.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    }
+    if (!left) { write(); return; }
+    rifles.forEach(function (o) {
+      PBPhoto.toDataURL(o.id, function (url) {
+        if (url) o.photo = url;
+        if (--left === 0) write();
+      });
+    });
   }
 
   function importLibrary(file) {
@@ -14200,7 +15472,7 @@ var PBOnline = (function () {
         if (!doc || doc.format !== LIB_FORMAT || !Array.isArray(doc.rifles)) {
           throw new Error('not a rifle library exported by this app');
         }
-        var added = 0, merged = 0;
+        var added = 0, merged = 0, photos = [];
         doc.rifles.forEach(function (r) {
           if (!r || !r.name || !r.setup) return;
           correctProfileFlags(r.setup.bullet);
@@ -14213,12 +15485,30 @@ var PBOnline = (function () {
             if (S.rifles[i].name === r.name) existing = S.rifles[i];
           }
           if (existing) { existing.setup = r.setup; merged++; }
-          else { S.rifles.push({ id: newRifleId(), name: r.name,
-                                 setup: r.setup }); added++; }
+          else {
+            existing = { id: newRifleId(), name: r.name, setup: r.setup };
+            S.rifles.push(existing);
+            added++;
+          }
+          /* Only the setup goes into the state; the photo goes to
+           * photo.js. A rifle in the file without one keeps the photo
+           * it already has here. */
+          if (typeof r.photo === 'string' && r.photo) {
+            photos.push([existing.id, r.photo]);
+          }
         });
         save(); renderRifleList(); renderNav();
-        rifleNote('Imported: ' + added + ' new, ' + merged +
-                  ' updated by name.');
+        var said = 'Imported: ' + added + ' new, ' + merged + ' updated by name';
+        rifleNote(said + (photos.length ? '. Reading the photos…' : '.'));
+        importPhotos(photos, function (got, bad, lost) {
+          photosChanged();
+          rifleNote(said +
+            (got ? ', ' + got + ' photo' + (got === 1 ? '' : 's') : '') +
+            (bad ? '. ' + bad + ' photo' + (bad === 1 ? '' : 's') +
+                   ' could not be read' : '') +
+            (lost ? '. This browser is not keeping photos, so they show ' +
+                    'until the page is closed' : '') + '.', bad + lost > 0);
+        });
       } catch (e) {
         rifleNote('Could not import that file: ' + e.message + '.', true);
       }
@@ -14227,6 +15517,27 @@ var PBOnline = (function () {
       rifleNote('Could not read that file.', true);
     };
     reader.readAsText(file);
+  }
+
+  /* [[rifle id, data URL], ...] into photo.js, one at a time: decoding a
+   * whole library's pictures at once is what makes a phone drop the tab.
+   * done(read, unreadable, notKept). A photo that cannot be read costs
+   * only itself; the rifles are already in. */
+  function importPhotos(list, done) {
+    var got = 0, bad = 0, lost = 0, i = 0;
+    function next() {
+      if (i >= list.length) { done(got, bad, lost); return; }
+      var item = list[i++];
+      PBPhoto.fromDataURL(item[1], function (err, blob) {
+        if (err || !rifleById(item[0])) { bad++; next(); return; }
+        PBPhoto.set(item[0], blob, function (kept) {
+          got++;
+          if (!kept) lost++;
+          next();
+        });
+      });
+    }
+    next();
   }
 
   // ---- factory twist rates -----------------------------------------
@@ -14407,31 +15718,35 @@ var PBOnline = (function () {
    * is for labels and the search box ONLY -- never physics.
    *
    * .257 is not "6.35 mm": that is the .25 ACP's .251. Nobody calls a
-   * .25-06 bullet by a metric name. */
+   * .25-06 bullet by a metric name. The same rule took "9.5 mm" off the
+   * .375 and "10.6 mm" off the .416, and a diameter not listed here
+   * prints its inch figure alone: ".219″ · 5.56 mm" beside ".224″ ·
+   * 5.56 mm" read as two names for one calibre. */
   var CAL_INFO = {
     '0.172': { mm: '', carts: '.17 HMR, .17 Hornet, .17 Rem', rank: 17 },
     '0.204': { mm: '', carts: '.204 Ruger', rank: 18 },
-    '0.224': { mm: '5.56 mm', carts: '.223 Rem, 5.56 NATO, .22-250, .22 Creedmoor, .224 Valkyrie', rank: 3 },
-    '0.243': { mm: '6 mm', carts: '.243 Win, 6 Creedmoor, 6 BR, 6x47 Lapua, 6 Dasher', rank: 4 },
-    '0.257': { mm: '', carts: '.25-06 Rem, .257 Roberts, .257 Weatherby', rank: 8 },
-    '0.264': { mm: '6.5 mm', carts: '6.5 Creedmoor, 6.5x55, 6.5 PRC, .260 Rem, 6.5-284, .264 Win Mag', rank: 2 },
-    '0.277': { mm: '6.8 mm', carts: '.270 Win, .270 WSM, 6.8 SPC, .277 Fury', rank: 7 },
+    '0.224': { mm: '5.56 mm', carts: '.223 Rem, 5.56 NATO, .22-250, .22 Creedmoor, .224 Valkyrie, .222 Rem, .22 Hornet', rank: 3 },
+    '0.243': { mm: '6 mm', carts: '.243 Win, 6 Creedmoor, 6 BR, 6x47 Lapua, 6 Dasher, 6mm ARC', rank: 4 },
+    '0.257': { mm: '', carts: '.25-06 Rem, .257 Roberts, .257 Weatherby, 25 Creedmoor', rank: 8 },
+    '0.264': { mm: '6.5 mm', carts: '6.5 Creedmoor, 6.5x55, 6.5 PRC, .260 Rem, 6.5-284, .264 Win Mag, 6.5 Grendel', rank: 2 },
+    '0.277': { mm: '6.8 mm', carts: '.270 Win, .270 WSM, 6.8 SPC, .277 Fury, 6.8 Western', rank: 7 },
     '0.284': { mm: '7 mm', carts: '7mm-08, 7 PRC, 7mm Rem Mag, .280 Rem, 7x57, 7x64', rank: 5 },
     '0.308': { mm: '7.62 mm', carts: '.308 Win, 7.62x51, .30-06, .300 Win Mag, .300 PRC, .300 BLK, .30-30', rank: 1 },
-    '0.311': { mm: '', carts: '.303 British, 7.62x39, 7.62x54R', rank: 9 },
-    '0.312': { mm: '', carts: '.303 British, 7.62x54R', rank: 10 },
+    '0.310': { mm: '', carts: '7.62x39', rank: 9 },
+    '0.311': { mm: '', carts: '.303 British, 7.62x54R, 7.65x53 Argentine, 7.62x39', rank: 9.5 },
+    '0.312': { mm: '', carts: '.303 British, 7.62x54R, .32-20 Win', rank: 10 },
     '0.323': { mm: '8 mm', carts: '8x57 JS Mauser, .325 WSM', rank: 11 },
-    '0.338': { mm: '8.6 mm', carts: '.338 Lapua, .338 Win Mag, .338 Federal, .338 Norma', rank: 6 },
-    '0.355': { mm: '9 mm', carts: '9mm Luger', rank: 30 },
+    '0.338': { mm: '8.6 mm', carts: '.338 Lapua, .338 Win Mag, .338 Federal, .338 Norma, 8.6 Blackout', rank: 6 },
+    '0.355': { mm: '9 mm', carts: '9mm Luger, .350 Legend', rank: 30 },
     '0.357': { mm: '', carts: '.357 Mag, .38 Special', rank: 31 },
-    '0.358': { mm: '', carts: '.35 Whelen, .358 Win, .35 Rem', rank: 12 },
+    '0.358': { mm: '', carts: '.35 Whelen, .358 Win, .35 Rem, .360 Buckhammer', rank: 12 },
     '0.366': { mm: '9.3 mm', carts: '9.3x62, 9.3x74R', rank: 13 },
-    '0.375': { mm: '9.5 mm', carts: '.375 H&H, .375 Ruger, .375 CheyTac', rank: 14 },
-    '0.416': { mm: '10.6 mm', carts: '.416 Rigby, .416 Rem Mag', rank: 15 },
-    '0.429': { mm: '', carts: '.44 Mag', rank: 32 },
+    '0.375': { mm: '', carts: '.375 H&H, .375 Ruger, .375 CheyTac', rank: 14 },
+    '0.416': { mm: '', carts: '.416 Rigby, .416 Rem Mag', rank: 15 },
+    '0.429': { mm: '', carts: '.44 Mag, .444 Marlin', rank: 32 },
     '0.430': { mm: '', carts: '.44 Mag', rank: 32 },
     '0.451': { mm: '', carts: '.45 ACP, .45 Colt', rank: 33 },
-    '0.452': { mm: '', carts: '.45 ACP, .45 Colt', rank: 33 },
+    '0.452': { mm: '', carts: '.45 ACP, .45 Colt, .450 Bushmaster', rank: 33 },
     '0.458': { mm: '', carts: '.45-70, .458 Win Mag, .458 Lott', rank: 16 },
     '0.510': { mm: '12.7 mm', carts: '.50 BMG, 12.7x99', rank: 16.5 }
   };
@@ -14455,11 +15770,13 @@ var PBOnline = (function () {
     return calInch(dMm) + (info && info.mm ? ' · ' + info.mm : '');
   }
 
-  /* ".264″ · 6.5 mm — 6.5 Creedmoor, 6.5x55, 6.5 PRC": in the filter and
-   * over each calibre's rows. A diameter nobody names keeps its mm. */
+  /* ".264″ · 6.5 mm — 6.5 Creedmoor, 6.5x55, 6.5 PRC": over each
+   * calibre's rows. A diameter nobody names is its inch figure alone: its
+   * millimetres to two places looked like a metric name, and the .219
+   * read "5.56 mm" beside the real one. */
   function calLabel(dMm) {
     var info = CAL_INFO[calKey(dMm)];
-    if (!info) return calInch(dMm) + ' · ' + (Math.round(dMm * 100) / 100).toFixed(2) + ' mm';
+    if (!info) return calInch(dMm);
     return calChip(dMm) + ' — ' + info.carts.split(', ').slice(0, 3).join(', ');
   }
 
@@ -14513,6 +15830,50 @@ var PBOnline = (function () {
   /* data/ammo.js: PB_AMMO, one record per factory load. Rows with no BC
    * at all are left out -- there is nothing to fly them with. */
   var ammoIndex = null, ammoByName = null, ammoCartCount = null;
+  /* Per cartridge: how many loads have each bore, for the bore it is
+   * filed under in the components tab (ammoCartBore). */
+  var ammoCartBores = null;
+
+  /* One chamber, two spellings: the makers' lists disagree on a dot or
+   * on spelling a short magnum out, and the cartridge filter listed
+   * ".22 Creedmoor" and "22 Creedmoor" as two cartridges. Folded for the
+   * filter and the headings only; a load's own name is untouched. A +P
+   * or "+Peak" load is a hotter load for the same chamber, and its name
+   * says so. */
+  var CART_SAME = {
+    '22 Creedmoor': '.22 Creedmoor',
+    '22 ARC': '.22 ARC',
+    '.270 WSM': '.270 Winchester Short Magnum',
+    '.300 WSM': '.300 Winchester Short Magnum',
+    '.325 WSM': '.325 Winchester Short Magnum',
+    '.300 Remington SA Ultra Magnum': '.300 Remington Short Action Ultra Magnum',
+    '8x57mm JS Mauser': '8x57 IS (8mm Mauser)',
+    '8x57mm Mauser': '8x57 IS (8mm Mauser)',
+    '9.3x62mm Mauser': '9.3x62mm',
+    '9.3x74mmR': '9.3x74R',
+    '7x64mm Brenneke': '7x64mm',
+    '6.5 Creedmoor +Peak': '6.5 Creedmoor',
+    '.257 Roberts +P': '.257 Roberts',
+    '6.5x52R (.25-35 Winchester)': '.25-35 Winchester'
+  };
+
+  function cartName(c) {
+    var s = String(c || '');
+    return CART_SAME[s] || s;
+  }
+
+  /* A cartridge as shooters type it, besides as the box prints it:
+   * "300 win mag", "7 rem mag", "270 wsm", "300 blk". */
+  function cartWords(name) {
+    var s = String(name || '').toLowerCase();
+    var short = s.replace(/winchester short magnum/g, 'wsm')
+      .replace(/remington short action ultra magnum/g, 'rsaum saum')
+      .replace(/remington ultra magnum/g, 'rum')
+      .replace(/winchester/g, 'win').replace(/remington/g, 'rem')
+      .replace(/magnum/g, 'mag').replace(/blackout/g, 'blk')
+      .replace(/(\d)mm\b/g, '$1 mm');
+    return s + ' ' + short;
+  }
 
   /* "Hornady Match 6.5 Creedmoor 140 gr ELD Match": brand, product line
    * and product, without saying the brand or the line twice when the
@@ -14531,27 +15892,41 @@ var PBOnline = (function () {
 
   function ammoRows() {
     if (ammoIndex) return ammoIndex;
-    ammoIndex = []; ammoByName = {}; ammoCartCount = {};
+    ammoIndex = []; ammoByName = {}; ammoCartCount = {}; ammoCartBores = {};
     var src = (typeof PB_AMMO !== 'undefined' && Array.isArray(PB_AMMO)) ? PB_AMMO : [];
     src.forEach(function (a) {
       if (!a || typeof a !== 'object' || !a.brand) return;
       if (!(a.bc_g7 > 0) && !(a.bc_g1 > 0)) return;
       if (!(a.gr > 0) || !(a.d_in > 0)) return;
       var d = a.d_in * 25.4;
+      var cart = cartName(a.cartridge);
       /* Searched by its own cartridge, not by the calibre's list of
        * them: a box of .300 Win Mag is not an answer to "308 win", even
        * though the bullet in it is a .308. */
       var e = {
-        ammo: a, d: d, name: ammoName(a),
-        key: [a.brand, a.line, a.product, a.cartridge, a.bullet,
-              a.gr + 'gr', a.sku, a.use].join(' ').toLowerCase()
+        ammo: a, d: d, name: ammoName(a), cart: cart,
+        key: [a.brand, a.line, a.product, a.cartridge, cartWords(cart),
+              a.bullet, a.gr + 'gr', a.sku, a.use].join(' ').toLowerCase()
       };
       ammoIndex.push(e);
       var k = a.brand + '|' + e.name;
       if (!ammoByName[k]) ammoByName[k] = e;
-      ammoCartCount[a.cartridge] = (ammoCartCount[a.cartridge] || 0) + 1;
+      ammoCartCount[cart] = (ammoCartCount[cart] || 0) + 1;
+      var bores = ammoCartBores[cart] || (ammoCartBores[cart] = {});
+      bores[calKey(d)] = (bores[calKey(d)] || 0) + 1;
     });
     return ammoIndex;
+  }
+
+  /* The bore a cartridge is filed under: the one most of its loads use.
+   * The .470 Nitro Express comes as .474 and .475. */
+  function ammoCartBore(cart) {
+    ammoRows();
+    var b = ammoCartBores[cart], best = '', n = -1;
+    for (var k in b) {
+      if (Object.prototype.hasOwnProperty.call(b, k) && b[k] > n) { best = k; n = b[k]; }
+    }
+    return best;
   }
 
   /* The factory load the current bullet came from, if it did. Matched
@@ -14666,7 +16041,15 @@ var PBOnline = (function () {
    * list, which read as lending one bullet's curves to another. */
   var BUILTIN_MAKER = 'Built-in profiles';
   var libMaker = null, ammoBrand = null, libTab = null;
-  var libTimer = null, libCalibresFilled = false;
+  var libTimer = null;
+  /* The filter: a calibre (calKey) and, from the Factory ammo tab, a
+   * cartridge (cartName). A cartridge brings its bore with it, so the
+   * components tab follows a 6.5 Creedmoor chosen among the factory
+   * loads; a calibre chosen there drops a cartridge of another bore.
+   * Factory ammo filters by the cartridge when there is one, else by the
+   * calibre. Kept while the page is open, like the search. */
+  var libCal = '', libCart = '';
+  var libFilterKind = 'cal', libFilterReturn = false;
 
   /* The makers a North American shooter knows, first, in roughly that
    * order; then everybody else alphabetically; then the cast-bullet
@@ -14709,71 +16092,343 @@ var PBOnline = (function () {
             calWords(p.physical.d_mm)).toLowerCase();
   }
 
-  /* Every calibre in the catalogue and the factory list, by its inch
-   * diameter: the common rifle calibres first under their own heading,
-   * by size, then every other diameter. Built once: neither list
-   * changes. */
-  function fillLibCalibres() {
-    if (libCalibresFilled) return;
-    libCalibresFilled = true;
-    var seen = {};
-    function add(dMm) { var k = calKey(dMm); if (!seen[k]) seen[k] = dMm; }
-    PB_CATALOG.forEach(function (b) { add(b.d); });
-    PB_PROFILES.forEach(function (p) { add(p.physical.d_mm); });
-    ammoRows().forEach(function (e) { add(e.d); });
-    var keys = Object.keys(seen).sort(function (a, b) { return a - b; });
-    var sel = $('lib-calibre');
-    [['Common calibres', function (k) { return CAL_INFO[k] && CAL_INFO[k].rank <= CAL_COMMON; }],
-     ['Other diameters', function (k) { return !(CAL_INFO[k] && CAL_INFO[k].rank <= CAL_COMMON); }]]
-      .forEach(function (g) {
-        var og = document.createElement('optgroup');
-        og.label = g[0];
-        keys.filter(g[1]).forEach(function (k) {
-          var o = document.createElement('option');
-          o.value = k;
-          o.textContent = calLabel(seen[k]);
-          og.appendChild(o);
-        });
-        if (og.children.length) sel.appendChild(og);
-      });
+  // ---- the calibre / cartridge filter (screen-libfilter) -------------
+  /* A calibre's diameter as the lists hold it, for its label: the key is
+   * rounded to three places, and a few diameters are published to four
+   * (.2455), which calInch prints. Built once: no list changes. */
+  var calSeen = null, cartsByBore = null;
+  function calDia(key) {
+    if (!calSeen) {
+      calSeen = {};
+      var add = function (dMm) {
+        var k = calKey(dMm);
+        if (!Object.prototype.hasOwnProperty.call(calSeen, k)) calSeen[k] = dMm;
+      };
+      PB_PROFILES.forEach(function (p) { add(p.physical.d_mm); });
+      PB_CATALOG.forEach(function (b) { add(b.d); });
+      ammoRows().forEach(function (e) { add(e.d); });
+    }
+    return calSeen[key] || Number(key) * 25.4;
   }
 
-  /* The factory list's cartridges, inside the chosen calibre when there
-   * is one: rebuilt when the calibre changes, keeping the choice if it
-   * is still there. */
-  function fillLibCartridges() {
-    var sel = $('lib-cartridge');
-    var cal = $('lib-calibre').value;
-    var was = sel.value;
-    var byCal = {};
+  /* Every factory cartridge of each bore, as search words for the
+   * calibre list: "8x57" finds the .323 and the .318 that way, and
+   * "350 legend" the .355, whatever CAL_INFO happens to list. */
+  function ammoCartsByBore() {
+    if (cartsByBore) return cartsByBore;
+    var seen = {};
     ammoRows().forEach(function (e) {
       var k = calKey(e.d);
-      if (cal && k !== cal) return;
-      (byCal[k] = byCal[k] || { d: e.d, carts: {} }).carts[e.ammo.cartridge] = true;
+      (seen[k] = seen[k] || {})[e.cart] = true;
     });
-    sel.innerHTML = '';
-    var all = document.createElement('option');
-    all.value = '';
-    all.textContent = 'All cartridges';
-    sel.appendChild(all);
-    var keep = false;
-    Object.keys(byCal).sort(function (a, b) {
-      return (calRank(a) - calRank(b)) || (a - b);
-    }).forEach(function (k) {
-      var og = document.createElement('optgroup');
-      og.label = calChip(byCal[k].d);
-      Object.keys(byCal[k].carts).sort(function (a, b) {
-        return (ammoCartCount[b] - ammoCartCount[a]) || a.localeCompare(b);
-      }).forEach(function (c) {
-        var o = document.createElement('option');
-        o.value = c;
-        o.textContent = c;
-        if (c === was) keep = true;
-        og.appendChild(o);
+    cartsByBore = {};
+    Object.keys(seen).forEach(function (k) {
+      cartsByBore[k] = cartWords(Object.keys(seen[k]).join(' '));
+    });
+    return cartsByBore;
+  }
+
+  /* What the filter is set to, in words, for the button above the
+   * lists: a calibre on My bullets and the components, a cartridge on
+   * Factory ammo. */
+  function libFilterText() {
+    if (libTab === 'ammo') {
+      return libCart ? libCart
+        : libCal ? 'All ' + calInch(calDia(libCal)) + ' cartridges'
+        : 'All cartridges';
+    }
+    return libCal ? calChip(calDia(libCal)) : 'All calibres';
+  }
+
+  function renderLibFilterBtn() {
+    var k = libTab === 'ammo' ? 'Cartridge' : 'Calibre';
+    var v = libFilterText(), on = !!(libCal || libCart);
+    $('lib-filter-k').textContent = k;
+    $('lib-filter-v').textContent = v;
+    var btn = $('lib-filter-btn');
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-label', k + ': ' + spoken(v) + '. Change');
+    var x = $('lib-filter-clear');
+    x.hidden = !on;
+    x.setAttribute('aria-label', 'Clear the ' + k.toLowerCase() + ' filter');
+    x.title = 'Clear the filter';
+  }
+
+  /* A label as a screen reader should say it: it reads the prime and
+   * the middle dot out as symbols. */
+  function spoken(s) {
+    return String(s).replace(/″/g, ' inch').replace(/ · /g, ', ');
+  }
+
+  /* " in .264″ · 6.5 mm", for the count line under the filters. */
+  function libFilterWhere() {
+    if (libTab === 'ammo' && libCart) return ' in ' + libCart;
+    return libCal ? ' in ' + calChip(calDia(libCal)) : '';
+  }
+
+  /* The calibres the open tab has anything in, for the search above the
+   * lists as it stands, each with how many: a calibre that would empty
+   * the list is not offered, except the one chosen. `head` is what the
+   * row itself says -- the inch figure and the metric name -- which
+   * outranks a match on a cartridge that is only listed beside it. */
+  function calFilterItems() {
+    var terms = libTerms(), n = {};
+    function add(dMm) { var k = calKey(dMm); n[k] = (n[k] || 0) + 1; }
+    if (libTab === 'mine') {
+      presetHits('bullet', $('lib-search').value, '').forEach(function (p) {
+        var b = (p.payload && p.payload.bullet) || {};
+        if (Number.isFinite(b.d)) add(b.d * 1e3);
       });
-      sel.appendChild(og);
+    } else {
+      var g = libGroups(terms, '');
+      g.makers.forEach(function (m) {
+        g.groups[m].forEach(function (it) { add(libDiameter(it)); });
+      });
+    }
+    if (libCal && !n[libCal]) n[libCal] = 0;
+    var carts = ammoCartsByBore();
+    return Object.keys(n).map(function (k) {
+      var info = CAL_INFO[k], d = calDia(k);
+      var head = [k, k.replace(/^0/, ''), k.slice(2),
+                  info && info.mm ? info.mm + ' ' + info.mm.replace(' ', '') : '']
+                 .join(' ').toLowerCase();
+      /* Not the millimetres to two places that the main search carries:
+       * here they made "5.56" find the .219 and "6.5" the .257. */
+      return {
+        kind: 'cal', key: k, n: n[k], on: k === libCal,
+        label: calChip(d),
+        sub: info ? info.carts.split(', ').slice(0, 3).join(', ') : '',
+        head: head,
+        words: (head + ' ' + (info ? info.carts.replace(/,/g, '') : '') + ' ' +
+                (carts[k] || '')).toLowerCase(),
+        common: !!(info && info.rank <= CAL_COMMON) || calRank(k) < 0,
+        order: calRank(k)
+      };
     });
-    sel.value = keep ? was : '';
+  }
+
+  /* The factory cartridges, the same way: how many loads each has for
+   * the search above the lists, and the bore it is filed under. */
+  function cartFilterItems() {
+    var terms = libTerms(), n = {};
+    ammoRows().forEach(function (e) {
+      if (libMatch(e.key, e.d, terms, '')) n[e.cart] = (n[e.cart] || 0) + 1;
+    });
+    if (libCart && !n[libCart]) n[libCart] = 0;
+    return Object.keys(n).map(function (c) {
+      var k = ammoCartBore(c), d = calDia(k), info = CAL_INFO[k];
+      /* The bore by its figures, so "308" lists every .308 cartridge
+       * after the ones named so -- but not by the other cartridges
+       * CAL_INFO lists for it, or "creedmoor" would find the .223. */
+      var bore = [k, k.replace(/^0/, ''), k.slice(2),
+                  info && info.mm ? info.mm : ''].join(' ');
+      return {
+        kind: 'cart', key: c, cal: k, n: n[c], on: c === libCart,
+        label: c, sub: calChip(d),
+        head: cartWords(c),
+        words: cartWords(c) + ' ' + bore,
+        total: ammoCartCount[c] || 0
+      };
+    });
+  }
+
+  /* A search hit's place: what the row says before what it only lists
+   * beside it, and a name that starts with what was typed before one
+   * that merely contains it -- "308" puts .308 Winchester above
+   * 7.62x51mm NATO, which is a .308 by bore only. Dots are optional:
+   * "308" and ".308" are the same search. */
+  function libFilterScore(it, terms) {
+    var flat = it.head.replace(/(^|\s)\./g, '$1');
+    var lead = terms[0].replace(/^\./, '');
+    var inHead = terms.every(function (t) {
+      return it.head.indexOf(t) >= 0 || flat.indexOf(t.replace(/^\./, '')) >= 0;
+    });
+    return (inHead ? 0 : 2) + (flat.indexOf(lead) === 0 ? 0 : 1);
+  }
+
+  /* Common calibres first, the rifle's own leading, then the rest by
+   * size. Cartridges by how many loads they have -- the list's own
+   * measure of how common one is -- then by name. */
+  function calOrder(a, b) {
+    return (a.common === b.common ? 0 : a.common ? -1 : 1) ||
+      (a.common ? a.order - b.order : 0) || (Number(a.key) - Number(b.key));
+  }
+  function cartOrder(a, b) {
+    return (b.total - a.total) || a.label.localeCompare(b.label);
+  }
+
+  var CART_COMMON = 12;
+
+  function libFilterNoun(n) {
+    var w = libTab === 'ammo' ? 'load' : libTab === 'mine' ? 'saved bullet' : 'bullet';
+    return (n === null ? '' : n + ' ') + w + (n === 1 ? '' : 's');
+  }
+
+  function libFilterRow(it) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'lf-row' + (it.on ? ' on' : '');
+    if (it.on) b.setAttribute('aria-current', 'true');
+    var text = document.createElement('span');
+    text.className = 'lf-text';
+    var name = document.createElement('span');
+    name.className = 'lf-name';
+    name.textContent = it.label;
+    text.appendChild(name);
+    if (it.sub) {
+      var sub = document.createElement('span');
+      sub.className = 'lf-sub';
+      sub.textContent = it.sub;
+      text.appendChild(sub);
+    }
+    b.appendChild(text);
+    var n = document.createElement('span');
+    n.className = 'lf-n';
+    n.textContent = it.n;
+    n.setAttribute('aria-hidden', 'true');
+    b.appendChild(n);
+    var tick = document.createElement('span');
+    tick.className = 'lf-tick';
+    tick.setAttribute('aria-hidden', 'true');
+    tick.textContent = it.on ? '✓' : '';
+    b.appendChild(tick);
+    b.setAttribute('aria-label', spoken(it.label + (it.sub ? ', ' + it.sub : '')) +
+                   ', ' + libFilterNoun(it.n) + (it.on ? ', chosen' : ''));
+    b.addEventListener('click', function () { chooseLibFilter(it); });
+    return b;
+  }
+
+  function renderLibFilter() {
+    var cart = libFilterKind === 'cart';
+    var q = $('libfilter-search').value.trim().toLowerCase();
+    var terms = q.split(/\s+/).filter(Boolean);
+    var items = cart ? cartFilterItems() : calFilterItems();
+    var list = $('libfilter-list');
+    list.innerHTML = '';
+    var what = cart ? 'cartridge' : 'calibre';
+    var mainQ = $('lib-search').value.trim();
+    var among = mainQ ? ' with ' + libFilterNoun(null) + ' for “' + mainQ + '”' : '';
+    function sec(text) {
+      var h = document.createElement('p');
+      h.className = 'lf-sec';
+      h.textContent = text;
+      list.appendChild(h);
+    }
+    function put(it) { list.appendChild(libFilterRow(it)); }
+
+    if (terms.length) {
+      var hits = items.filter(function (it) {
+        return terms.every(function (t) {
+          return it.words.indexOf(t) >= 0 ||
+            it.words.indexOf(t.replace(/^\./, '')) >= 0;
+        });
+      }).map(function (it) {
+        return { it: it, s: libFilterScore(it, terms) };
+      }).sort(function (a, b) {
+        return (a.s - b.s) || (cart ? cartOrder(a.it, b.it) : calOrder(a.it, b.it));
+      });
+      hits.forEach(function (h) { put(h.it); });
+      $('libfilter-count').textContent = hits.length
+        ? hits.length + ' ' + what + (hits.length === 1 ? '' : 's') + among +
+          (hits.length === 1 ? ' matches “' : ' match “') + q +
+          '”. Enter takes the first.'
+        : 'No ' + what + among + ' matches “' + q + '”.';
+      return;
+    }
+
+    /* The way out first, so clearing is never a scroll away. */
+    var total = 0;
+    items.forEach(function (it) { if (it.kind !== 'calall') total += it.n; });
+    put({ kind: 'none', key: '', n: total, on: !libCal && !libCart,
+          label: cart ? 'All cartridges' : 'All calibres',
+          sub: (libCal || libCart) ? 'Clears the filter' : '' });
+    if (!cart) {
+      var common = items.filter(function (it) { return it.common; }).sort(calOrder);
+      var rest = items.filter(function (it) { return !it.common; }).sort(calOrder);
+      if (common.length) { sec('Common calibres'); common.forEach(put); }
+      if (rest.length) { sec('Other diameters'); rest.forEach(put); }
+    } else {
+      var shown = {};
+      /* A calibre chosen on the other tabs, or as "All .264″": its
+       * cartridges first, under a row that keeps the whole calibre. */
+      if (libCal) {
+        var same = items.filter(function (it) { return it.cal === libCal; }).sort(cartOrder);
+        var inCal = 0;
+        same.forEach(function (it) { inCal += it.n; });
+        sec(calChip(calDia(libCal)));
+        put({ kind: 'calall', key: libCal, n: inCal, on: !libCart,
+              label: 'All ' + calInch(calDia(libCal)) + ' cartridges', sub: '' });
+        /* Under their calibre's heading, they need not repeat it. */
+        same.forEach(function (it) {
+          shown[it.key] = true;
+          var row = {}, f;
+          for (f in it) row[f] = it[f];
+          row.sub = '';
+          put(row);
+        });
+      }
+      /* The load being shot leads the common ones with its cartridge. */
+      var cur = ammoFor(S.bullet);
+      var curCart = cur ? cartName(cur.cartridge) : '';
+      var left = items.filter(function (it) { return !shown[it.key]; }).sort(function (a, b) {
+        return (a.key === curCart ? -1 : b.key === curCart ? 1 : 0) || cartOrder(a, b);
+      });
+      var top = left.slice(0, CART_COMMON);
+      var others = left.slice(CART_COMMON).sort(function (a, b) {
+        return (Number(a.cal) - Number(b.cal)) || a.label.localeCompare(b.label);
+      });
+      if (top.length) { sec('Common cartridges'); top.forEach(put); }
+      if (others.length) { sec('Other cartridges, by bore'); others.forEach(put); }
+    }
+    $('libfilter-count').textContent = items.length + ' ' + what +
+      (items.length === 1 ? '' : 's') + among + '.';
+  }
+
+  function openLibFilter() {
+    libFilterKind = libTab === 'ammo' ? 'cart' : 'cal';
+    var cart = libFilterKind === 'cart';
+    $('libfilter-title').textContent = cart ? 'Cartridge' : 'Calibre';
+    $('screen-libfilter').setAttribute('aria-label',
+      cart ? 'Cartridge filter' : 'Calibre filter');
+    var box = $('libfilter-search');
+    box.value = '';
+    box.placeholder = cart ? 'Search — e.g. 6.5 creedmoor, 308 win, 8x57'
+                           : 'Search — e.g. 6.5, creedmoor, 308, 8x57';
+    box.setAttribute('aria-label', cart ? 'Search cartridges' : 'Search calibres');
+    showScreen('screen-libfilter');
+    /* A keyboard goes straight to the search. A phone does not get its
+     * keyboard thrown up over the common calibres, which are what most
+     * taps are for: focus lands on the row that is chosen instead. */
+    var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    var list = $('libfilter-list');
+    refocus(coarse ? (list.querySelector('.lf-row.on') || list.querySelector('.lf-row'))
+                   : box);
+  }
+
+  function closeLibFilter() {
+    libFilterReturn = true;
+    showScreen('screen-library');
+    refocus($('lib-filter-btn'));
+  }
+
+  function chooseLibFilter(it) {
+    if (it.kind === 'none') {
+      libCal = ''; libCart = '';
+    } else if (it.kind === 'cart') {
+      libCart = it.key; libCal = it.cal;
+    } else {
+      libCal = it.key;
+      if (it.kind === 'calall' || (libCart && ammoCartBore(libCart) !== it.key)) {
+        libCart = '';
+      }
+    }
+    closeLibFilter();
+  }
+
+  function clearLibFilter() {
+    libCal = ''; libCart = '';
+    renderLibrary(false);
+    refocus($('lib-filter-btn'));
   }
 
   function libTerms() {
@@ -14809,12 +16464,13 @@ var PBOnline = (function () {
              total: total };
   }
 
-  /* The factory loads narrowed the same way, plus the cartridge, by brand. */
+  /* The factory loads narrowed the same way, by brand: by the cartridge
+   * when one is chosen, else by the calibre. */
   function ammoGroups(terms, cal, cart) {
     var groups = {}, total = 0;
     ammoRows().forEach(function (e) {
-      if (cart && e.ammo.cartridge !== cart) return;
-      if (!libMatch(e.key, e.d, terms, cal)) return;
+      if (cart ? e.cart !== cart : (cal && calKey(e.d) !== cal)) return;
+      if (!libMatch(e.key, e.d, terms, '')) return;
       (groups[e.ammo.brand] = groups[e.ammo.brand] || []).push(e);
       total++;
     });
@@ -14850,14 +16506,11 @@ var PBOnline = (function () {
       ammoBrand = null;
       $('lib-note').textContent = '';
     }
-    fillLibCalibres();
-    fillLibCartridges();
     var terms = libTerms();
-    var cal = $('lib-calibre').value, cart = $('lib-cartridge').value;
     var q = $('lib-search').value.trim();
-    var gComp = libGroups(terms, cal);
-    var gAmmo = ammoGroups(terms, cal, cart);
-    var mine = presetHits('bullet', q, cal);
+    var gComp = libGroups(terms, libCal);
+    var gAmmo = ammoGroups(terms, libCal, libCart);
+    var mine = presetHits('bullet', q, libCal);
 
     /* Each tab says how many it has for this search, so one that finds
      * nothing points at the tab that did. */
@@ -14872,7 +16525,7 @@ var PBOnline = (function () {
       tabs[i].classList.toggle('on', on);
     }
     $('lib-panel').setAttribute('aria-labelledby', 'lib-tab-' + libTab);
-    $('lib-cartridge').hidden = libTab !== 'ammo';
+    renderLibFilterBtn();
     $('lib-cols').hidden = libTab === 'mine';
     $('lib-mine').hidden = libTab !== 'mine';
     $('lib-shared-slot').hidden = libTab !== 'mine';
@@ -14881,9 +16534,7 @@ var PBOnline = (function () {
       renderSharedFoot('bullet');
     }
 
-    var where = (q ? ' for “' + q + '”' : '') +
-      (cal ? ' in ' + calChip(Number(cal) * 25.4) : '') +
-      (libTab === 'ammo' && cart ? ' in ' + cart : '');
+    var where = (q ? ' for “' + q + '”' : '') + libFilterWhere();
     if (libTab === 'mine') {
       var all = PBPresets.all('bullet').length;
       $('lib-count').textContent = mine.length
@@ -15064,14 +16715,19 @@ var PBOnline = (function () {
     function rank(x) {
       return (ammoGone(x.ammo) ? 2 : 0) + (ammoAbroad(x.ammo) ? 1 : 0);
     }
+    /* Rows that would read the same -- one product in a box of 20 and a
+     * box of 200 -- are told apart by their SKU; the rest do not carry
+     * it. */
+    var looks = {};
+    items.forEach(function (e) { var k = ammoLook(e); looks[k] = (looks[k] || 0) + 1; });
     var rows = items.slice().sort(function (a, b) {
       return (rank(a) - rank(b)) || (a.ammo.gr - b.ammo.gr) ||
         String(a.ammo.product).localeCompare(String(b.ammo.product));
     }).map(function (e) {
-      return { it: e, row: function () { return ammoRow(e); } };
+      return { it: e, row: function () { return ammoRow(e, looks[ammoLook(e)] > 1); } };
     });
     libSections(col, rows,
-      function (r) { return r.it.ammo.cartridge || '?'; },
+      function (r) { return r.it.cart || '?'; },
       function (k, g) { return k + ' · ' + calChip(g[0].it.d); },
       function (a, b, groups) {
         var ka = calKey(groups[a][0].it.d), kb = calKey(groups[b][0].it.d);
@@ -15124,49 +16780,43 @@ var PBOnline = (function () {
     return body;
   }
 
-  /* One bullet: its weight, name, calibre, and what the solver will fly
-   * it with -- the drag model and BC, how many velocity bands, and
-   * whether the length is published or will be estimated. */
+  /* ".264 inch, 6.5 mm": the calibre for a screen reader, which reads
+   * the chip's prime and middle dot as symbols. */
+  function calSpoken(dMm) {
+    var info = CAL_INFO[calKey(dMm)];
+    return calInch(dMm).replace('″', ' inch') + (info && info.mm ? ', ' + info.mm : '');
+  }
+
+  /* One bullet: its weight, its name, and what tells it from the next
+   * one -- calibre, drag model and BC. A built-in profile also sets the
+   * muzzle velocity and twist of its reference load, so it says them.
+   * What is estimated about a bullet is said once it has been chosen
+   * (renderEstNote), not on every row: on every row it was most of the
+   * list. */
   function libRow(it) {
     var row = document.createElement('button');
     row.type = 'button';
     var current = libIsCurrent(it);
     row.className = 'lib-bullet' + (current ? ' on' : '');
-    var spec, more;
-    var len = function (mm) {
-      return U.fromSI('length', mm * 1e-3).toFixed(U.decimals('length')) +
-             ' ' + U.label('length');
-    };
+    var d = libDiameter(it), bc, more = '';
     if (it.profile) {
-      var p = it.profile, pe = profileEstimates(p);
-      /* From the profile's own provenance, not one sentence for all
-       * three: the S&B's length and inertias are estimates and its lift
-       * and moment curves are the M852's. */
-      var what = (pe.inertia || pe.coefficients)
-        ? [pe.inertia ? 'inertias estimated' : 'its own inertias',
-           pe.coefficients ? 'lift and moment curves from the M852'
-                           : 'its own aerodynamic curves'].join(' · ')
-        : 'its own inertias and aerodynamic curves';
-      spec = calChip(p.physical.d_mm) + ' · ' +
-        (p.ballistic.drag_model === 'G1' ? 'G1 ' : 'G7 ') + p.ballistic.BC_G7;
-      more = 'length ' + len(p.physical.L_mm) +
-        (pe.length ? ' (estimated)' : '') + ' · ' + what + ' · sets MV ' +
-        U.fromSI('velocity', p.ballistic.default_MV_mps)
-          .toFixed(U.decimals('velocity')) + ' ' + U.label('velocity') +
-        ' and twist ' + twistText(p.ballistic.default_twist_in);
+      var p = it.profile;
+      bc = (p.ballistic.drag_model === 'G1' ? 'G1 ' : 'G7 ') + fmt(p.ballistic.BC_G7, 3);
+      more = 'sets ' + velText(p.ballistic.default_MV_mps) + ', ' +
+        twistText(p.ballistic.default_twist_in) + ' twist';
     } else {
       var b = it.bullet;
-      var hasG7 = b.b.some(function (x) { return x[0] === 'G7'; });
-      var model = hasG7 ? 'G7' : 'G1';
-      var bands = b.b.filter(function (x) { return x[0] === model; });
-      spec = calChip(b.d) + ' · ' + model + ' ' + bands[0][1] +
-        (bands.length > 1 ? ' · ' + bands.length + ' velocity bands' : '');
-      more = b.L ? 'length ' + len(b.L) : 'length not published: estimated';
+      var model = b.b.some(function (x) { return x[0] === 'G7'; }) ? 'G7' : 'G1';
+      var first = b.b.filter(function (x) { return x[0] === model; })[0];
+      bc = model + ' ' + fmt(first[1], 3);
     }
     row.appendChild(libBadge(libGrains(libMass(it)), 'gr'));
-    row.appendChild(libBody(libName(it), spec, more, current ? 'in use' : ''));
+    row.appendChild(libBody(libName(it), calChip(d) + ' · ' + bc, more,
+                            current ? 'in use' : ''));
     row.setAttribute('aria-label', libName(it) + ', ' + libGrains(libMass(it)) +
-      ' grains, ' + spec + ', ' + more + (current ? ', in use' : ''));
+      ' grains, ' + calSpoken(d) + ', ' + bc +
+      (more ? ', ' + more.replace(/″/g, ' inch') : '') +
+      (current ? ', in use' : ''));
     row.addEventListener('click', function () {
       if (it.profile) {
         applyProfileDefaults(it.profile.profile_id);
@@ -15176,39 +16826,92 @@ var PBOnline = (function () {
         pickBullet(it.bullet);
       }
       showScreen('screen-projectile');
+      armEstNote();
       refocus($('btn-bullet-change'));
     });
     return row;
   }
 
-  /* One factory load: the product as the box names it, the line and
-   * SKU, and the BC and box velocity it would be flown with. */
-  function ammoRow(e) {
+  /* The product name for a row, without what the row already says: the
+   * weight is in the badge, the cartridge in the heading above and the
+   * box velocity beside the BC. Federal's names carry all three, and the
+   * bullet twice -- "Trophy Copper, 6.5 Creedmoor, 120 Grain, Trophy
+   * Copper, 2875 fps" -- and were most of the row. Only exact copies of
+   * those figures come out, so "+P" or "+Peak" after a cartridge stays;
+   * a name with nothing left keeps all of it. The card and the bullet's
+   * saved name are the whole thing (ammoName). */
+  function ammoShort(e) {
+    var a = e.ammo, full = String(a.product || e.name), s = full;
+    function esc(t) { return String(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+    function cut(pattern) {
+      s = s.replace(new RegExp('(^|[\\s,(~–—])' + pattern + '(?=$|[\\s,)~–—])', 'i'), '$1');
+    }
+    var cart = e.cart;
+    if (cart) {
+      cut(esc(cart));
+      if (cart.charAt(0) === '.') cut(esc(cart.slice(1)));
+    }
+    if (a.gr > 0) cut(esc(a.gr) + '\\s*(?:grs?|grains?)\\.?');
+    if (a.mv_fps > 0) cut(esc(a.mv_fps) + '\\s*fps');
+    /* "(WSM)", "(Precision Rifle Cartridge)": what the cartridge's name
+     * was spelt out as, left at the front once the name is gone. */
+    s = s.replace(/^\s*\([^)]*\)/, '');
+    /* What is left, in the pieces the maker separated it into -- by a
+     * comma and a space ("6,5 Creedmoor" is a number), or a spaced dash
+     * or tilde -- without the empty ones and without repeats. */
+    var seen = {}, parts = [];
+    s.replace(/\(\s*\)/g, '').split(/,\s+|\s+[~–—]\s+/).forEach(function (p) {
+      p = p.replace(/\s+/g, ' ').replace(/^[\s,~–—]+|[\s,~–—]+$/g, '');
+      var k = p.toLowerCase();
+      if (p && !seen[k]) { seen[k] = true; parts.push(p); }
+    });
+    s = parts.join(', ');
+    return s.length >= 3 ? s : full;
+  }
+
+  /* What two factory rows would both print by name, to find the ones
+   * that need their SKU to be told apart. */
+  function ammoLook(e) {
+    var a = e.ammo;
+    return [ammoShort(e), a.line, a.gr, e.cart].join('|');
+  }
+
+  /* One factory load: the product as the box names it, its line where
+   * the name does not already say it, the BC and the box velocity it is
+   * flown with. The test barrel is said in the note on the Projectile
+   * screen once the load is chosen; an export line says "International"
+   * in its own name. sku: print the SKU, because another row of this
+   * brand would read the same without it. */
+  function ammoRow(e, sku) {
     var a = e.ammo;
     var row = document.createElement('button');
     row.type = 'button';
     var current = ammoIsCurrent(e);
     row.className = 'lib-bullet' + (current ? ' on' : '');
-    var g7 = a.bc_g7 > 0;
-    var spec = (a.line ? a.line : a.brand) + (a.sku ? ' · ' + a.sku : '') +
-      ' · ' + (g7 ? 'G7 ' + fmt(a.bc_g7, 3) : 'G1 ' + fmt(a.bc_g1, 3));
-    var more = (a.mv_fps > 0
-      ? velText(a.mv_fps * FT_M) + ' box velocity' +
-        (a.barrel_in > 0 ? ', ' + a.barrel_in + '″ test barrel'
-                         : ', test barrel not published')
-      : 'no box velocity published') +
-      (ammoAbroad(a) ? ' · sold outside North America' : '') +
-      (current && ammoGone(a) ? ' · ' + ammoStatusText(a) : '');
-    /* The tag says "in use" on the one loaded, so its status moves to
-     * the line under it rather than going unsaid. */
-    var tag = current ? 'in use' : ammoGone(a) ? ammoStatusText(a) : '';
+    var prod = String(a.product || e.name);
+    var line = a.line && prod.toLowerCase().indexOf(String(a.line).toLowerCase()) < 0
+      ? String(a.line) : '';
+    var bc = a.bc_g7 > 0 ? 'G7 ' + fmt(a.bc_g7, 3) : 'G1 ' + fmt(a.bc_g1, 3);
+    var mv = a.mv_fps > 0 ? velText(a.mv_fps * FT_M) : '';
+    var spec = [line, bc, mv, sku && a.sku ? a.sku : ''].filter(Boolean).join(' · ');
+    /* One tag: "in use" on the load being shot, whose status then goes
+     * on a line under it rather than unsaid. */
+    var gone = ammoGone(a) ? ammoStatusText(a) : '';
+    var tag = current ? 'in use' : gone;
+    var more = current ? gone : '';
+    var name = ammoShort(e);
     row.appendChild(libBadge(libGrains(a.gr), 'gr'));
-    row.appendChild(libBody(a.product || e.name, spec, more, tag));
-    row.setAttribute('aria-label', e.name + ', ' + spec + ', ' + more +
-                     (tag ? ', ' + tag : ''));
+    row.appendChild(libBody(name, spec, more, tag));
+    /* A screen reader does not hear the cartridge heading on every row,
+     * so the label says it once. */
+    row.setAttribute('aria-label', [a.brand + ' ' + (line ? line + ' ' : '') + name,
+      e.cart, libGrains(a.gr) + ' grains', bc, mv,
+      sku && a.sku ? 'SKU ' + a.sku : '', gone, current ? 'in use' : '']
+      .filter(Boolean).join(', '));
     row.addEventListener('click', function () {
       pickAmmo(a);
       showScreen('screen-projectile');
+      armEstNote();
       refocus($('btn-bullet-change'));
     });
     return row;
@@ -15238,12 +16941,9 @@ var PBOnline = (function () {
       if (libTimer) { clearTimeout(libTimer); libTimer = null; renderLibrary(false); }
       box.blur();
     });
-    $('lib-calibre').addEventListener('change', function () {
-      renderLibrary(false);
-    });
-    $('lib-cartridge').addEventListener('change', function () {
-      renderLibrary(false);
-    });
+    $('lib-filter-btn').addEventListener('click', openLibFilter);
+    $('lib-filter-clear').addEventListener('click', clearLibFilter);
+    bindLibFilter();
     /* Tabs the ARIA way: one tab stop, the arrows move between them. */
     var order = ['mine', 'ammo', 'comp'];
     var tabs = document.querySelectorAll('#lib-tabs [role="tab"]');
@@ -15262,6 +16962,61 @@ var PBOnline = (function () {
         setLibTab(order[to], true);
       });
     }
+  }
+
+  /* The filter screen by keyboard: type, then Enter takes the top match;
+   * Down goes from the search into the list and Up comes back out of
+   * it; Escape empties the search, or goes back when it is empty. */
+  function bindLibFilter() {
+    var box = $('libfilter-search'), list = $('libfilter-list');
+    function rows() { return Array.prototype.slice.call(list.querySelectorAll('.lf-row')); }
+    /* Scrolled into view, unlike refocus(): Down walks down a long list. */
+    function go(el) { try { el.focus(); } catch (e) { /* older browsers */ } }
+    $('libfilter-back').addEventListener('click', closeLibFilter);
+    box.addEventListener('input', renderLibFilter);
+    box.addEventListener('keydown', function (ev) {
+      var r = rows();
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        if (box.value.trim() && r.length) r[0].click();
+        else box.blur();
+      } else if (ev.key === 'ArrowDown' && r.length) {
+        ev.preventDefault();
+        go(r[0]);
+      }
+    });
+    list.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp') return;
+      var r = rows(), at = r.indexOf(document.activeElement);
+      if (at < 0) return;
+      ev.preventDefault();
+      if (ev.key === 'ArrowDown') { if (at < r.length - 1) go(r[at + 1]); }
+      else go(at > 0 ? r[at - 1] : box);
+    });
+    $('screen-libfilter').addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Escape') return;
+      ev.preventDefault();
+      if (box.value) { box.value = ''; renderLibFilter(); go(box); }
+      else closeLibFilter();
+    });
+  }
+
+  /* The estimated-data notice under the bullet card, and the inertia
+   * fields in Advanced. */
+  function bindBulletAdvanced() {
+    bindInertiaFields();
+    $('est-note-x').addEventListener('click', function () {
+      dropEstNote();
+      refocus($('btn-bullet-change'));
+    });
+    $('est-note-open').addEventListener('click', function () {
+      dropEstNote();
+      var adv = $('bullet-advanced');
+      adv.open = true;
+      var sum = adv.querySelector('summary');
+      try { sum.focus({ preventScroll: true }); } catch (e) { /* older browsers */ }
+      adv.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
   }
 
   // ------------------------------------------------------------------
@@ -15516,6 +17271,7 @@ var PBOnline = (function () {
     populateSelects();
     bindInputs();
     bindLibrary();
+    bindBulletAdvanced();
     bindPresets();
     bindUnitChips();
     refreshInputs();
@@ -15527,11 +17283,14 @@ var PBOnline = (function () {
     recoverShots();
     renderLogPanel();
     runSolve();
+    /* The rifles' photos, read after the first solve and never waited
+     * on: the cards and the rifle screen redraw when they arrive. */
+    PBPhoto.init(S.rifles.map(function (r) { return r.id; }), photosChanged);
 
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.10.0',
+      version: '1.11.0',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(), k, sub;
         for (k in (cfgOverrides || {})) {
