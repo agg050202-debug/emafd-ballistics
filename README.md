@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  1f15f75e4f65fe577937fab52db48552d557e08935190615367015cf4339c62e
-bytes   2160535
-stamp   1.11.0 · 2026-10-17 23:37 UTC   (shown in the page footer)
+sha256  6d3246a0aacbcd9e6eb0df30e985b9de0a6f500565486811fb2144a05e069597
+bytes   2658729
+stamp   1.12.0 · 2026-10-18 04:42 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -96,6 +96,13 @@ mean typed, and a pair with only one value typed still says `false` while the
 other is an estimate. Nothing else in the log changed: still 66 columns, and
 the new bullet drawing and rifle photo record nothing.
 
+**1.12.0 is not a boundary.** It carries 1.11.1, which was never served — a
+new way to create a rifle — and adds a catalogue of scopes and their reticles.
+Choosing a scope sets the reticle, the click value and, where the table reads
+MIL or MOA, the turret unit, so later rows may show a different `dialled_unit`
+or `dialled_click`; both mean what they always did. The log has no reticle
+column, and nothing it records changes meaning.
+
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
 already been fixed.
@@ -130,6 +137,10 @@ From 1.11.0 a rifle can carry a photo. It is stored only in the browser
 (IndexedDB, redrawn at most 1000 px across, which also drops the location a
 phone camera writes into the file), never uploaded, and leaves the device only
 inside a rifle-library file the shooter exports themselves.
+
+The scope catalogue added in 1.12.0 is part of the page as well. Each reticle
+names the maker's document it was drawn from, but nothing is fetched from the
+makers' sites: the page loads no image or file from anywhere.
 
 Since 1.4.1 the wind toggle starts on **HOLD YOURSELF** rather than the mode
 now labelled DRIFT INCLUDED — WIND DRIFT INCLUDED from 1.5.1 to 1.7.0 and WIND
