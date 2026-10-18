@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  4d5d08999e60b2e174df044021ab64969b9248eac5fde16a0e8bcc4b39507dc1
-bytes   2690398
-stamp   1.13.0 · 2026-10-18 05:23 UTC   (shown in the page footer)
+sha256  3ceb6a9a922a4a0ddda600ffb4fea85ec96c6baf33f10fdcb9a8b14fe23a63f9
+bytes   2700058
+stamp   1.13.1 · 2026-10-18 06:18 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -113,6 +113,10 @@ with the default M852 at azimuth 40°: 5 m/s from 3 o'clock to 300 m, then
 600 m, against −1.57 for 5 m/s all the way; the same with the far wind from
 9 o'clock gives +0.07. Join the JSON before reading any row from 1.13.0 on as
 a constant wind.
+
+**1.13.1 is not a boundary.** It makes the solver about twice as fast and
+changes no result: every number it computes is bit-identical to 1.13.0's.
+Rows from either side of it pool freely.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has
@@ -264,6 +268,14 @@ above, stamped with the build they were run against, before it was published:
 - From 1.10.0, the magnetic declination behind the compass agrees with all
   **12** of NOAA's published WMM2025 test values, the worst field component
   within 0.049 nT.
+
+In 1.13.1 the engine was optimised for speed for the first time since the
+port. No formula and no order of operations changed. The outputs were checked
+bit for bit against the previous engine — 228 solves and a fuzz of the
+numerical primitives, some 35 million numbers compared exactly — and the
+suites above give the same figures as before. On publication, six whole range
+cards from the published 1.13.0 and from 1.13.1 were compared again, 5,786
+numbers each, with no difference.
 
 ## Releasing a new build
 
