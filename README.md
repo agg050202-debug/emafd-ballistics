@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  6d3246a0aacbcd9e6eb0df30e985b9de0a6f500565486811fb2144a05e069597
-bytes   2658729
-stamp   1.12.0 · 2026-10-18 04:42 UTC   (shown in the page footer)
+sha256  4d5d08999e60b2e174df044021ab64969b9248eac5fde16a0e8bcc4b39507dc1
+bytes   2690398
+stamp   1.13.0 · 2026-10-18 05:23 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -102,6 +102,17 @@ Choosing a scope sets the reticle, the click value and, where the table reads
 MIL or MOA, the turret unit, so later rows may show a different `dialled_unit`
 or `dialled_click`; both mean what they always did. The log has no reticle
 column, and nothing it records changes meaning.
+
+**1.13.0 is a boundary for the wind columns, and no column shows it.** The
+wind can now be given by segments along the range. When it is, `wind_mps` and
+`wind_dir_rel_deg` hold only the first segment, the wind at the shooter, while
+every `pred_*` column comes from the flight through the whole profile; the
+whole profile is in the JSON record as `wind.profile`. Measured on this build
+with the default M852 at azimuth 40°: 5 m/s from 3 o'clock to 300 m, then
+10 m/s from 3 o'clock, records `wind_mps = 5` and a drift of −2.11 MIL at
+600 m, against −1.57 for 5 m/s all the way; the same with the far wind from
+9 o'clock gives +0.07. Join the JSON before reading any row from 1.13.0 on as
+a constant wind.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has

@@ -1661,6 +1661,69 @@
 }
 .sb-app .phone-live .actions button { min-height: 44px; }
 
+/* ---- Wind by segments ------------------------------------------------
+   A graph to draw on: the line in the accent, everything else muted, and
+   targets sized for a gloved finger (the hit circle is 22 px of radius
+   around a 6 px dot). touch-action stops the page scrolling under a drag. */
+.sb-app .wprof-card { max-width: 560px; }
+.sb-app .wprof-graph {
+  width: 100%; height: auto; display: block; touch-action: none;
+  background: var(--sb-bg-2); border: 1px solid var(--sb-line);
+  border-radius: var(--sb-radius); user-select: none; -webkit-user-select: none;
+}
+.sb-app .wprof-graph .wg-grid line { stroke: var(--sb-line); stroke-width: 1; }
+.sb-app .wprof-graph .wg-grid text {
+  fill: var(--sb-fg-dim); font: 10px var(--sb-mono);
+}
+.sb-app .wprof-graph .wg-grid .wg-unit { font-size: 10px; }
+.sb-app .wprof-graph .wg-area { fill: var(--sb-accent); opacity: 0.08; }
+.sb-app .wprof-graph .wg-line {
+  fill: none; stroke: var(--sb-accent); stroke-width: 2;
+  stroke-linejoin: round; stroke-linecap: round;
+}
+.sb-app .wprof-graph .wg-stem { stroke: var(--sb-line); stroke-dasharray: 2 3; }
+.sb-app .wprof-graph .wg-hit { fill: transparent; cursor: grab; }
+.sb-app .wprof-graph .wg-dot {
+  fill: var(--sb-bg); stroke: var(--sb-accent); stroke-width: 2;
+}
+.sb-app .wprof-graph .wg-pt.sel .wg-dot { fill: var(--sb-accent); }
+.sb-app .wprof-graph .wg-dial { fill: var(--sb-bg); stroke: var(--sb-fg-dim); stroke-width: 1; }
+.sb-app .wprof-graph .wg-dial.on { stroke: var(--sb-accent); }
+.sb-app .wprof-graph .wg-dial-12 { stroke: var(--sb-fg-dim); stroke-width: 1.2; }
+.sb-app .wprof-graph .wg-arrow {
+  fill: none; stroke: var(--sb-fg); stroke-width: 1.6; stroke-linecap: round;
+}
+.sb-app .wprof-graph .wg-pt:focus { outline: none; }
+.sb-app .wprof-graph .wg-pt:focus-visible .wg-hit {
+  stroke: var(--sb-accent); stroke-width: 1.5; stroke-dasharray: 3 3;
+}
+.sb-app .wprof-mode { align-self: flex-start; }
+.sb-app .wprof-rows { display: flex; flex-direction: column; gap: 6px; }
+.sb-app .wprof-row {
+  display: grid; align-items: end; gap: 6px; padding: 6px 8px;
+  grid-template-columns: 18px repeat(3, minmax(0, 1fr)) auto 40px;
+  border: 1px solid var(--sb-line); border-radius: var(--sb-radius);
+}
+.sb-app .wprof-row.sel { border-color: var(--sb-accent); }
+.sb-app .wprof-n {
+  align-self: center; font: 12px var(--sb-mono); color: var(--sb-fg-dim);
+}
+.sb-app .wprof-f { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sb-app .wprof-f span { font-size: 11px; color: var(--sb-fg-dim); white-space: nowrap; }
+.sb-app .wprof-f input { width: 100%; min-width: 0; }
+.sb-app .wprof-clock {
+  align-self: center; font-size: 12px; color: var(--sb-fg-dim); white-space: nowrap;
+}
+.sb-app .wprof-del { width: 40px; height: 40px; padding: 0; align-self: end; }
+.sb-app .wprof-actions { justify-content: space-between; }
+/* The graph button lit while the segments are the wind, so a glance at
+   the field says the number in it is not what the solver uses. */
+.sb-app button.icon-btn.on { background: var(--sb-accent); color: #fff; }
+@media (max-width: 420px) {
+  .sb-app .wprof-row { grid-template-columns: 16px repeat(3, minmax(0, 1fr)) 40px; }
+  .sb-app .wprof-clock { display: none; }
+}
+
 </style>
 <style>
 /* STANDALONE PAGE ONLY. style.css is scoped entirely under .sb-app so it
@@ -2551,11 +2614,25 @@ body { background: #101317; }
       </div>
     </div>
     <div class="grid2">
+      <!-- The graph button: a wind that changes along the range, the
+           way the compass beside the azimuth is a second way to set it. -->
       <div class="field"><label for="in-wspd">Speed <u data-u="wind"></u></label>
-        <input type="text" inputmode="decimal" id="in-wspd"></div>
+        <div class="with-info">
+          <input type="text" inputmode="decimal" id="in-wspd">
+          <button type="button" class="icon-btn wprof-btn" id="btn-wprof"
+                  aria-label="Wind by segments, on a graph"
+                  title="Wind by segments">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 4v16h18"/>
+              <path d="M6 15h4v-5h4v3h5"/>
+            </svg></button>
+        </div></div>
       <div class="field"><label for="in-wdir">Direction (deg, relative)</label>
         <input type="text" inputmode="decimal" id="in-wdir"></div>
     </div>
+    <p class="hint warn wprof-status" id="wprof-status" hidden></p>
   </div>
 </section>
 
@@ -2615,7 +2692,7 @@ body { background: #101317; }
 </section>
 
 <footer class="sb-footer">
-  <p>Build <b id="build-stamp">1.12.0 · 2026-10-18 04:42 UTC</b> &mdash; quote this when
+  <p>Build <b id="build-stamp">1.13.0 · 2026-10-18 05:23 UTC</b> &mdash; quote this when
   reporting anything, so a fixed bug is not reported twice.
   <button type="button" class="info" aria-expanded="false"
           aria-controls="info-credits" aria-label="About this solver">i</button></p>
@@ -2691,12 +2768,52 @@ body { background: #101317; }
     </div>
     <div class="grid2">
       <div class="field"><label for="wm-wspd">Speed <u data-u="wind"></u></label>
-        <input type="text" inputmode="decimal" id="wm-wspd"></div>
+        <div class="with-info">
+          <input type="text" inputmode="decimal" id="wm-wspd">
+          <button type="button" class="icon-btn wprof-btn" id="btn-wprof-2"
+                  aria-label="Wind by segments, on a graph"
+                  title="Wind by segments">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 4v16h18"/>
+              <path d="M6 15h4v-5h4v3h5"/>
+            </svg></button>
+        </div></div>
       <div class="field"><label for="wm-wdir">Direction (deg, relative)</label>
         <input type="text" inputmode="decimal" id="wm-wdir"></div>
     </div>
+    <p class="hint warn wprof-status" id="wprof-status-2" hidden></p>
     <div class="actions">
       <button type="button" id="wind-done">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Wind by segments. A graph you draw on: distance along the bottom,
+     speed up the side, a point wherever the wind changes, its direction
+     as a small dial above it. Rows below give each point exact numbers.
+     Built by renderWindProfile(); the drawing is PBWindGraph. -->
+<div class="sb-modal" id="wprof-modal" hidden role="dialog" aria-modal="true"
+     aria-labelledby="wprof-title">
+  <div class="sb-modal-card wprof-card">
+    <h3 id="wprof-title">Wind by segments</h3>
+    <label class="check wprof-on">
+      <input type="checkbox" id="wprof-on">
+      <span>Use wind by segments</span>
+    </label>
+    <div class="seg wprof-mode" id="wprof-mode" role="group" aria-label="Between points">
+      <button type="button" data-mode="steps">Steps</button>
+      <button type="button" data-mode="interp">Smooth</button>
+    </div>
+    <svg id="wprof-graph" class="wprof-graph" role="group"
+         aria-label="Wind speed along the range; drag a point, tap to add one"></svg>
+    <p class="hint" id="wprof-hint">Each point sets the wind from its distance
+    on. Drag a point to change it; tap the graph to add one.</p>
+    <div class="wprof-rows" id="wprof-rows"></div>
+    <div class="actions wprof-actions">
+      <button type="button" id="wprof-add">+ Add segment</button>
+      <button type="button" id="wprof-done" class="primary">Done</button>
     </div>
   </div>
 </div>
@@ -10112,6 +10229,236 @@ var PBWindRose = (function () {
 
 </script>
 <script>
+/* Wind by segments, as a graph you draw on.
+ *
+ * Distance downrange along the bottom, wind speed up the side, one point
+ * per change of wind. A point sets the wind FROM its distance on: in
+ * Steps the wind stays at that value until the next point, in Smooth it
+ * ramps to the next point's value -- the engine's 'steps' and 'interp'
+ * modes (runner.js / dynamics.js wind()), drawn the way they fly. Past the
+ * last point the last value holds, which is also what the engine does.
+ *
+ * Each point carries the direction of its wind as a small dial above the
+ * graph, in the wind rose's convention: target at the top, the arrow runs
+ * from where the wind comes FROM onto the centre. A shooter reads a
+ * profile as "3 m/s from 3 o'clock to 300, then 5 from 2 o'clock", so
+ * speed and direction sit together over each segment.
+ *
+ * The widget only draws and reports gestures; the app owns the points.
+ *   PBWindGraph.draw(svg, view)    view: { pts:[{x, speed, dir}] (SI),
+ *       mode, xMax (m), sel, x: {toD, fromD, step, unit},
+ *       v: {toD, fromD, step, unit} }
+ *   PBWindGraph.attach(svg, api)   api: { view(), move(i, x, speed),
+ *       add(x, speed), select(i), done() }
+ */
+'use strict';
+
+var PBWindGraph = (function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var W = 340, H = 230;
+  var PAD = { l: 38, r: 14, t: 52, b: 28 };   /* the dials sit in the top band */
+
+  function el(name, attrs, text) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) {
+      if (Object.prototype.hasOwnProperty.call(attrs, k)) n.setAttribute(k, attrs[k]);
+    }
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  /* A round number of display units per grid step, so the axis reads
+   * 0 / 200 / 400 rather than 0 / 187 / 374. */
+  function niceStep(span, target) {
+    var raw = span / target, p = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var m = raw / p;
+    return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+  }
+
+  /* The scales for this view, shared by draw() and the gestures so a
+   * finger lands where the point is drawn. */
+  function frame(v) {
+    var xMaxD = v.x.toD(v.xMax);
+    var vmax = 0;
+    v.pts.forEach(function (p) { vmax = Math.max(vmax, v.v.toD(p.speed)); });
+    var vTop = Math.max(v.v.toD(5), vmax * 1.3);
+    var vStep = niceStep(vTop, 4);
+    vTop = Math.ceil(vTop / vStep) * vStep;
+    var iw = W - PAD.l - PAD.r, ih = H - PAD.t - PAD.b;
+    return {
+      xMaxD: xMaxD, vTop: vTop, vStep: vStep, xStep: niceStep(xMaxD, 4),
+      X: function (m) { return PAD.l + iw * v.x.toD(m) / xMaxD; },
+      Y: function (mps) { return PAD.t + ih * (1 - v.v.toD(mps) / vTop); },
+      unX: function (px) {
+        return v.x.fromD(Math.max(0, Math.min(1, (px - PAD.l) / iw)) * xMaxD);
+      },
+      unY: function (py) {
+        return v.v.fromD(Math.max(0, Math.min(1, 1 - (py - PAD.t) / ih)) * vTop);
+      }
+    };
+  }
+
+  /* The dial over a point: where the wind comes from, onto the centre. */
+  function dial(g, cx, cy, dir, on) {
+    var r = 11, a = (dir - 90) * Math.PI / 180;
+    var fx = cx + r * Math.cos(a), fy = cy + r * Math.sin(a);
+    g.appendChild(el('circle', { cx: cx, cy: cy, r: r, 'class': 'wg-dial' + (on ? ' on' : '') }));
+    g.appendChild(el('path', { d: 'M' + cx + ' ' + (cy - r) + 'v3', 'class': 'wg-dial-12' }));
+    g.appendChild(el('line', { x1: fx, y1: fy, x2: cx, y2: cy, 'class': 'wg-arrow' }));
+    /* Head on the centre, pointing the way the wind pushes. */
+    var b = Math.atan2(cy - fy, cx - fx), h = 4.5;
+    g.appendChild(el('path', {
+      d: 'M' + cx + ' ' + cy +
+         'L' + (cx - h * Math.cos(b - 0.5)) + ' ' + (cy - h * Math.sin(b - 0.5)) +
+         'M' + cx + ' ' + cy +
+         'L' + (cx - h * Math.cos(b + 0.5)) + ' ' + (cy - h * Math.sin(b + 0.5)),
+      'class': 'wg-arrow'
+    }));
+  }
+
+  function draw(svg, v) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    var f = frame(v), x0 = PAD.l, x1 = W - PAD.r, y0 = PAD.t, y1 = H - PAD.b;
+    var i, t;
+
+    /* Grid and axes. */
+    var grid = el('g', { 'class': 'wg-grid' });
+    for (t = 0; t <= f.vTop + 1e-9; t += f.vStep) {
+      var gy = y1 - (y1 - y0) * t / f.vTop;
+      grid.appendChild(el('line', { x1: x0, y1: gy, x2: x1, y2: gy }));
+      grid.appendChild(el('text', { x: x0 - 6, y: gy + 4, 'text-anchor': 'end' },
+                          String(Math.round(t * 10) / 10)));
+    }
+    for (t = 0; t <= f.xMaxD + 1e-9; t += f.xStep) {
+      var gx = x0 + (x1 - x0) * t / f.xMaxD;
+      grid.appendChild(el('line', { x1: gx, y1: y0, x2: gx, y2: y1, 'class': 'v' }));
+      grid.appendChild(el('text', { x: gx, y: y1 + 16, 'text-anchor': 'middle' },
+                          String(Math.round(t))));
+    }
+    grid.appendChild(el('text', { x: x0 - 6, y: y0 - 8, 'text-anchor': 'end', 'class': 'wg-unit' }, v.v.unit));
+    grid.appendChild(el('text', { x: x1, y: H - 2, 'text-anchor': 'end', 'class': 'wg-unit' }, v.x.unit));
+    svg.appendChild(grid);
+
+    /* The wind as the bullet meets it. */
+    var p = v.pts, d = '';
+    for (i = 0; i < p.length; i++) {
+      var px = f.X(p[i].x), py = f.Y(p[i].speed);
+      if (i === 0) d += 'M' + px + ' ' + py;
+      else if (v.mode === 'interp') d += 'L' + px + ' ' + py;
+      else d += 'H' + px + 'V' + py;
+    }
+    d += 'H' + x1;
+    svg.appendChild(el('path', { d: d + 'V' + y1 + 'H' + f.X(p[0].x) + 'Z', 'class': 'wg-area' }));
+    svg.appendChild(el('path', { d: d, 'class': 'wg-line' }));
+
+    /* Points, each with its dial above, and a generous invisible target
+     * for a gloved finger. */
+    for (i = 0; i < p.length; i++) {
+      var cx = f.X(p[i].x), cy = f.Y(p[i].speed), sel = i === v.sel;
+      var g = el('g', { 'class': 'wg-pt' + (sel ? ' sel' : ''), 'data-i': i,
+                        tabindex: 0, role: 'button',
+                        'aria-label': 'Segment ' + (i + 1) + ': from ' +
+                          Math.round(v.x.toD(p[i].x)) + ' ' + v.x.unit + ', ' +
+                          (Math.round(v.v.toD(p[i].speed) * 10) / 10) + ' ' + v.v.unit +
+                          ' from ' + (Math.round(((p[i].dir % 360) + 360) % 360 / 30) || 12) +
+                          " o'clock" });
+      g.appendChild(el('line', { x1: cx, y1: y0 - 10, x2: cx, y2: y1, 'class': 'wg-stem' }));
+      dial(g, cx, 22, p[i].dir, sel);
+      g.appendChild(el('circle', { cx: cx, cy: cy, r: 26, 'class': 'wg-hit' }));
+      g.appendChild(el('circle', { cx: cx, cy: cy, r: sel ? 7 : 6, 'class': 'wg-dot' }));
+      svg.appendChild(g);
+    }
+  }
+
+  function toSvg(svg, ev) {
+    var m = svg.getScreenCTM();
+    if (!m) return null;
+    var q = svg.createSVGPoint();
+    q.x = ev.clientX; q.y = ev.clientY;
+    return q.matrixTransform(m.inverse());
+  }
+
+  function snap(val, step) { return Math.round(val / step) * step; }
+
+  function attach(svg, api) {
+    var drag = null;
+
+    function frameNow() { return frame(api.view()); }
+
+    svg.addEventListener('pointerdown', function (ev) {
+      if (ev.button !== undefined && ev.button !== 0) return;
+      var at = toSvg(svg, ev);
+      if (!at) return;
+      var v = api.view(), f = frame(v);
+      var hit = ev.target.closest ? ev.target.closest('.wg-pt') : null;
+      var i;
+      if (hit) {
+        i = Number(hit.getAttribute('data-i'));
+      } else {
+        /* Tapping the graph adds a point there -- but not in the dial
+         * band or below the axis, where a stray touch is not a wish. */
+        if (at.y < PAD.t - 6 || at.y > H - PAD.b + 4 || at.x < PAD.l) return;
+        var xd = snap(v.x.toD(f.unX(at.x)), v.x.step);
+        var sd = Math.max(0, snap(v.v.toD(f.unY(at.y)), v.v.step));
+        i = api.add(v.x.fromD(xd), v.v.fromD(sd));
+        if (i < 0) return;
+      }
+      api.select(i);
+      drag = { i: i, id: ev.pointerId, moved: false };
+      try { svg.setPointerCapture(ev.pointerId); } catch (e) { /* none */ }
+      ev.preventDefault();
+    });
+
+    svg.addEventListener('pointermove', function (ev) {
+      if (!drag || ev.pointerId !== drag.id) return;
+      var at = toSvg(svg, ev);
+      if (!at) return;
+      var v = api.view(), f = frameNow();
+      var xd = snap(v.x.toD(f.unX(at.x)), v.x.step);
+      var sd = Math.max(0, snap(v.v.toD(f.unY(at.y)), v.v.step));
+      drag.moved = true;
+      api.move(drag.i, v.x.fromD(xd), v.v.fromD(sd));
+    });
+
+    function end(ev) {
+      if (!drag || (ev && ev.pointerId !== drag.id)) return;
+      drag = null;
+      api.done();
+    }
+    svg.addEventListener('pointerup', end);
+    svg.addEventListener('pointercancel', end);
+
+    /* Keys on a focused point: up/down the speed, left/right the
+     * distance, Delete removes it. */
+    svg.addEventListener('keydown', function (ev) {
+      var g = ev.target.closest ? ev.target.closest('.wg-pt') : null;
+      if (!g) return;
+      var i = Number(g.getAttribute('data-i')), v = api.view(), p = v.pts[i];
+      var dv = 0, dx = 0;
+      if (ev.key === 'ArrowUp') dv = 1;
+      else if (ev.key === 'ArrowDown') dv = -1;
+      else if (ev.key === 'ArrowRight') dx = 1;
+      else if (ev.key === 'ArrowLeft') dx = -1;
+      else if (ev.key === 'Delete' || ev.key === 'Backspace') {
+        ev.preventDefault(); if (api.remove) api.remove(i); return;
+      } else if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault(); api.select(i); return;
+      } else return;
+      ev.preventDefault();
+      var sd = Math.max(0, snap(v.v.toD(p.speed), v.v.step) + dv * v.v.step * (ev.shiftKey ? 5 : 1));
+      var xd = snap(v.x.toD(p.x), v.x.step) + dx * v.x.step * (ev.shiftKey ? 5 : 1);
+      api.select(i);
+      api.move(i, v.x.fromD(Math.max(0, xd)), v.v.fromD(sd));
+      api.done();
+    });
+  }
+
+  return { draw: draw, attach: attach };
+})();
+
+</script>
+<script>
 /* Azimuth of fire: a compass card you turn, with the bullet fixed.
  *
  * Drawn from the shooter's eye, exactly like the wind dial: the target
@@ -10975,6 +11322,12 @@ var PBOnline = (function () {
        * wants a bearing in the same frame as the azimuth, so buildConfig
        * adds the azimuth back on. */
       wind: { speed: 0.0, dir: 90.0 },
+      /* Wind by segments: a point wherever the wind changes downrange --
+       * x in metres from the muzzle, speed in m/s, dir RELATIVE to the
+       * shot like wind.dir. 'steps' holds each point's wind until the
+       * next, 'interp' ramps between them: the engine's two profile
+       * modes. Off, the single wind above is the wind, as before. */
+      windProfile: { on: false, mode: 'steps', pts: [] },
       geom: { los: 0.0, lat: 0.0, lon: 0.0, az: 0.0 },
       out: { corr: 'MIL', click: '0.1 MIL', turret: 1.0 },
       /* The distances the shooter is actually shooting, in metres. This
@@ -11128,6 +11481,7 @@ var PBOnline = (function () {
         } else { base[k] = d[k]; }
       }
       S = base;
+      cleanProfile();
       correctProfileFlags(S.bullet);
       /* Before the curves were chosen automatically every catalogue
        * bullet carried the M852's. A saved one is re-chosen here, so an
@@ -11423,6 +11777,24 @@ var PBOnline = (function () {
      * bearing, as this did before, mislabels the wind by the azimuth:
      * firing east into an easterly is a headwind, not a 3 o'clock. */
     cfg.air.wind_dir_deg = clamp('wind.dir', S.wind.dir) + cfg.pos.azimuth;
+
+    /* Wind by segments: the engine's wind_profile, each direction put
+     * into the azimuth's frame exactly as the single wind is above. The
+     * single-wind fields carry the first segment -- the wind at the
+     * shooter -- so nothing that reads them alone is told a calm. */
+    if (profileOn()) {
+      var wp = wpPts();
+      cfg.air.wind_profile = {
+        x: wp.map(function (p) { return p.x; }),
+        speed: wp.map(function (p) { return clamp('wind.speed', p.speed); }),
+        dir: wp.map(function (p) {
+          return clamp('wind.dir', p.dir) + cfg.pos.azimuth;
+        }),
+        mode: S.windProfile.mode === 'interp' ? 'interp' : 'steps'
+      };
+      cfg.air.wind_speed = clamp('wind.speed', wp[0].speed);
+      cfg.air.wind_dir_deg = clamp('wind.dir', wp[0].dir) + cfg.pos.azimuth;
+    }
     cfg.pos.altitude = clamp('atmo.altitude', S.atmo.altitude);
 
     /* Solve 50 m past the furthest row, as the desktop does, so every
@@ -11525,7 +11897,47 @@ var PBOnline = (function () {
    * it moves by about a quarter of a MIL, which is the physical figure
    * and is what the shot log has always been meant to test. */
   function displayed() { return resPhys; }
-  function hasWind() { return clamp('wind.speed', S.wind.speed) > 0; }
+  function hasWind() {
+    if (profileOn()) {
+      return wpPts().some(function (p) { return clamp('wind.speed', p.speed) > 0; });
+    }
+    return clamp('wind.speed', S.wind.speed) > 0;
+  }
+
+  /* Wind by segments, read safely: points with numbers, in distance
+   * order, the first at the muzzle. */
+  var WPROF_MAX = 8;
+  function wpPts() {
+    var wp = S.windProfile;
+    return (wp && Array.isArray(wp.pts)) ? wp.pts : [];
+  }
+  function profileOn() { return !!(S.windProfile && S.windProfile.on && wpPts().length); }
+  function cleanProfile() {
+    if (!S.windProfile || typeof S.windProfile !== 'object') {
+      S.windProfile = { on: false, mode: 'steps', pts: [] };
+    }
+    var wp = S.windProfile;
+    if (wp.mode !== 'interp') wp.mode = 'steps';
+    var pts = (Array.isArray(wp.pts) ? wp.pts : []).filter(function (p) {
+      return p && Number.isFinite(p.x) && Number.isFinite(p.speed) && Number.isFinite(p.dir);
+    }).map(function (p) {
+      return { x: Math.max(0, Math.min(MAX_DISTANCE, p.x)),
+               speed: clamp('wind.speed', p.speed), dir: clamp('wind.dir', p.dir) };
+    }).sort(function (a, b) { return a.x - b.x; });
+    if (pts.length) pts[0].x = 0;
+    wp.pts = pts.slice(0, WPROF_MAX);
+    wp.on = !!wp.on && wp.pts.length > 0;
+  }
+  /* "3 segments, 2.0–5.5 m/s" -- for the labels that used to print one wind. */
+  function wpSummary() {
+    var p = wpPts(), lo = Infinity, hi = 0;
+    p.forEach(function (q) { lo = Math.min(lo, q.speed); hi = Math.max(hi, q.speed); });
+    var u = U.label('wind'), dec = 1;
+    var sp = Math.abs(hi - lo) < 1e-9
+      ? fmt(U.fromSI('wind', hi), dec)
+      : fmt(U.fromSI('wind', lo), dec) + '–' + fmt(U.fromSI('wind', hi), dec);
+    return p.length + (p.length === 1 ? ' segment, ' : ' segments, ') + sp + ' ' + u;
+  }
 
   /* One row of the card at an arbitrary distance.
    *
@@ -11864,7 +12276,9 @@ var PBOnline = (function () {
   function renderShotWindButton() {
     var b = $('btn-shot-wind');
     if (!b) return;
-    b.textContent = hasWind()
+    b.textContent = profileOn()
+      ? 'Wind by segments · ' + wpSummary() + '…'
+      : hasWind()
       ? 'Wind ' + fmt(U.fromSI('wind', S.wind.speed), 1) + ' ' +
         U.label('wind') + ' · ' + U.degToClock(S.wind.dir) + " o'clock…"
       : 'Wind: calm…';
@@ -12429,7 +12843,9 @@ var PBOnline = (function () {
       fmt(U.fromSI('temp', S.atmo.temp), 0) + U.label('temp') +
       ' · ' + fmt(U.fromSI('pressure', S.atmo.pressure), 0) + ' ' +
       U.label('pressure') + '\n' +
-      (hasWind()
+      (profileOn()
+        ? 'wind by segments: ' + wpSummary()
+        : hasWind()
         ? fmt(U.fromSI('wind', S.wind.speed), 1) + ' ' +
           U.label('wind') + ' @ ' + U.degToClock(S.wind.dir) +
           " o'clock"
@@ -12488,6 +12904,8 @@ var PBOnline = (function () {
     renderReticle();
     if ($('screen-shot').classList.contains('on')) renderShot();
     renderShotWindButton();
+    renderWindProfileStatus();
+    renderWindProfile(true);
     /* DRIFT, not WIND DRIFT: the figure is wind and spin drift
      * together, and it is dialled or held as one number. */
     var label = S.windInDope ? 'DRIFT INCLUDED' : 'HOLD YOURSELF';
@@ -13286,6 +13704,15 @@ var PBOnline = (function () {
         } else if (ev.key === 'Tab') { trapFocus(ev, $('ask-modal')); }
         return;
       }
+      /* Opened from the wind dialog too, so it sits above it. */
+      if (!$('wprof-modal').hidden) {
+        if (ev.key === 'Escape') { ev.preventDefault(); closeWindProfile(); }
+        else if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' &&
+                 ev.target.type !== 'checkbox') {
+          ev.preventDefault(); ev.target.blur();   /* commit the field */
+        }
+        return;
+      }
       if (!$('az-modal').hidden) {
         if (ev.key === 'Escape') { ev.preventDefault(); closeAz(); }
         else if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') {
@@ -13514,6 +13941,268 @@ var PBOnline = (function () {
     try { $('btn-az-compass').focus({ preventScroll: true }); }
     catch (e) { /* older browsers */ }
     save(); scheduleSolve(0);
+  }
+
+  // ---- wind by segments: the graph dialog ----------------------------
+
+  /* The selected point (its row is highlighted, its dot filled) and the
+   * button that opened the dialog, so focus goes back where it was. */
+  var wpSel = 0, wpOpener = null;
+
+  /* The graph spans the table: to the furthest listed distance, and a
+   * little past the last point so it can always be grabbed. */
+  function wpXMax() {
+    var p = wpPts(), last = p.length ? p[p.length - 1].x : 0;
+    return Math.max(200, maxDistance(), last * 1.15 + 50);
+  }
+
+  function wpView() {
+    return {
+      pts: wpPts(), mode: S.windProfile.mode, xMax: wpXMax(), sel: wpSel,
+      x: { toD: function (m) { return U.fromSI('distance', m); },
+           fromD: function (d) { return U.toSI('distance', d); },
+           step: 5, unit: U.label('distance') },
+      v: { toD: function (v) { return U.fromSI('wind', v); },
+           fromD: function (d) { return U.toSI('wind', d); },
+           step: 0.5, unit: U.label('wind') }
+    };
+  }
+
+  /* A point moved by finger or key: speed anywhere from calm up, the
+   * distance kept between its neighbours so the order never flips under
+   * a drag. The first point is the wind at the muzzle and stays at 0. */
+  function wpMove(i, x, speed) {
+    var p = wpPts();
+    if (!p[i]) return;
+    p[i].speed = clamp('wind.speed', speed);
+    if (i > 0) {
+      var lo = p[i - 1].x + 5;
+      var hi = i < p.length - 1 ? p[i + 1].x - 5 : MAX_DISTANCE;
+      p[i].x = Math.round(Math.min(hi, Math.max(lo, x)));
+    }
+    renderWindProfile(true);
+    scheduleSolve(120);
+  }
+
+  /* A new point at distance x, carrying the direction of the segment it
+   * splits so only what the shooter changes changes. Returns its index,
+   * or the existing point's when the tap lands on one. */
+  function wpAdd(x, speed) {
+    var p = wpPts(), i;
+    x = Math.round(Math.max(0, Math.min(MAX_DISTANCE, x)));
+    for (i = 0; i < p.length; i++) if (Math.abs(p[i].x - x) < 10) return i;
+    if (p.length >= WPROF_MAX) {
+      wpNote('Up to ' + WPROF_MAX + ' segments.');
+      return -1;
+    }
+    var at = 0;
+    for (i = 0; i < p.length; i++) if (p[i].x <= x) at = i;
+    var pt = { x: x, speed: clamp('wind.speed', Number.isFinite(speed) ? speed : p[at].speed),
+               dir: p[at].dir };
+    p.splice(at + 1, 0, pt);
+    save(); scheduleSolve(0);
+    return at + 1;
+  }
+
+  function wpRemove(i) {
+    var p = wpPts();
+    if (i <= 0 || !p[i]) return;
+    p.splice(i, 1);
+    wpSel = Math.min(wpSel, p.length - 1);
+    save(); scheduleSolve(0); render(); renderWindProfile();
+  }
+
+  function wpNote(text) {
+    $('wprof-hint').textContent = text ||
+      'Each point sets the wind from its distance on. Drag a point to ' +
+      'change it; tap the graph to add one.';
+  }
+
+  /* The rows under the graph: exact numbers for each point. Rebuilt only
+   * when no field in them is being typed in, so a drag does not throw
+   * away half a number. */
+  function renderWindProfileRows() {
+    var box = $('wprof-rows');
+    if (box.contains(document.activeElement)) return;
+    box.innerHTML = '';
+    var du = U.label('distance'), vu = U.label('wind');
+    wpPts().forEach(function (p, i) {
+      var row = document.createElement('div');
+      row.className = 'wprof-row' + (i === wpSel ? ' sel' : '');
+      row.setAttribute('data-i', i);
+      var n = document.createElement('span');
+      n.className = 'wprof-n'; n.textContent = String(i + 1);
+      row.appendChild(n);
+      function field(key, label, value, disabled) {
+        var l = document.createElement('label');
+        l.className = 'wprof-f';
+        var s = document.createElement('span'); s.textContent = label;
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.inputMode = 'decimal';
+        inp.value = value; inp.disabled = !!disabled;
+        inp.setAttribute('data-k', key);
+        inp.setAttribute('aria-label', 'Segment ' + (i + 1) + ' ' + label);
+        l.appendChild(s); l.appendChild(inp);
+        row.appendChild(l);
+        return inp;
+      }
+      field('x', 'From (' + du + ')', fmt(U.fromSI('distance', p.x), 0), i === 0);
+      field('speed', 'Speed (' + vu + ')', fmt(U.fromSI('wind', p.speed), 1));
+      field('dir', 'From (°)', fmt(p.dir, 0));
+      var clk = document.createElement('span');
+      clk.className = 'wprof-clock';
+      clk.textContent = U.degToClock(p.dir) + " o'clock";
+      row.appendChild(clk);
+      var del = document.createElement('button');
+      del.type = 'button'; del.className = 'ghost wprof-del';
+      del.textContent = '×';
+      del.disabled = i === 0;
+      del.setAttribute('aria-label', i === 0
+        ? 'The first segment starts at the muzzle and stays'
+        : 'Remove segment ' + (i + 1));
+      row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
+
+  /* graphOnly: during a drag only the drawing follows the finger. */
+  function renderWindProfile(graphOnly) {
+    if ($('wprof-modal').hidden) return;
+    var g = $('wprof-graph');
+    var focusI = document.activeElement && document.activeElement.closest &&
+                 document.activeElement.closest('.wg-pt')
+      ? document.activeElement.closest('.wg-pt').getAttribute('data-i') : null;
+    PBWindGraph.draw(g, wpView());
+    if (focusI !== null) {
+      var back = g.querySelector('.wg-pt[data-i="' + focusI + '"]');
+      if (back) { try { back.focus({ preventScroll: true }); } catch (e) { /* none */ } }
+    }
+    if (graphOnly) {
+      var rows = $('wprof-rows').querySelectorAll('.wprof-row');
+      var p = wpPts();
+      for (var i = 0; i < rows.length && i < p.length; i++) {
+        var ins = rows[i].querySelectorAll('input');
+        if (ins[0] !== document.activeElement) ins[0].value = fmt(U.fromSI('distance', p[i].x), 0);
+        if (ins[1] !== document.activeElement) ins[1].value = fmt(U.fromSI('wind', p[i].speed), 1);
+        rows[i].classList.toggle('sel', i === wpSel);
+      }
+      return;
+    }
+    $('wprof-on').checked = !!S.windProfile.on;
+    var mb = $('wprof-mode').querySelectorAll('button');
+    for (var k = 0; k < mb.length; k++) {
+      var on = mb[k].getAttribute('data-mode') === S.windProfile.mode;
+      mb[k].classList.toggle('on', on);
+      mb[k].setAttribute('aria-pressed', String(on));
+    }
+    $('wprof-add').disabled = wpPts().length >= WPROF_MAX;
+    renderWindProfileRows();
+  }
+
+  /* The line under the single-wind fields, wherever they are: the dial
+   * and those two fields are not the wind while segments are on. */
+  function renderWindProfileStatus() {
+    ['wprof-status', 'wprof-status-2'].forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      el.hidden = !profileOn();
+      el.textContent = profileOn()
+        ? 'Wind by segments is on (' + wpSummary() + '). The dial and ' +
+          'these fields are not used; the graph button edits it.'
+        : '';
+    });
+    ['btn-wprof', 'btn-wprof-2'].forEach(function (id) {
+      var b = $(id);
+      if (b) b.classList.toggle('on', profileOn());
+    });
+  }
+
+  function openWindProfile(opener) {
+    cleanProfile();
+    /* First time: the single wind as the starting profile, so the first
+     * edit changes something the shooter recognises. */
+    if (!wpPts().length) {
+      S.windProfile.pts = [{ x: 0, speed: clamp('wind.speed', S.wind.speed),
+                             dir: clamp('wind.dir', S.wind.dir) }];
+    }
+    wpSel = 0; wpOpener = opener || null;
+    wpNote('');
+    $('wprof-modal').hidden = false;
+    renderWindProfile();
+    try { $('wprof-on').focus({ preventScroll: true }); } catch (e) { /* none */ }
+  }
+
+  function closeWindProfile() {
+    var m = $('wprof-modal');
+    if (m.hidden) return;
+    if (document.activeElement && m.contains(document.activeElement)) {
+      document.activeElement.blur();      /* commit a field still being typed */
+    }
+    m.hidden = true;
+    cleanProfile();
+    save(); scheduleSolve(0); render();
+    if (wpOpener) { try { wpOpener.focus({ preventScroll: true }); } catch (e) { /* none */ } }
+  }
+
+  function bindWindProfile() {
+    $('btn-wprof').addEventListener('click', function () { openWindProfile(this); });
+    $('btn-wprof-2').addEventListener('click', function () { openWindProfile(this); });
+    $('wprof-done').addEventListener('click', closeWindProfile);
+    $('wprof-modal').addEventListener('mousedown', function (ev) {
+      if (ev.target === this) closeWindProfile();
+    });
+    $('wprof-on').addEventListener('change', function () {
+      S.windProfile.on = this.checked;
+      save(); scheduleSolve(0); render(); renderWindProfile();
+    });
+    $('wprof-mode').addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-mode]');
+      if (!b) return;
+      S.windProfile.mode = b.getAttribute('data-mode') === 'interp' ? 'interp' : 'steps';
+      save(); scheduleSolve(0); renderWindProfile();
+    });
+    $('wprof-add').addEventListener('click', function () {
+      var p = wpPts(), last = p[p.length - 1];
+      var x = last ? last.x + Math.max(50, Math.round((wpXMax() - last.x) / 2 / 50) * 50) : 0;
+      var i = wpAdd(Math.min(x, MAX_DISTANCE), last ? last.speed : 0);
+      if (i >= 0) { wpSel = i; render(); renderWindProfile(); }
+    });
+    var rows = $('wprof-rows');
+    rows.addEventListener('change', function (ev) {
+      var inp = ev.target, row = inp.closest('.wprof-row');
+      if (!row || !inp.getAttribute('data-k')) return;
+      var i = Number(row.getAttribute('data-i')), p = wpPts()[i];
+      var v = parseNum(inp.value);
+      if (!p || !Number.isFinite(v)) { inp.blur(); renderWindProfile(); return; }
+      var k = inp.getAttribute('data-k');
+      if (k === 'dir') p.dir = clamp('wind.dir', v);
+      else if (k === 'speed') p.speed = clamp('wind.speed', U.toSI('wind', v));
+      else if (k === 'x' && i > 0) {
+        var all = wpPts();
+        var lo = all[i - 1].x + 5, hi = i < all.length - 1 ? all[i + 1].x - 5 : MAX_DISTANCE;
+        p.x = Math.round(Math.min(hi, Math.max(lo, U.toSI('distance', v))));
+      }
+      wpSel = i;
+      save(); scheduleSolve(0); render();
+      inp.blur();
+      renderWindProfile();
+    });
+    rows.addEventListener('click', function (ev) {
+      var del = ev.target.closest('.wprof-del');
+      var row = ev.target.closest('.wprof-row');
+      if (!row) return;
+      var i = Number(row.getAttribute('data-i'));
+      if (del) { wpRemove(i); return; }
+      if (wpSel !== i) { wpSel = i; renderWindProfile(true); }
+    });
+    PBWindGraph.attach($('wprof-graph'), {
+      view: wpView,
+      move: wpMove,
+      add: function (x, speed) { var i = wpAdd(x, speed); if (i >= 0) renderWindProfile(); return i; },
+      select: function (i) { wpSel = i; renderWindProfile(true); },
+      remove: wpRemove,
+      done: function () { save(); scheduleSolve(0); render(); renderWindProfile(); }
+    });
   }
 
   function closeWind() {
@@ -14864,7 +15553,16 @@ var PBOnline = (function () {
       rifle: JSON.parse(JSON.stringify(S.rifle)),
       zeroWx: JSON.parse(JSON.stringify(S.zeroWx)),
       atmo: JSON.parse(JSON.stringify(S.atmo)),
-      wind: JSON.parse(JSON.stringify(S.wind)),
+      /* With wind by segments the record's single wind is the FIRST
+       * segment -- the wind at the shooter, which is what the CSV's
+       * wind_mps / wind_dir_rel_deg have always meant to a reader -- and
+       * the whole profile travels with it, so the flight can be
+       * reconstructed. */
+      wind: profileOn()
+        ? { speed: wpPts()[0].speed, dir: wpPts()[0].dir,
+            profile: { mode: S.windProfile.mode,
+                       pts: JSON.parse(JSON.stringify(wpPts())) } }
+        : JSON.parse(JSON.stringify(S.wind)),
       geom: JSON.parse(JSON.stringify(S.geom)),
       provenance: JSON.parse(JSON.stringify(S.provenance))
     };
@@ -18247,7 +18945,12 @@ var PBOnline = (function () {
       '# atmosphere: ' + S.atmo.temp + ' C, ' +
         (S.atmo.pressure / 100).toFixed(1) + ' hPa, ' + S.atmo.humidity +
         ' %RH, ' + S.atmo.altitude + ' m',
-      '# wind: ' + S.wind.speed + ' m/s from ' + S.wind.dir + ' deg — ' +
+      '# wind: ' + (profileOn()
+        ? 'by segments (' + S.windProfile.mode + '): ' +
+          wpPts().map(function (p) {
+            return 'from ' + p.x + ' m ' + p.speed + ' m/s from ' + p.dir + ' deg';
+          }).join('; ')
+        : S.wind.speed + ' m/s from ' + S.wind.dir + ' deg') + ' — ' +
         'drift column is the whole deflection, wind and spin, ' +
         (S.windInDope ? 'DIALLED on the windage turret'
                       : 'HELD in the reticle, windage turret untouched'),
@@ -18303,6 +19006,7 @@ var PBOnline = (function () {
     }
     populateSelects();
     bindInputs();
+    bindWindProfile();
     bindLibrary();
     bindBulletAdvanced();
     bindSights();
@@ -18324,7 +19028,7 @@ var PBOnline = (function () {
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.12.0',
+      version: '1.13.0',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(), k, sub;
         for (k in (cfgOverrides || {})) {
