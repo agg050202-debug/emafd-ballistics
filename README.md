@@ -11,9 +11,9 @@ a phone or a USB stick works where there is no signal.
 ## This build
 
 ```
-sha256  3ceb6a9a922a4a0ddda600ffb4fea85ec96c6baf33f10fdcb9a8b14fe23a63f9
-bytes   2700058
-stamp   1.13.1 · 2026-10-18 06:18 UTC   (shown in the page footer)
+sha256  1d05d29fb3c99e65fb21acb152199800f43b9251acddae150cd9f7b4c64f8562
+bytes   2707321
+stamp   1.13.2 · 2026-10-18 06:27 UTC   (shown in the page footer)
 ```
 
 **Match on the whole stamp, never on the version number.** Four separate builds
@@ -116,7 +116,8 @@ a constant wind.
 
 **1.13.1 is not a boundary.** It makes the solver about twice as fast and
 changes no result: every number it computes is bit-identical to 1.13.0's.
-Rows from either side of it pool freely.
+Rows from either side of it pool freely. **1.13.2** changes only how the wind
+graph is drawn and edited; its range cards are identical to 1.13.1's.
 
 The build stamp is at the bottom of the page. Quote it when reporting anything,
 otherwise there is no way to tell whether you were looking at a build that has

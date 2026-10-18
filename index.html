@@ -1665,9 +1665,20 @@
    A graph to draw on: the line in the accent, everything else muted, and
    targets sized for a gloved finger (the hit circle is 22 px of radius
    around a 6 px dot). touch-action stops the page scrolling under a drag. */
+/* The graph keeps its size however many segments there are: the card is
+   a flex column capped at the screen, and left alone the browser shrank
+   the one item that could shrink -- the graph -- a little more with every
+   point added. Everything is fixed except the rows, which take what is
+   left and scroll. */
 .sb-app .wprof-card { max-width: 560px; }
+.sb-app .wprof-card > * { flex: none; }
+.sb-app .wprof-card > .wprof-rows {
+  flex: 1 1 auto; min-height: 120px; overflow-y: auto;
+  overscroll-behavior: contain; position: relative;
+}
 .sb-app .wprof-graph {
   width: 100%; height: auto; display: block; touch-action: none;
+  aspect-ratio: 340 / 230;
   background: var(--sb-bg-2); border: 1px solid var(--sb-line);
   border-radius: var(--sb-radius); user-select: none; -webkit-user-select: none;
 }
@@ -1692,6 +1703,13 @@
 .sb-app .wprof-graph .wg-dial-12 { stroke: var(--sb-fg-dim); stroke-width: 1.2; }
 .sb-app .wprof-graph .wg-arrow {
   fill: none; stroke: var(--sb-fg); stroke-width: 1.6; stroke-linecap: round;
+}
+.sb-app .wprof-graph .wg-leader { fill: none; stroke: var(--sb-line); stroke-width: 1; }
+.sb-app .wprof-graph .wg-dialbtn { cursor: pointer; }
+.sb-app .wprof-graph .wg-dialbtn:hover .wg-dial { stroke: var(--sb-accent); }
+.sb-app .wprof-graph .wg-dialbtn:focus { outline: none; }
+.sb-app .wprof-graph .wg-dialbtn:focus-visible .wg-hit {
+  stroke: var(--sb-accent); stroke-width: 1.5; stroke-dasharray: 3 3;
 }
 .sb-app .wprof-graph .wg-pt:focus { outline: none; }
 .sb-app .wprof-graph .wg-pt:focus-visible .wg-hit {
@@ -2692,7 +2710,7 @@ body { background: #101317; }
 </section>
 
 <footer class="sb-footer">
-  <p>Build <b id="build-stamp">1.13.1 · 2026-10-18 06:18 UTC</b> &mdash; quote this when
+  <p>Build <b id="build-stamp">1.13.2 · 2026-10-18 06:27 UTC</b> &mdash; quote this when
   reporting anything, so a fixed bug is not reported twice.
   <button type="button" class="info" aria-expanded="false"
           aria-controls="info-credits" aria-label="About this solver">i</button></p>
@@ -2814,6 +2832,29 @@ body { background: #101317; }
     <div class="actions wprof-actions">
       <button type="button" id="wprof-add">+ Add segment</button>
       <button type="button" id="wprof-done" class="primary">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- One segment's wind direction, on the same dial as the single wind:
+     opened by tapping a segment's small dial on the graph. -->
+<div class="sb-modal" id="wpdir-modal" hidden role="dialog" aria-modal="true"
+     aria-labelledby="wpdir-title">
+  <div class="sb-modal-card">
+    <h3 id="wpdir-title">Wind direction</h3>
+    <div class="rose-wrap">
+      <div class="rose-box">
+        <svg id="wpdir-rose" class="rose" role="slider" tabindex="0"
+             aria-label="Wind direction of this segment, relative to the shot"
+             aria-valuemin="0" aria-valuemax="359" aria-valuenow="90"></svg>
+        <div class="rose-readout">
+          <b id="wpdir-deg">90&deg;</b>
+          <span id="wpdir-clock">3 o'clock</span>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="button" id="wpdir-done" class="primary">Done</button>
     </div>
   </div>
 </div>
@@ -7803,7 +7844,7 @@ var PBWindRose = (function () {
  *       mode, xMax (m), sel, x: {toD, fromD, step, unit},
  *       v: {toD, fromD, step, unit} }
  *   PBWindGraph.attach(svg, api)   api: { view(), move(i, x, speed),
- *       add(x, speed), select(i), done() }
+ *       add(x, speed), select(i), remove(i), dial(i), done() }
  */
 'use strict';
 
@@ -7906,8 +7947,7 @@ var PBWindGraph = (function () {
     svg.appendChild(el('path', { d: d + 'V' + y1 + 'H' + f.X(p[0].x) + 'Z', 'class': 'wg-area' }));
     svg.appendChild(el('path', { d: d, 'class': 'wg-line' }));
 
-    /* Points, each with its dial above, and a generous invisible target
-     * for a gloved finger. */
+    /* Points, each with a generous invisible target for a gloved finger. */
     for (i = 0; i < p.length; i++) {
       var cx = f.X(p[i].x), cy = f.Y(p[i].speed), sel = i === v.sel;
       var g = el('g', { 'class': 'wg-pt' + (sel ? ' sel' : ''), 'data-i': i,
@@ -7915,14 +7955,43 @@ var PBWindGraph = (function () {
                         'aria-label': 'Segment ' + (i + 1) + ': from ' +
                           Math.round(v.x.toD(p[i].x)) + ' ' + v.x.unit + ', ' +
                           (Math.round(v.v.toD(p[i].speed) * 10) / 10) + ' ' + v.v.unit +
-                          ' from ' + (Math.round(((p[i].dir % 360) + 360) % 360 / 30) || 12) +
-                          " o'clock" });
-      g.appendChild(el('line', { x1: cx, y1: y0 - 10, x2: cx, y2: y1, 'class': 'wg-stem' }));
-      dial(g, cx, 22, p[i].dir, sel);
+                          ' from ' + clock(p[i].dir) + " o'clock" });
+      g.appendChild(el('line', { x1: cx, y1: y0 - 6, x2: cx, y2: y1, 'class': 'wg-stem' }));
       g.appendChild(el('circle', { cx: cx, cy: cy, r: 26, 'class': 'wg-hit' }));
       g.appendChild(el('circle', { cx: cx, cy: cy, r: sel ? 7 : 6, 'class': 'wg-dot' }));
       svg.appendChild(g);
     }
+
+    /* The dials, in one row over the graph: over their point when there
+     * is room, pushed aside when not, with a thin leader down to the
+     * point. Close points stay readable, and each dial is a button of its
+     * own -- tapping it opens the wind dial for that segment. Eight dials
+     * fit the width with room to spare. */
+    var DR = 11, GAP = 2 * DR + 4, DY = 16;
+    var lo = PAD.l + DR - 8, hi = W - PAD.r - DR + 8, dx = [];
+    for (i = 0; i < p.length; i++) {
+      dx[i] = Math.max(f.X(p[i].x), i ? dx[i - 1] + GAP : lo);
+    }
+    for (i = p.length - 1; i >= 0; i--) {
+      dx[i] = Math.min(dx[i], i < p.length - 1 ? dx[i + 1] - GAP : hi);
+    }
+    for (i = 0; i < p.length; i++) {
+      var px0 = f.X(p[i].x), on = i === v.sel;
+      svg.appendChild(el('path', {
+        d: 'M' + dx[i] + ' ' + (DY + DR) + 'L' + px0 + ' ' + (y0 - 6),
+        'class': 'wg-leader' }));
+      var b = el('g', { 'class': 'wg-dialbtn' + (on ? ' sel' : ''), 'data-d': i,
+                        tabindex: 0, role: 'button',
+                        'aria-label': 'Segment ' + (i + 1) + ' wind from ' +
+                          clock(p[i].dir) + " o'clock. Change the direction" });
+      b.appendChild(el('circle', { cx: dx[i], cy: DY, r: DR + 6, 'class': 'wg-hit' }));
+      dial(b, dx[i], DY, p[i].dir, on);
+      svg.appendChild(b);
+    }
+  }
+
+  function clock(dir) {
+    return Math.round(((dir % 360) + 360) % 360 / 30) || 12;
   }
 
   function toSvg(svg, ev) {
@@ -7944,6 +8013,12 @@ var PBWindGraph = (function () {
       if (ev.button !== undefined && ev.button !== 0) return;
       var at = toSvg(svg, ev);
       if (!at) return;
+      var dialBtn = ev.target.closest ? ev.target.closest('.wg-dialbtn') : null;
+      if (dialBtn) {
+        ev.preventDefault();
+        if (api.dial) api.dial(Number(dialBtn.getAttribute('data-d')));
+        return;
+      }
       var v = api.view(), f = frame(v);
       var hit = ev.target.closest ? ev.target.closest('.wg-pt') : null;
       var i;
@@ -7986,6 +8061,12 @@ var PBWindGraph = (function () {
     /* Keys on a focused point: up/down the speed, left/right the
      * distance, Delete removes it. */
     svg.addEventListener('keydown', function (ev) {
+      var db = ev.target.closest ? ev.target.closest('.wg-dialbtn') : null;
+      if (db && (ev.key === 'Enter' || ev.key === ' ')) {
+        ev.preventDefault();
+        if (api.dial) api.dial(Number(db.getAttribute('data-d')));
+        return;
+      }
       var g = ev.target.closest ? ev.target.closest('.wg-pt') : null;
       if (!g) return;
       var i = Number(g.getAttribute('data-i')), v = api.view(), p = v.pts[i];
@@ -11324,6 +11405,11 @@ var PBOnline = (function () {
         } else if (ev.key === 'Tab') { trapFocus(ev, $('ask-modal')); }
         return;
       }
+      /* A segment's direction dial sits above the graph dialog. */
+      if (!$('wpdir-modal').hidden) {
+        if (ev.key === 'Escape') { ev.preventDefault(); closeWpDir(); }
+        return;
+      }
       /* Opened from the wind dialog too, so it sits above it. */
       if (!$('wprof-modal').hidden) {
         if (ev.key === 'Escape') { ev.preventDefault(); closeWindProfile(); }
@@ -11644,6 +11730,9 @@ var PBOnline = (function () {
   function renderWindProfileRows() {
     var box = $('wprof-rows');
     if (box.contains(document.activeElement)) return;
+    /* The list scrolls on its own; rebuilding it must not throw the
+     * shooter back to the first segment. */
+    var keep = box.scrollTop;
     box.innerHTML = '';
     var du = U.label('distance'), vu = U.label('wind');
     wpPts().forEach(function (p, i) {
@@ -11683,18 +11772,39 @@ var PBOnline = (function () {
       row.appendChild(del);
       box.appendChild(row);
     });
+    box.scrollTop = keep;
+    wpRevealSel();
+  }
+
+  /* The selected segment in view inside the list -- a point just added
+   * on the graph lands at the bottom of a list that may already be
+   * scrolled -- moving the list only, never the page or the graph. */
+  function wpRevealSel() {
+    var box = $('wprof-rows'), row = box.querySelector('.wprof-row.sel');
+    if (!row) return;
+    var top = row.offsetTop, bottom = top + row.offsetHeight;
+    if (top < box.scrollTop) box.scrollTop = top;
+    else if (bottom > box.scrollTop + box.clientHeight) {
+      box.scrollTop = bottom - box.clientHeight;
+    }
   }
 
   /* graphOnly: during a drag only the drawing follows the finger. */
   function renderWindProfile(graphOnly) {
     if ($('wprof-modal').hidden) return;
     var g = $('wprof-graph');
-    var focusI = document.activeElement && document.activeElement.closest &&
-                 document.activeElement.closest('.wg-pt')
-      ? document.activeElement.closest('.wg-pt').getAttribute('data-i') : null;
+    /* A redraw replaces every node, including the point or dial that
+     * has the keyboard focus: put the focus back on its replacement. */
+    var ae = document.activeElement, focusSel = null;
+    var fp = ae && ae.closest ? ae.closest('.wg-pt, .wg-dialbtn') : null;
+    if (fp && g.contains(fp)) {
+      focusSel = fp.hasAttribute('data-d')
+        ? '.wg-dialbtn[data-d="' + fp.getAttribute('data-d') + '"]'
+        : '.wg-pt[data-i="' + fp.getAttribute('data-i') + '"]';
+    }
     PBWindGraph.draw(g, wpView());
-    if (focusI !== null) {
-      var back = g.querySelector('.wg-pt[data-i="' + focusI + '"]');
+    if (focusSel) {
+      var back = g.querySelector(focusSel);
       if (back) { try { back.focus({ preventScroll: true }); } catch (e) { /* none */ } }
     }
     if (graphOnly) {
@@ -11706,6 +11816,7 @@ var PBOnline = (function () {
         if (ins[1] !== document.activeElement) ins[1].value = fmt(U.fromSI('wind', p[i].speed), 1);
         rows[i].classList.toggle('sel', i === wpSel);
       }
+      wpRevealSel();
       return;
     }
     $('wprof-on').checked = !!S.windProfile.on;
@@ -11764,7 +11875,52 @@ var PBOnline = (function () {
     if (wpOpener) { try { wpOpener.focus({ preventScroll: true }); } catch (e) { /* none */ } }
   }
 
+  /* A segment's direction on the wind dial -- the same PBWindRose as the
+   * single wind, so the clock means the same thing in both places. */
+  var wpDirI = -1;
+  function renderWpDir() {
+    var p = wpPts()[wpDirI];
+    if (!p) return;
+    var svg = $('wpdir-rose');
+    PBWindRose.draw(svg, p.dir, { size: svg.clientWidth || 260 });
+    $('wpdir-deg').textContent = Math.round(p.dir) + '°';
+    $('wpdir-clock').textContent = U.degToClock(p.dir) + " o'clock";
+  }
+  function openWpDir(i) {
+    if (!wpPts()[i]) return;
+    wpDirI = i; wpSel = i;
+    $('wpdir-title').textContent = 'Segment ' + (i + 1) + ' — wind direction';
+    $('wpdir-modal').hidden = false;
+    renderWindProfile(true);
+    renderWpDir();
+    try { $('wpdir-rose').focus({ preventScroll: true }); } catch (e) { /* none */ }
+  }
+  function closeWpDir() {
+    var m = $('wpdir-modal');
+    if (m.hidden) return;
+    m.hidden = true;
+    var i = wpDirI;
+    wpDirI = -1;
+    save(); scheduleSolve(0); render(); renderWindProfile();
+    var back = $('wprof-graph').querySelector('.wg-dialbtn[data-d="' + i + '"]');
+    if (back) { try { back.focus({ preventScroll: true }); } catch (e) { /* none */ } }
+  }
+
   function bindWindProfile() {
+    PBWindRose.attach($('wpdir-rose'),
+      function () { var p = wpPts()[wpDirI]; return p ? p.dir : 0; },
+      function (deg) {
+        var p = wpPts()[wpDirI];
+        if (!p) return;
+        p.dir = clamp('wind.dir', deg);
+        renderWpDir();
+        PBWindGraph.draw($('wprof-graph'), wpView());
+      },
+      function () { save(); scheduleSolve(0); render(); renderWindProfile(); });
+    $('wpdir-done').addEventListener('click', closeWpDir);
+    $('wpdir-modal').addEventListener('mousedown', function (ev) {
+      if (ev.target === this) closeWpDir();
+    });
     $('btn-wprof').addEventListener('click', function () { openWindProfile(this); });
     $('btn-wprof-2').addEventListener('click', function () { openWindProfile(this); });
     $('wprof-done').addEventListener('click', closeWindProfile);
@@ -11781,10 +11937,20 @@ var PBOnline = (function () {
       S.windProfile.mode = b.getAttribute('data-mode') === 'interp' ? 'interp' : 'steps';
       save(); scheduleSolve(0); renderWindProfile();
     });
+    /* + Add segment: in the middle of the widest gap the table covers,
+     * so new points spread over the range being shot instead of piling
+     * up past its end. */
     $('wprof-add').addEventListener('click', function () {
-      var p = wpPts(), last = p[p.length - 1];
-      var x = last ? last.x + Math.max(50, Math.round((wpXMax() - last.x) / 2 / 50) * 50) : 0;
-      var i = wpAdd(Math.min(x, MAX_DISTANCE), last ? last.speed : 0);
+      var p = wpPts(), end = Math.max(maxDistance(), p.length ? p[p.length - 1].x : 0);
+      var best = -1, at = 0, k;
+      for (k = 0; k < p.length; k++) {
+        var b = k < p.length - 1 ? p[k + 1].x : end;
+        if (b - p[k].x > best) { best = b - p[k].x; at = k; }
+      }
+      if (best < 20) { wpNote('No room left between the points.'); return; }
+      var hi = at < p.length - 1 ? p[at + 1].x : end;
+      var x = Math.round((p[at].x + hi) / 2 / 5) * 5;
+      var i = wpAdd(x, p[at].speed);
       if (i >= 0) { wpSel = i; render(); renderWindProfile(); }
     });
     var rows = $('wprof-rows');
@@ -11821,6 +11987,7 @@ var PBOnline = (function () {
       add: function (x, speed) { var i = wpAdd(x, speed); if (i >= 0) renderWindProfile(); return i; },
       select: function (i) { wpSel = i; renderWindProfile(true); },
       remove: wpRemove,
+      dial: openWpDir,
       done: function () { save(); scheduleSolve(0); render(); renderWindProfile(); }
     });
   }
@@ -16687,7 +16854,7 @@ var PBOnline = (function () {
     /* A minimal, deliberate surface for anything embedding this page --
      * see INTEGRATION.md. Everything else stays private. */
     window.SuperiorBallistics = {
-      version: '1.13.1',
+      version: '1.13.2',
       solve: function (cfgOverrides) {
         var cfg = buildConfig(), k, sub;
         for (k in (cfgOverrides || {})) {
